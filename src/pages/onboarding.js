@@ -1,6 +1,6 @@
 // src/pages/onboarding.js
 // Campus Connect — multi-step profile creation.
-// Design: Neo-Brutalist Bento — thick borders, lime green accent, Montserrat bold.
+// Design: Neo-Brutalist Bento from Stitch (Montserrat, dot background, bold shadows).
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/router";
@@ -9,65 +9,54 @@ import { db } from "../lib/firebase";
 import { useRequireAuth } from "../lib/useAuth";
 import { fileToFirestorePhoto } from "../lib/imageUtils";
 
-// ─── Design tokens ─────────────────────────────────────────────────────────────
-const G = "#B4FF39";          // lime accent
-const BLK = "#1b1b1b";        // near-black
-const BG = "#f9f9f9";         // page background
-const CARD_SHADOW = `4px 4px 0 0 ${BLK}`;
+// ─── Design tokens from Stitch Template ─────────────────────────────────────────
+const PRIMARY = "#4b6700";
+const PRIMARY_CONTAINER = "#bdff00"; // Lime green
+const ON_PRIMARY_CONTAINER = "#547300";
+const SECONDARY = "#7531d3"; // Purple accent
+const BLK = "#1b1b1b";
+const BG = "#f3f3f3";
 
-// ─── Per-step configuration ────────────────────────────────────────────────────
 const STEPS = [
-  { id: "name",      label: "Your Identity"    },
-  { id: "branch",    label: "Your Course"      },
-  { id: "year",      label: "Your Year"        },
-  { id: "stay",      label: "Where You Stay"   },
-  { id: "vibe",      label: "Your Vibe"        },
-  { id: "interests", label: "Your Interests"   },
-  { id: "squad",     label: "Squad Goals"      },
-  { id: "spot",      label: "Your Spot"        },
-  { id: "prompt",    label: "Vibe Card"        },
-  { id: "photo",     label: "Verify Yourself"  },
+  { id: "name",      label: "IDENTITY" },
+  { id: "branch",    label: "COURSE" },
+  { id: "year",      label: "YEAR" },
+  { id: "stay",      label: "STAY" },
+  { id: "vibe",      label: "VIBE" },
+  { id: "interests", label: "INTERESTS" },
+  { id: "squad",     label: "SQUAD" },
+  { id: "spot",      label: "SPOT" },
+  { id: "prompt",    label: "VIBE CARD" },
+  { id: "photo",     label: "VERIFICATION" },
 ];
 
-// ─── Option data ───────────────────────────────────────────────────────────────
 const OPT = {
   branch: [
-    // ── Engineering (BTech / BE) ──
     { l: "CSE", e: "💻" }, { l: "ECE", e: "📡" }, { l: "IT", e: "🖥️" },
     { l: "Mechanical", e: "⚙️" }, { l: "Civil", e: "🏗️" }, { l: "EEE", e: "⚡" },
     { l: "Chemical Engg", e: "⚗️" }, { l: "Biotech Engg", e: "🧬" },
     { l: "Aerospace", e: "✈️" }, { l: "Mining", e: "⛏️" },
     { l: "Environmental Engg", e: "🌿" }, { l: "Agricultural Engg", e: "🌾" },
     { l: "Marine Engg", e: "🚢" }, { l: "Production Engg", e: "🏭" },
-    // ── Computer Applications ──
     { l: "BCA", e: "🖥️" }, { l: "MCA", e: "💻" },
-    // ── Management ──
     { l: "BBA", e: "📊" }, { l: "MBA", e: "💼" },
     { l: "B.Com", e: "📈" }, { l: "M.Com", e: "📉" }, { l: "PGDM", e: "📋" },
-    // ── Science ──
     { l: "BSc Physics", e: "⚛️" }, { l: "BSc Chemistry", e: "🧪" },
     { l: "BSc Maths", e: "📐" }, { l: "BSc Biology", e: "🔬" },
     { l: "BSc CS", e: "💻" }, { l: "BSc Biotech", e: "🧬" },
     { l: "MSc", e: "🔭" },
-    // ── Arts & Humanities ──
     { l: "BA English", e: "📝" }, { l: "BA History", e: "🏛️" },
     { l: "BA Pol. Science", e: "🗳️" }, { l: "BA Psychology", e: "🧠" },
     { l: "BA Sociology", e: "👥" }, { l: "BA Economics", e: "💹" },
     { l: "BA Philosophy", e: "🤔" }, { l: "MA", e: "🎓" },
-    // ── Law ──
     { l: "LLB", e: "⚖️" }, { l: "LLM", e: "⚖️" },
     { l: "BA LLB", e: "⚖️" }, { l: "BBA LLB", e: "⚖️" },
-    // ── Medical & Allied Health ──
     { l: "MBBS", e: "🏥" }, { l: "BDS", e: "🦷" },
     { l: "BPharm", e: "💊" }, { l: "MPharm", e: "💊" },
     { l: "BSc Nursing", e: "🩺" }, { l: "Physiotherapy", e: "🏃" },
-    // ── Architecture & Design ──
     { l: "B.Arch", e: "🏛️" }, { l: "B.Des", e: "🎨" },
-    // ── Education ──
     { l: "B.Ed", e: "📚" }, { l: "M.Ed", e: "📚" },
-    // ── Agriculture ──
     { l: "BSc Agriculture", e: "🌾" }, { l: "MSc Agriculture", e: "🌾" },
-    // ── Hotel & Tourism ──
     { l: "BHM", e: "🏨" }, { l: "MTM", e: "🧳" },
   ],
   year: [
@@ -124,446 +113,6 @@ const OPT = {
 
 const AVATARS = ["😎", "🤩", "🥷", "🧠", "🎭", "🦋", "🐉", "👾", "🌙", "🔥", "⚡", "🎯"];
 
-// ─── Neo-Brutalist Chip ────────────────────────────────────────────────────────
-function Chip({ label, emoji, selected, onClick, custom }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: emoji ? 6 : 0,
-        padding: "8px 16px",
-        borderRadius: 8,
-        border: `2px solid ${BLK}`,
-        background: selected ? G : "#fff",
-        color: BLK,
-        fontWeight: 700,
-        fontSize: 13,
-        cursor: "pointer",
-        fontFamily: "inherit",
-        boxShadow: selected ? `3px 3px 0 0 ${BLK}` : "none",
-        transition: "all 0.12s",
-        transform: selected ? "translate(-1px,-1px)" : "none",
-        position: "relative",
-      }}
-    >
-      {emoji && <span style={{ fontSize: 14 }}>{emoji}</span>}
-      {label}
-      {custom && selected && (
-        <span style={{
-          marginLeft: 4, fontSize: 9, opacity: 0.6,
-          background: BLK, color: "#fff", borderRadius: 4, padding: "1px 4px",
-        }}>custom</span>
-      )}
-    </button>
-  );
-}
-
-// ─── WriteOwn ─────────────────────────────────────────────────────────────────
-function WriteOwn({ onAdd, placeholder = "Type and press Enter..." }) {
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-  const ref = useRef(null);
-
-  const commit = () => {
-    const t = text.trim();
-    if (t) { onAdd(t); setText(""); }
-    setOpen(false);
-  };
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => { setOpen(true); setTimeout(() => ref.current?.focus(), 60); }}
-        style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          padding: "8px 16px", borderRadius: 8,
-          border: `2px dashed ${BLK}`,
-          background: "transparent",
-          color: BLK, fontWeight: 700, fontSize: 13,
-          cursor: "pointer", fontFamily: "inherit",
-          transition: "all 0.12s",
-        }}
-      >
-        ✏️ Write your own
-      </button>
-    );
-  }
-
-  return (
-    <div style={{
-      display: "flex", gap: 6, width: "100%",
-      padding: "10px 12px", borderRadius: 8,
-      border: `2px solid ${BLK}`,
-      background: `${G}20`,
-      boxShadow: `3px 3px 0 0 ${BLK}`,
-    }}>
-      <input
-        ref={ref}
-        value={text}
-        onChange={e => setText(e.target.value)}
-        onKeyDown={e => {
-          if (e.key === "Enter") { e.preventDefault(); commit(); }
-          if (e.key === "Escape") { setOpen(false); setText(""); }
-        }}
-        placeholder={placeholder}
-        style={{
-          flex: 1, border: "none", background: "transparent",
-          fontSize: 13, fontFamily: "inherit", color: BLK, outline: "none",
-          fontWeight: 600,
-        }}
-      />
-      <button type="button" onClick={commit} style={{
-        padding: "4px 12px", borderRadius: 6, border: `2px solid ${BLK}`,
-        background: G, color: BLK, fontWeight: 800, fontSize: 12,
-        cursor: "pointer", fontFamily: "inherit",
-        boxShadow: `2px 2px 0 0 ${BLK}`,
-      }}>Add</button>
-      <button type="button" onClick={() => { setOpen(false); setText(""); }} style={{
-        padding: "4px 8px", borderRadius: 6, border: `2px solid ${BLK}`,
-        background: "#fff", color: "#666",
-        fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit",
-      }}>✕</button>
-    </div>
-  );
-}
-
-// ─── Chip grid ────────────────────────────────────────────────────────────────
-function ChipGrid({ options, value, onChange, writeOwn = true, writeOwnPlaceholder }) {
-  const optionLabels = options.map(o => o.l);
-  const toggle = (label) => {
-    if (value.includes(label)) onChange(value.filter(v => v !== label));
-    else onChange([...value, label]);
-  };
-  const addCustom = (text) => {
-    if (!value.includes(text)) onChange([...value, text]);
-  };
-  const customEntries = value.filter(v => !optionLabels.includes(v));
-
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-      {options.map(opt => (
-        <Chip
-          key={opt.l}
-          label={opt.l}
-          emoji={opt.e}
-          selected={value.includes(opt.l)}
-          onClick={() => toggle(opt.l)}
-        />
-      ))}
-      {customEntries.map(c => (
-        <Chip key={c} label={c} selected onClick={() => toggle(c)} custom />
-      ))}
-      {writeOwn && <WriteOwn onAdd={addCustom} placeholder={writeOwnPlaceholder} />}
-    </div>
-  );
-}
-
-// ─── Progress bar ─────────────────────────────────────────────────────────────
-function ProgressBar({ step }) {
-  const pct = Math.round((step / STEPS.length) * 100);
-  return (
-    <div style={{ marginBottom: 28 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 800, color: BLK, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-          Step {step} of {STEPS.length}
-        </span>
-        <span style={{ fontSize: 13, fontWeight: 900, color: BLK }}>{pct}%</span>
-      </div>
-      <div style={{
-        height: 10, borderRadius: 4,
-        background: "#e0e0e0",
-        border: `2px solid ${BLK}`,
-        overflow: "hidden",
-      }}>
-        <div style={{
-          height: "100%",
-          width: `${pct}%`,
-          background: G,
-          borderRadius: 2,
-          transition: "width 0.4s cubic-bezier(.22,1,.36,1)",
-        }} />
-      </div>
-    </div>
-  );
-}
-
-// ─── Step header ──────────────────────────────────────────────────────────────
-function StepHeader({ question, sub, tag }) {
-  return (
-    <div style={{ marginBottom: 24 }}>
-      {tag && (
-        <span style={{
-          display: "inline-block",
-          background: G, color: BLK,
-          fontSize: 10, fontWeight: 900,
-          letterSpacing: "0.14em", textTransform: "uppercase",
-          padding: "3px 10px", borderRadius: 4,
-          border: `2px solid ${BLK}`,
-          marginBottom: 10,
-        }}>{tag}</span>
-      )}
-      <h2 style={{
-        margin: 0, fontSize: 26, fontWeight: 900,
-        color: BLK, lineHeight: 1.15,
-        letterSpacing: -0.5, textTransform: "uppercase",
-      }}>
-        {question}
-      </h2>
-      {sub && (
-        <p style={{ margin: "8px 0 0", fontSize: 13, color: "#555", fontWeight: 500, lineHeight: 1.5 }}>
-          {sub}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ─── Bento card wrapper ───────────────────────────────────────────────────────
-function BentoCard({ children, style = {} }) {
-  return (
-    <div style={{
-      background: "#fff",
-      border: `3px solid ${BLK}`,
-      borderRadius: 12,
-      padding: "20px 18px",
-      boxShadow: CARD_SHADOW,
-      marginBottom: 14,
-      ...style,
-    }}>
-      {children}
-    </div>
-  );
-}
-
-// ─── Step 1 — Name + Avatar ───────────────────────────────────────────────────
-function StepName({ name, setName, avatar, setAvatar }) {
-  return (
-    <>
-      <StepHeader question="Build your vibe" tag="Identity" sub="This shows on your campus profile." />
-
-      <BentoCard>
-        <p style={{ fontSize: 10, fontWeight: 800, color: "#888", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
-          Pick an avatar
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {AVATARS.map(em => (
-            <button
-              key={em}
-              type="button"
-              onClick={() => setAvatar(em)}
-              style={{
-                width: 46, height: 46, borderRadius: 8, fontSize: 22,
-                border: `2px solid ${avatar === em ? BLK : "#ddd"}`,
-                background: avatar === em ? G : "#fff",
-                cursor: "pointer",
-                boxShadow: avatar === em ? `3px 3px 0 0 ${BLK}` : "none",
-                transform: avatar === em ? "translate(-1px,-1px)" : "none",
-                transition: "all 0.12s",
-              }}
-            >{em}</button>
-          ))}
-        </div>
-      </BentoCard>
-
-      <BentoCard>
-        <label style={{ fontSize: 10, fontWeight: 900, color: G, letterSpacing: "0.14em", textTransform: "uppercase", display: "block", marginBottom: 8, WebkitTextStroke: `0.3px ${BLK}` }}>
-          Your full name
-        </label>
-        <input
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder="e.g. Alex Rivera"
-          autoFocus
-          style={{
-            width: "100%", padding: "12px 14px",
-            border: `2px solid ${name.length >= 2 ? BLK : "#ddd"}`,
-            borderRadius: 8, fontSize: 16, fontWeight: 700,
-            color: BLK, outline: "none", fontFamily: "inherit",
-            background: "#fff",
-            boxShadow: name.length >= 2 ? `3px 3px 0 0 ${BLK}` : "none",
-            transition: "all 0.15s",
-            boxSizing: "border-box",
-          }}
-        />
-      </BentoCard>
-    </>
-  );
-}
-
-// ─── Generic chip-select step ─────────────────────────────────────────────────
-function GenericStep({ question, sub, tag, options, value, onChange, writeOwn, placeholder }) {
-  return (
-    <>
-      <StepHeader question={question} sub={sub} tag={tag} />
-      <BentoCard>
-        <ChipGrid
-          options={options}
-          value={value}
-          onChange={onChange}
-          writeOwn={writeOwn}
-          writeOwnPlaceholder={placeholder}
-        />
-      </BentoCard>
-    </>
-  );
-}
-
-// ─── Step 10 — Photo ──────────────────────────────────────────────────────────
-function StepPhoto({
-  profilePhotoFile, setProfilePhotoFile, profilePhotoPreview, setProfilePhotoPreview,
-  idCardFile, setIdCardFile, idCardPreview, setIdCardPreview,
-  uploadProgress,
-}) {
-  const profileRef = useRef(null);
-  const idRef = useRef(null);
-
-  function onFilePick(setFile, setPreview) {
-    return (e) => {
-      const file = e.target.files?.[0];
-      if (!file || !file.type.startsWith("image/")) return;
-      setFile(file);
-      const reader = new FileReader();
-      reader.onload = (ev) => setPreview(ev.target.result);
-      reader.readAsDataURL(file);
-    };
-  }
-
-  const UploadBox = ({ label, sublabel, file, preview, refEl, icon }) => (
-    <BentoCard style={{ cursor: "pointer" }}>
-      <input ref={refEl} type="file" accept="image/*" style={{ display: "none" }} onChange={onFilePick(file === profilePhotoFile ? setProfilePhotoFile : setIdCardFile, file === profilePhotoFile ? setProfilePhotoPreview : setIdCardPreview)} />
-      <div onClick={() => refEl.current?.click()}>
-        <label style={{ fontSize: 10, fontWeight: 900, color: G, letterSpacing: "0.14em", textTransform: "uppercase", display: "block", marginBottom: 10, WebkitTextStroke: `0.3px ${BLK}`, cursor: "pointer" }}>
-          {label}
-        </label>
-        <div style={{
-          height: 140, borderRadius: 8,
-          border: `2px dashed ${file ? BLK : "#bbb"}`,
-          background: file ? `${G}20` : "#f9f9f9",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          overflow: "hidden", position: "relative",
-        }}>
-          {preview ? (
-            <img src={preview} alt="preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 36, marginBottom: 6 }}>{icon}</div>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: 13, color: BLK }}>Tap to upload</p>
-              <p style={{ margin: "3px 0 0", fontSize: 11, color: "#888" }}>{sublabel}</p>
-            </div>
-          )}
-          {file && (
-            <div style={{
-              position: "absolute", top: 8, right: 8,
-              background: G, color: BLK, borderRadius: 6,
-              fontSize: 11, fontWeight: 900, padding: "3px 10px",
-              border: `2px solid ${BLK}`, boxShadow: `2px 2px 0 0 ${BLK}`,
-            }}>✓ Selected</div>
-          )}
-        </div>
-      </div>
-    </BentoCard>
-  );
-
-  return (
-    <>
-      <StepHeader question="Verify yourself ✅" tag="Final Step" sub="Your photo is shown only to mutual reveals. Your ID stays private." />
-
-      <BentoCard>
-        <input ref={profileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onFilePick(setProfilePhotoFile, setProfilePhotoPreview)} />
-        <div onClick={() => profileRef.current?.click()} style={{ cursor: "pointer" }}>
-          <label style={{ fontSize: 10, fontWeight: 900, color: G, letterSpacing: "0.14em", textTransform: "uppercase", display: "block", marginBottom: 10, WebkitTextStroke: `0.3px ${BLK}`, cursor: "pointer" }}>
-            Profile Photo
-          </label>
-          <div style={{
-            height: 160, borderRadius: 8,
-            border: `2px dashed ${profilePhotoFile ? BLK : "#bbb"}`,
-            background: profilePhotoFile ? `${G}20` : "#f9f9f9",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            overflow: "hidden", position: "relative",
-          }}>
-            {profilePhotoPreview ? (
-              <img src={profilePhotoPreview} alt="profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            ) : (
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 40, marginBottom: 6 }}>🤳</div>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: 13, color: BLK }}>Tap to upload photo</p>
-                <p style={{ margin: "4px 0 0", fontSize: 11, color: "#888" }}>Shown only to mutual reveals</p>
-              </div>
-            )}
-            {profilePhotoFile && (
-              <div style={{
-                position: "absolute", top: 8, right: 8,
-                background: G, color: BLK, borderRadius: 6,
-                fontSize: 11, fontWeight: 900, padding: "3px 10px",
-                border: `2px solid ${BLK}`, boxShadow: `2px 2px 0 0 ${BLK}`,
-              }}>✓ Selected</div>
-            )}
-          </div>
-        </div>
-      </BentoCard>
-
-      <BentoCard>
-        <input ref={idRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onFilePick(setIdCardFile, setIdCardPreview)} />
-        <div onClick={() => idRef.current?.click()} style={{ cursor: "pointer" }}>
-          <label style={{ fontSize: 10, fontWeight: 900, color: G, letterSpacing: "0.14em", textTransform: "uppercase", display: "block", marginBottom: 10, WebkitTextStroke: `0.3px ${BLK}`, cursor: "pointer" }}>
-            College ID Card (Optional)
-          </label>
-          <div style={{
-            height: 130, borderRadius: 8,
-            border: `2px dashed ${idCardFile ? BLK : "#bbb"}`,
-            background: idCardFile ? `${G}20` : "#f9f9f9",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            overflow: "hidden", position: "relative",
-          }}>
-            {idCardPreview ? (
-              <img src={idCardPreview} alt="id" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            ) : (
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 34, marginBottom: 6 }}>🪪</div>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: 13, color: BLK }}>Tap to upload college ID</p>
-                <p style={{ margin: "4px 0 0", fontSize: 11, color: "#888" }}>Only admins see this</p>
-              </div>
-            )}
-            {idCardFile && (
-              <div style={{
-                position: "absolute", top: 8, right: 8,
-                background: G, color: BLK, borderRadius: 6,
-                fontSize: 11, fontWeight: 900, padding: "3px 10px",
-                border: `2px solid ${BLK}`, boxShadow: `2px 2px 0 0 ${BLK}`,
-              }}>✓ Selected</div>
-            )}
-          </div>
-        </div>
-      </BentoCard>
-
-      <div style={{
-        background: `${G}20`, border: `2px solid ${BLK}`,
-        borderRadius: 8, padding: "10px 14px",
-        fontSize: 12, color: BLK, fontWeight: 700, lineHeight: 1.5,
-      }}>
-        🔒 Your ID is stored privately — never shown to other users. Used only to verify you're a real student.
-      </div>
-
-      {uploadProgress && (
-        <div style={{
-          marginTop: 12, background: `${G}30`, borderRadius: 8,
-          border: `2px solid ${BLK}`, padding: "10px 14px",
-          fontSize: 12, fontWeight: 800, color: BLK,
-          boxShadow: `3px 3px 0 0 ${BLK}`,
-        }}>
-          ⏳ {uploadProgress}
-        </div>
-      )}
-    </>
-  );
-}
-
-// ─── Main Onboarding component ────────────────────────────────────────────────
 export default function Onboarding() {
   const router = useRouter();
   const scrollRef = useRef(null);
@@ -573,8 +122,9 @@ export default function Onboarding() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const [avatar, setAvatar] = useState("😎");
+  // States
   const [name, setName] = useState("");
+  const [avatar, setAvatar] = useState("😎");
   const [branch, setBranch] = useState([]);
   const [year, setYear] = useState([]);
   const [stay, setStay] = useState([]);
@@ -584,11 +134,24 @@ export default function Onboarding() {
   const [spot, setSpot] = useState([]);
   const [prompt, setPrompt] = useState([]);
 
+  // Photo
   const [profilePhotoFile, setProfilePhotoFile] = useState(null);
   const [profilePhotoPreview, setProfilePhotoPreview] = useState("");
   const [idCardFile, setIdCardFile] = useState(null);
   const [idCardPreview, setIdCardPreview] = useState("");
   const [uploadProgress, setUploadProgress] = useState("");
+
+  const profilePickerRef = useRef(null);
+  const idPickerRef = useRef(null);
+
+  const handleFileChange = (setFile, setPreview) => (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    setFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setPreview(ev.target.result);
+    reader.readAsDataURL(file);
+  };
 
   const validate = () => {
     if (step === 1 && name.trim().length < 2) return "Enter at least 2 characters for your name";
@@ -599,7 +162,7 @@ export default function Onboarding() {
     if (step === 6 && interests.length < 3) return `Pick ${3 - interests.length} more interest${3 - interests.length > 1 ? "s" : ""}`;
     if (step === 7 && squad.length === 0) return "Select at least one squad type";
     if (step === 8 && spot.length === 0) return "Pick your go-to spot(s)";
-    if (step === 9 && prompt.length === 0) return "Pick at least one vibe";
+    if (step === 9 && prompt.length === 0) return "Pick at least one Saturday plan";
     if (step === 10 && !profilePhotoFile) return "Upload your profile photo first";
     return "";
   };
@@ -658,204 +221,593 @@ export default function Onboarding() {
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const toggleOption = (list, setList, item, single = false) => {
+    if (single) {
+      setList(list.includes(item) ? [] : [item]);
+    } else {
+      setList(list.includes(item) ? list.filter(x => x !== item) : [...list, item]);
+    }
+  };
+
+  const addCustomOption = (list, setList, text) => {
+    const trimmed = text.trim();
+    if (trimmed && !list.includes(trimmed)) {
+      setList([...list, trimmed]);
+    }
+  };
+
   if (authLoading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: BG }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 36, marginBottom: 8 }}>⚡</div>
-          <p style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 800, color: BLK }}>Loading...</p>
+          <div style={{ fontSize: 40, marginBottom: 8, animation: "bounce 1s infinite" }}>⚡</div>
+          <style>{`@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}`}</style>
+          <p style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 800, color: BLK }}>LOADING...</p>
         </div>
       </div>
     );
   }
 
+  // Calculate percentage progress
+  const progressPercent = Math.round((step / STEPS.length) * 100);
+
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
-        * { box-sizing: border-box; }
-        body { margin: 0; background: ${BG}; font-family: 'Montserrat', sans-serif; overflow-x: hidden; }
-        ::placeholder { color: #bbb; font-family: 'Montserrat', sans-serif; }
-        button:active { opacity: 0.85; }
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;0,800;0,900;1,800;1,900&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+          background-color: #f3f3f3;
+          background-image: radial-gradient(#bcbcbc 1.5px, transparent 1.5px);
+          background-size: 32px 32px;
+          font-family: 'Montserrat', sans-serif;
+          color: #1b1b1b;
+        }
+
+        .neo-shadow {
+          box-shadow: 6px 6px 0px 0px #1b1b1b;
+        }
+
+        .neo-shadow-small {
+          box-shadow: 3px 3px 0px 0px #1b1b1b;
+        }
+
+        .neo-button-hover {
+          transition: all 0.1s ease;
+        }
+        .neo-button-hover:hover {
+          transform: translate(2px, 2px);
+          box-shadow: 2px 2px 0px 0px #1b1b1b;
+        }
+        .neo-button-hover:active {
+          transform: translate(4px, 4px);
+          box-shadow: 0px 0px 0px 0px #1b1b1b;
+        }
+
+        .glass-bento {
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+        }
+
+        input:focus, select:focus, textarea:focus {
+          outline: none !important;
+          border-color: ${SECONDARY} !important;
+          box-shadow: 3px 3px 0px 0px ${SECONDARY} !important;
+        }
+
+        .step-transition {
+          animation: slideUp 0.3s cubic-bezier(.22,1,.36,1) both;
+        }
         @keyframes slideUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to   { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .step-enter { animation: slideUp 0.3s cubic-bezier(.22,1,.36,1) both; }
+
+        .shake {
+          animation: shake 0.3s ease;
+        }
         @keyframes shake {
-          0%,100% { transform: translateX(0); }
-          20%,60%  { transform: translateX(-6px); }
-          40%,80%  { transform: translateX(6px); }
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-6px); }
+          40%, 80% { transform: translateX(6px); }
         }
-        .shake { animation: shake 0.35s ease; }
       `}</style>
 
-      <div style={{ minHeight: "100vh", background: BG, display: "flex", flexDirection: "column", alignItems: "center", fontFamily: "Montserrat, sans-serif" }}>
+      {/* Fixed Navigation Bar */}
+      <nav style={{
+        position: "fixed", top: 0, left: 0, width: "100%", zIndex: 50,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        padding: "16px 20px", background: "#fff",
+        borderBottom: "3px solid #1b1b1b",
+        boxShadow: "0px 4px 0px 0px rgba(0, 0, 0, 0.15)"
+      }}>
+        <div style={{
+          fontFamily: "Montserrat", fontSize: "24px", fontWeight: 900,
+          fontStyle: "italic", tracking: "-0.04em", color: PRIMARY
+        }}>
+          CAMPUS CONNECT
+        </div>
+        <div style={{
+          background: BLK, color: PRIMARY_CONTAINER,
+          padding: "4px 10px", borderRadius: 4,
+          fontSize: "11px", fontWeight: 800, letterSpacing: "0.06em"
+        }}>
+          {STEPS[step - 1].label}
+        </div>
+      </nav>
 
-        {/* Scrollable area */}
-        <div
-          ref={scrollRef}
-          style={{ width: "100%", maxWidth: 480, flex: 1, overflowY: "auto", padding: "24px 18px 160px" }}
-        >
-          {/* Brand header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: G, border: `2px solid ${BLK}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 16, boxShadow: `2px 2px 0 0 ${BLK}`,
-              }}>🔥</div>
-              <span style={{ fontWeight: 900, fontSize: 14, color: BLK, letterSpacing: -0.2 }}>CAMPUS CONNECT</span>
-            </div>
-            <span style={{
-              background: BLK, color: G,
-              padding: "4px 10px", borderRadius: 6,
-              fontSize: 11, fontWeight: 800, letterSpacing: "0.06em",
+      {/* Main Container */}
+      <main style={{
+        width: "100%", maxWidth: "600px", margin: "100px auto 140px",
+        padding: "0 16px", display: "flex", flexDirection: "column", gap: "20px"
+      }}>
+        
+        {/* Main Bento container */}
+        <div className="glass-bento neo-shadow" style={{
+          border: "3px solid #1b1b1b", padding: "24px",
+          display: "flex", flexDirection: "column", gap: "24px"
+        }}>
+          
+          {/* Header Block with Progress */}
+          <header style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div style={{
+              width: "100%", height: "32px", background: "#eee",
+              border: "3px solid #1b1b1b", display: "flex", overflow: "hidden"
             }}>
-              {STEPS[step - 1].label.toUpperCase()}
-            </span>
-          </div>
+              {/* Progress bars segment */}
+              <div style={{
+                height: "100%", background: PRIMARY_CONTAINER,
+                width: `${progressPercent}%`,
+                borderRight: step < STEPS.length ? "3px solid #1b1b1b" : "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "width 0.4s ease-out"
+              }}>
+                <span style={{ fontSize: "11px", fontWeight: 900, color: ON_PRIMARY_CONTAINER }}>
+                  {progressPercent}%
+                </span>
+              </div>
+            </div>
+            
+            <h1 style={{
+              fontSize: "32px", fontWeight: 900, textTransform: "uppercase",
+              fontStyle: "italic", letterSpacing: "-0.04em", color: BLK,
+              lineHeight: "1.1"
+            }}>
+              BUILD YOUR <span style={{
+                background: PRIMARY_CONTAINER, padding: "2px 8px",
+                border: `3px solid ${BLK}`, display: "inline-block",
+                transform: "rotate(-1deg)"
+              }}>VIBE</span>
+            </h1>
+          </header>
 
-          {/* Progress */}
-          <ProgressBar step={step} />
+          {/* Form Step Section */}
+          <div key={step} className="step-transition" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            
+            {/* Step 1: Identity */}
+            {step === 1 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                
+                {/* Profile Photo Upload inside Bento */}
+                <div className="neo-shadow-small" style={{
+                  border: "3px solid #1b1b1b", background: "#fff",
+                  padding: "24px", display: "flex", flexDirection: "column",
+                  alignItems: "center", justifyContent: "center", position: "relative"
+                }}>
+                  <input
+                    ref={profilePickerRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleFileChange(setProfilePhotoFile, setProfilePhotoPreview)}
+                  />
+                  <div
+                    onClick={() => profilePickerRef.current?.click()}
+                    style={{
+                      width: "130px", height: "130px", borderRadius: "50%",
+                      border: "3px solid #1b1b1b", background: "#ecdcff",
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      justifyContent: "center", cursor: "pointer", overflow: "hidden",
+                      transition: "background 0.2s"
+                    }}
+                  >
+                    {profilePhotoPreview ? (
+                      <img src={profilePhotoPreview} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined" style={{ fontSize: "40px", color: BLK }}>photo_camera</span>
+                        <p style={{ fontSize: "9px", fontWeight: 900, marginTop: "4px", textTransform: "uppercase" }}>ADD PHOTO</p>
+                      </>
+                    )}
+                  </div>
+                  <div style={{
+                    position: "absolute", top: "-10px", right: "-10px",
+                    width: "36px", height: "36px", background: SECONDARY,
+                    border: "3px solid #1b1b1b", borderRadius: "50%",
+                    display: "flex", alignItems: "center", justifyContent: "center", color: "#fff"
+                  }}>★</div>
+                  <p style={{ fontSize: "12px", fontWeight: 800, marginTop: "12px", textTransform: "uppercase", color: SECONDARY }}>
+                    PROFILE PIC
+                  </p>
+                  <p style={{ fontSize: "11px", color: "#666", marginTop: "4px" }}>Let them see your energy ⚡</p>
+                </div>
 
-          {/* Step content */}
-          <div key={step} className="step-enter">
-            {step === 1 && <StepName name={name} setName={setName} avatar={avatar} setAvatar={setAvatar} />}
+                {/* Name & Avatar options */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: 900, textTransform: "uppercase", color: SECONDARY }}>
+                    YOUR FULL NAME
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Alex Rivera"
+                    style={{
+                      width: "100%", background: "#fff", border: "3px solid #1b1b1b",
+                      padding: "16px", fontSize: "18px", fontWeight: 700,
+                      textTransform: "uppercase", borderRadius: "0px",
+                      boxShadow: name.length >= 2 ? "3px 3px 0px 0px #1b1b1b" : "none"
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: 900, textTransform: "uppercase", color: SECONDARY }}>
+                    CHOOSE EMOJI AVATAR
+                  </label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {AVATARS.map(av => (
+                      <button
+                        key={av}
+                        type="button"
+                        onClick={() => setAvatar(av)}
+                        style={{
+                          width: "44px", height: "44px", fontSize: "20px",
+                          border: "3px solid #1b1b1b", background: avatar === av ? PRIMARY_CONTAINER : "#fff",
+                          cursor: "pointer", transition: "all 0.1s",
+                          boxShadow: avatar === av ? "3px 3px 0px 0px #1b1b1b" : "none",
+                          transform: avatar === av ? "translate(-2px, -2px)" : "none"
+                        }}
+                      >
+                        {av}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* Steps 2-9: General selection steps */}
             {step === 2 && (
-              <GenericStep tag="Course" question="What are you studying?"
-                sub="Pick all that apply — dual degrees welcome 🎓"
-                options={OPT.branch} value={branch} onChange={setBranch}
-                writeOwn placeholder="e.g. Physics, Law, Design..."
+              <SelectionStep
+                label="COURSE / BRANCH"
+                options={OPT.branch}
+                value={branch}
+                onChange={setBranch}
+                placeholder="Search or add course..."
               />
             )}
+
             {step === 3 && (
-              <GenericStep tag="Year" question="Which year are you in?"
-                sub="Backlog years count too, no judgement 😌"
-                options={OPT.year} value={year} onChange={setYear}
-                writeOwn placeholder="e.g. 5th Year, Postgrad..."
+              <SelectionStep
+                label="CURRENT GRADUATION YEAR"
+                options={OPT.year}
+                value={year}
+                onChange={(val) => setYear(val)}
+                single={true}
               />
             )}
+
             {step === 4 && (
-              <GenericStep tag="Stay" question="Where do you stay?"
-                sub="Helps surface people near you for impromptu plans"
-                options={OPT.stay} value={stay} onChange={setStay}
-                writeOwn placeholder="e.g. Off-campus PG..."
+              <SelectionStep
+                label="WHERE YOU STAY"
+                options={OPT.stay}
+                value={stay}
+                onChange={setStay}
               />
             )}
+
             {step === 5 && (
-              <GenericStep tag="Vibe" question="Your campus alter-ego is..."
-                sub="Pick all that resonate. You can be multiple things 🤷"
-                options={OPT.vibe} value={vibe} onChange={setVibe}
-                writeOwn placeholder="e.g. Debate champion..."
+              <SelectionStep
+                label="CAMPUS ALTER-EGO VIBES"
+                options={OPT.vibe}
+                value={vibe}
+                onChange={setVibe}
+                placeholder="Write custom vibe..."
               />
             )}
+
             {step === 6 && (
-              <GenericStep tag="Interests" question="What gets you going?"
-                sub={`Pick at least 3 — ${interests.length} selected so far`}
-                options={OPT.interests} value={interests} onChange={setInterests}
-                writeOwn placeholder="e.g. Birdwatching, Robotics..."
+              <SelectionStep
+                label="YOUR DEEPEST INTERESTS (SELECT >= 3)"
+                options={OPT.interests}
+                value={interests}
+                onChange={setInterests}
+                placeholder="Write custom interest..."
               />
             )}
+
             {step === 7 && (
-              <GenericStep tag="Squad" question="What kind of squad are you building?"
-                sub="Pick everything you're open to — more = better matches"
-                options={OPT.squad} value={squad} onChange={setSquad}
-                writeOwn placeholder="e.g. Movie nights..."
+              <SelectionStep
+                label="SQUAD OBJECTIVES"
+                options={OPT.squad}
+                value={squad}
+                onChange={setSquad}
               />
             )}
+
             {step === 8 && (
-              <GenericStep tag="Spots" question="Where do people find you?"
-                sub="Your default campus spot(s)"
-                options={OPT.spot} value={spot} onChange={setSpot}
-                writeOwn placeholder="e.g. Rooftop, Design studio..."
+              <SelectionStep
+                label="CAMPUS HANGOUT SPOTS"
+                options={OPT.spot}
+                value={spot}
+                onChange={setSpot}
               />
             )}
+
             {step === 9 && (
-              <GenericStep tag="Prompt" question="My ideal Saturday looks like..."
-                sub="Shows on your profile card"
-                options={OPT.prompt} value={prompt} onChange={setPrompt}
-                writeOwn placeholder="e.g. Cooking for the whole floor..."
+              <SelectionStep
+                label="MY IDEAL SATURDAY"
+                options={OPT.prompt}
+                value={prompt}
+                onChange={setPrompt}
               />
             )}
+
+            {/* Step 10: Private ID Verification */}
             {step === 10 && (
-              <StepPhoto
-                profilePhotoFile={profilePhotoFile} setProfilePhotoFile={setProfilePhotoFile}
-                profilePhotoPreview={profilePhotoPreview} setProfilePhotoPreview={setProfilePhotoPreview}
-                idCardFile={idCardFile} setIdCardFile={setIdCardFile}
-                idCardPreview={idCardPreview} setIdCardPreview={setIdCardPreview}
-                uploadProgress={uploadProgress}
-              />
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div style={{ marginBottom: "8px" }}>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, textTransform: "uppercase" }}>
+                    Student Verification
+                  </h3>
+                  <p style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                    Upload your ID to request access verification. Admins review it privately.
+                  </p>
+                </div>
+
+                <div className="neo-shadow-small" style={{
+                  border: "3px solid #1b1b1b", background: "#fff",
+                  padding: "24px", display: "flex", flexDirection: "column",
+                  alignItems: "center", justifyContent: "center", position: "relative",
+                  cursor: "pointer"
+                }} onClick={() => idPickerRef.current?.click()}>
+                  <input
+                    ref={idPickerRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleFileChange(setIdCardFile, setIdCardPreview)}
+                  />
+                  <div style={{
+                    width: "100%", height: "140px",
+                    border: "3px dashed #1b1b1b", background: idCardPreview ? "transparent" : "#fcf8ff",
+                    display: "flex", flexDirection: "column", alignItems: "center",
+                    justifyContent: "center", overflow: "hidden"
+                  }}>
+                    {idCardPreview ? (
+                      <img src={idCardPreview} alt="ID Card Preview" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined" style={{ fontSize: "48px", color: BLK }}>badge</span>
+                        <p style={{ fontSize: "11px", fontWeight: 850, marginTop: "6px", textTransform: "uppercase" }}>
+                          TAP TO UPLOAD COLLEGE ID
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  {idCardFile && (
+                    <div style={{
+                      position: "absolute", top: "8px", right: "8px",
+                      background: PRIMARY_CONTAINER, color: BLK, border: "2px solid #1b1b1b",
+                      padding: "2px 8px", fontSize: "10px", fontWeight: 900
+                    }}>
+                      ✓ SELECTED
+                    </div>
+                  )}
+                </div>
+
+                <div style={{
+                  background: "#fff", border: "3px solid #1b1b1b",
+                  padding: "16px", display: "flex", gap: "10px", alignItems: "center"
+                }}>
+                  <span style={{ fontSize: "20px" }}>🔒</span>
+                  <p style={{ fontSize: "11px", fontWeight: 650, color: "#444" }}>
+                    Your ID is stored securely, encrypted, and is never shown to other users.
+                  </p>
+                </div>
+
+                {uploadProgress && (
+                  <div className="neo-shadow-small" style={{
+                    background: PRIMARY_CONTAINER, border: "3px solid #1b1b1b",
+                    padding: "12px", fontSize: "12px", fontWeight: 800, textAlign: "center"
+                  }}>
+                    {uploadProgress.toUpperCase()}
+                  </div>
+                )}
+              </div>
             )}
+
           </div>
 
-          {/* Error */}
+          {/* Validation Error Banner */}
           {error && (
             <div className="shake" style={{
-              marginTop: 16, padding: "12px 16px", borderRadius: 8,
-              background: "#fff0f0", border: `2px solid ${BLK}`,
-              color: "#c62828", fontSize: 13, fontWeight: 700,
-              boxShadow: `3px 3px 0 0 ${BLK}`,
+              background: "#ffdad6", border: "3px solid #1b1b1b",
+              padding: "12px 16px", color: "#ba1a1a",
+              fontWeight: 800, fontSize: "13px",
+              boxShadow: "3px 3px 0px 0px #1b1b1b"
             }}>
-              ⚠️ {error}
+              ⚠️ {error.toUpperCase()}
             </div>
           )}
-        </div>
 
-        {/* ── Fixed bottom bar ── */}
-        <div style={{
-          position: "fixed", bottom: 0,
-          left: "50%", transform: "translateX(-50%)",
-          width: "100%", maxWidth: 480,
-          background: "rgba(249,249,249,0.97)",
-          backdropFilter: "blur(10px)",
-          borderTop: `3px solid ${BLK}`,
-          padding: "14px 18px 28px",
-          display: "flex", gap: 10,
-        }}>
-          {/* Back */}
-          {step > 1 && (
-            <button
-              type="button"
-              onClick={handleBack}
-              disabled={saving}
-              style={{
-                width: 50, height: 50, borderRadius: 10, flexShrink: 0,
-                border: `2px solid ${BLK}`,
-                background: "#fff", color: BLK,
-                fontSize: 18, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: "inherit", fontWeight: 800,
-                boxShadow: `3px 3px 0 0 ${BLK}`,
-                transition: "all 0.12s",
-              }}
-            >←</button>
-          )}
-
-          {/* Next / Submit */}
+          {/* Continue / Finish Action Button */}
           <button
             type="button"
             onClick={handleNext}
             disabled={saving}
+            className="neo-button-hover"
             style={{
-              flex: 1, height: 50, borderRadius: 10,
-              border: `2px solid ${BLK}`,
-              background: saving ? "#e0e0e0" : G,
-              color: BLK,
-              fontWeight: 900, fontSize: 14,
-              cursor: saving ? "wait" : "pointer",
-              fontFamily: "inherit",
-              letterSpacing: "0.04em",
-              textTransform: "uppercase",
-              boxShadow: saving ? "none" : `4px 4px 0 0 ${BLK}`,
-              transition: "all 0.12s",
+              width: "100%", background: PRIMARY_CONTAINER, color: BLK,
+              border: "3px solid #1b1b1b", padding: "18px",
+              fontFamily: "Montserrat", fontSize: "18px", fontWeight: 900,
+              fontStyle: "italic", textTransform: "uppercase",
+              boxShadow: "4px 4px 0px 0px #1b1b1b", cursor: saving ? "wait" : "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
             }}
           >
-            {saving ? "⏳ Saving..." : step === STEPS.length ? "🚀 Launch Profile" : `Continue →`}
+            {saving ? "SAVING..." : step === STEPS.length ? "LAUNCH PROFILE 🚀" : "CONTINUE →"}
+          </button>
+
+        </div>
+
+        {/* Previous Navigation / Back Control */}
+        {step > 1 && (
+          <button
+            type="button"
+            onClick={handleBack}
+            disabled={saving}
+            className="neo-button-hover"
+            style={{
+              alignSelf: "flex-start", background: "#fff", color: BLK,
+              border: "3px solid #1b1b1b", padding: "12px 24px",
+              fontFamily: "Montserrat", fontSize: "13px", fontWeight: 800,
+              textTransform: "uppercase", boxShadow: "3px 3px 0px 0px #1b1b1b",
+              cursor: "pointer"
+            }}
+          >
+            ← Back
+          </button>
+        )}
+
+      </main>
+
+      {/* Page Footer */}
+      <footer style={{
+        width: "100%", padding: "24px 20px", background: SECONDARY,
+        borderTop: "3px solid #1b1b1b", display: "flex", flexDirection: "column",
+        alignItems: "center", gap: "12px", color: "#fff"
+      }}>
+        <div style={{ fontFamily: "Montserrat", fontSize: "18px", fontWeight: 900, fontStyle: "italic" }}>
+          CAMPUS CONNECT
+        </div>
+        <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em" }}>
+          © 2026 CAMPUS CONNECT. BUILT FOR THE BOLD.
+        </p>
+      </footer>
+    </>
+  );
+}
+
+// ─── Selection component (Multi/Single selection grids with WriteOwn fallback) ─────
+function SelectionStep({ label, options, value, onChange, single = false, placeholder }) {
+  const [customText, setCustomText] = useState("");
+
+  const handleToggle = (itemLabel) => {
+    if (single) {
+      onChange(value.includes(itemLabel) ? [] : [itemLabel]);
+    } else {
+      onChange(value.includes(itemLabel) ? value.filter(v => v !== itemLabel) : [...value, itemLabel]);
+    }
+  };
+
+  const handleCustomAddSubmit = (e) => {
+    if (e.key === "Enter" || e.type === "click") {
+      e.preventDefault();
+      const text = customText.trim();
+      if (text) {
+        addCustomOption(value, onChange, text);
+        setCustomText("");
+      }
+    }
+  };
+
+  const standardLabels = options.map(o => o.l);
+  const customItems = value.filter(v => !standardLabels.includes(v));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <label style={{ fontSize: "12px", fontWeight: 900, textTransform: "uppercase", color: SECONDARY }}>
+        {label}
+      </label>
+
+      {/* Option Grid */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+        {options.map(opt => {
+          const selected = value.includes(opt.l);
+          return (
+            <button
+              key={opt.l}
+              type="button"
+              onClick={() => handleToggle(opt.l)}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                padding: "8px 16px", border: "2px solid #1b1b1b",
+                background: selected ? PRIMARY_CONTAINER : "#fff",
+                fontWeight: 700, fontSize: "13px", cursor: "pointer",
+                boxShadow: selected ? "3px 3px 0px 0px #1b1b1b" : "none",
+                transform: selected ? "translate(-2px, -2px)" : "none",
+                transition: "all 0.1s"
+              }}
+            >
+              <span>{opt.e}</span> {opt.l}
+            </button>
+          );
+        })}
+
+        {/* Custom items added */}
+        {customItems.map(customVal => (
+          <button
+            key={customVal}
+            type="button"
+            onClick={() => handleToggle(customVal)}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "6px",
+              padding: "8px 16px", border: "2px solid #1b1b1b",
+              background: PRIMARY_CONTAINER,
+              fontWeight: 700, fontSize: "13px", cursor: "pointer",
+              boxShadow: "3px 3px 0px 0px #1b1b1b",
+              transform: "translate(-2px, -2px)"
+            }}
+          >
+            ✏️ {customVal}
+          </button>
+        ))}
+      </div>
+
+      {/* Custom item input */}
+      {placeholder && (
+        <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+          <input
+            type="text"
+            value={customText}
+            onChange={(e) => setCustomText(e.target.value)}
+            onKeyDown={handleCustomAddSubmit}
+            placeholder={placeholder}
+            style={{
+              flex: 1, padding: "10px 12px", border: "3px solid #1b1b1b",
+              fontSize: "13px", fontWeight: 700, fontFamily: "inherit"
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleCustomAddSubmit}
+            className="neo-button-hover"
+            style={{
+              padding: "0 18px", background: PRIMARY_CONTAINER, color: BLK,
+              border: "3px solid #1b1b1b", fontWeight: 900, cursor: "pointer",
+              fontSize: "12px", textTransform: "uppercase",
+              boxShadow: "3px 3px 0px 0px #1b1b1b"
+            }}
+          >
+            Add
           </button>
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 }
