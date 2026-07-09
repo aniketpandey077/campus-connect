@@ -16,10 +16,23 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Avoid re-initializing on hot reload
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// Guard: only initialize Firebase when the API key is present.
+// During Next.js build/SSR on a CI/CD server the NEXT_PUBLIC_ vars may be
+// absent; without this guard the build crashes with auth/invalid-api-key.
+let app, auth, db, storage;
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+if (firebaseConfig.apiKey) {
+  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+} else {
+  // Stub exports so imports never throw at module-evaluation time.
+  app = null;
+  auth = null;
+  db = null;
+  storage = null;
+}
+
+export { auth, db, storage };
 export default app;
