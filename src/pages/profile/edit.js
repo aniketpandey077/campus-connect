@@ -11,9 +11,43 @@ import { useRequireAuth } from "../../lib/useAuth";
 
 const OPT = {
   branch: [
+    // ── Engineering (BTech / BE) ──
     { l: "CSE", e: "💻" }, { l: "ECE", e: "📡" }, { l: "IT", e: "🖥️" },
     { l: "Mechanical", e: "⚙️" }, { l: "Civil", e: "🏗️" }, { l: "EEE", e: "⚡" },
-    { l: "Biotech", e: "🧬" }, { l: "Chemical", e: "⚗️" }, { l: "MBA/BBA", e: "📊" },
+    { l: "Chemical Engg", e: "⚗️" }, { l: "Biotech Engg", e: "🧬" },
+    { l: "Aerospace", e: "✈️" }, { l: "Mining", e: "⛏️" },
+    { l: "Environmental Engg", e: "🌿" }, { l: "Agricultural Engg", e: "🌾" },
+    { l: "Marine Engg", e: "🚢" }, { l: "Production Engg", e: "🏭" },
+    // ── Computer Applications ──
+    { l: "BCA", e: "🖥️" }, { l: "MCA", e: "💻" },
+    // ── Management ──
+    { l: "BBA", e: "📊" }, { l: "MBA", e: "💼" },
+    { l: "B.Com", e: "📈" }, { l: "M.Com", e: "📉" }, { l: "PGDM", e: "📋" },
+    // ── Science ──
+    { l: "BSc Physics", e: "⚛️" }, { l: "BSc Chemistry", e: "🧪" },
+    { l: "BSc Maths", e: "📐" }, { l: "BSc Biology", e: "🔬" },
+    { l: "BSc CS", e: "💻" }, { l: "BSc Biotech", e: "🧬" },
+    { l: "MSc", e: "🔭" },
+    // ── Arts & Humanities ──
+    { l: "BA English", e: "📝" }, { l: "BA History", e: "🏛️" },
+    { l: "BA Pol. Science", e: "🗳️" }, { l: "BA Psychology", e: "🧠" },
+    { l: "BA Sociology", e: "👥" }, { l: "BA Economics", e: "💹" },
+    { l: "BA Philosophy", e: "🤔" }, { l: "MA", e: "🎓" },
+    // ── Law ──
+    { l: "LLB", e: "⚖️" }, { l: "LLM", e: "⚖️" },
+    { l: "BA LLB", e: "⚖️" }, { l: "BBA LLB", e: "⚖️" },
+    // ── Medical & Allied Health ──
+    { l: "MBBS", e: "🏥" }, { l: "BDS", e: "🦷" },
+    { l: "BPharm", e: "💊" }, { l: "MPharm", e: "💊" },
+    { l: "BSc Nursing", e: "🩺" }, { l: "Physiotherapy", e: "🏃" },
+    // ── Architecture & Design ──
+    { l: "B.Arch", e: "🏛️" }, { l: "B.Des", e: "🎨" },
+    // ── Education ──
+    { l: "B.Ed", e: "📚" }, { l: "M.Ed", e: "📚" },
+    // ── Agriculture ──
+    { l: "BSc Agriculture", e: "🌾" }, { l: "MSc Agriculture", e: "🌾" },
+    // ── Hotel & Tourism ──
+    { l: "BHM", e: "🏨" }, { l: "MTM", e: "🧳" },
   ],
   year: [
     { l: "1st Year", e: "🌱" }, { l: "2nd Year", e: "🌿" },

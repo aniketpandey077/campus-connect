@@ -6,6 +6,7 @@ import { useAuth } from "../lib/useAuth";
 
 const NAV_ITEMS = [
   { icon: "🔥", label: "Swipe",   href: "/swipe"   },
+  { icon: "🎓", label: "Courses", href: "/courses" },
   { icon: "🗓️", label: "Events",  href: "/events"  },
   { icon: "💬", label: "Inbox",   href: "/matches" },
   { icon: "👤", label: "Profile", href: "/profile" },
