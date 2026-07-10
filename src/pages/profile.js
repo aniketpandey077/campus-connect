@@ -5,12 +5,16 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, onSnapshot } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
 import NavBar from "../components/NavBar";
 import { useRequireAuth } from "../lib/useAuth";
 import { fileToFirestorePhoto } from "../lib/imageUtils";
+
+// ─── Admin UID — only this account sees the admin panel ───────────────────────
+// Replace the value below with your own Firebase UID (phone number used as UID).
+const ADMIN_UID = "YOUR_UID_HERE"; // ← update this!
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function Tag({ children, bg = "#fff", color = "#1b1b1b" }) {
@@ -74,12 +78,20 @@ export default function Profile() {
   const [error,     setError]     = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(""); // success / error toast
+  const [pendingCount, setPendingCount] = useState(0); // admin: pending verifications
 
   useEffect(() => {
     if (!user) return;
     const uid = user.uid;
     setMyPhone(uid);
     loadProfile(uid);
+
+    // Live pending verifications count — only for admin
+    if (uid === ADMIN_UID || true) { // remove "|| true" after setting ADMIN_UID
+      const q = query(collection(db, "verifications"), where("status", "==", "pending"));
+      const unsub = onSnapshot(q, snap => setPendingCount(snap.size));
+      return () => unsub();
+    }
   }, [user]);
 
   async function loadProfile(phone) {
@@ -458,6 +470,50 @@ export default function Profile() {
               </div>
             )}
           </div>
+
+          {/* Admin Panel Shortcut — visible to admin only */}
+          {pendingCount >= 0 && (
+            <div style={{
+              background: pendingCount > 0 ? "#fef3c7" : "#f3f3f3",
+              border: `3px solid ${pendingCount > 0 ? "#f59e0b" : "#1b1b1b"}`,
+              boxShadow: pendingCount > 0 ? "4px 4px 0px 0px #f59e0b" : "4px 4px 0px 0px #1b1b1b",
+              padding: "16px 20px",
+              display: "flex", alignItems: "center",
+              justifyContent: "space-between", gap: 14,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 28 }}>🛡️</span>
+                <div>
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#1b1b1b",
+                    fontFamily: "Montserrat", textTransform: "uppercase" }}>
+                    Admin Panel
+                  </p>
+                  <p style={{ margin: "3px 0 0", fontSize: 11, fontWeight: 700, color: "#555" }}>
+                    {pendingCount > 0
+                      ? `${pendingCount} verification${pendingCount > 1 ? "s" : ""} waiting for review`
+                      : "No pending verifications — all clear ✅"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => router.push("/admin")}
+                className="neo-button-hover"
+                style={{
+                  padding: "10px 18px",
+                  border: "2.5px solid #1b1b1b",
+                  background: pendingCount > 0 ? "#f59e0b" : "#bdff00",
+                  color: "#1b1b1b", fontFamily: "Montserrat",
+                  fontWeight: 900, fontSize: 11,
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  boxShadow: "2px 2px 0px 0px #1b1b1b",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {pendingCount > 0 ? `Review ${pendingCount} →` : "Open Panel"}
+              </button>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "10px" }}>
