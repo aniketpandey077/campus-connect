@@ -434,13 +434,13 @@ export default function Swipe() {
   );
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !router.isReady) return;
     const userId = user.uid;
     myPhoneRef.current = userId;
-    loadData(userId);
-  }, [user]);
+    loadData(userId, router.query.course);
+  }, [user, router.isReady, router.query.course]);
 
-  async function loadData(phone) {
+  async function loadData(phone, filterCourse) {
     setLoading(true);
     setFetchError("");
     try {
@@ -453,7 +453,7 @@ export default function Swipe() {
 
       // 2. All completed profiles except self
       const allSnap = await getDocs(collection(db, "profiles"));
-      const others = [];
+      let others = [];
       allSnap.forEach(d => {
         if (d.id !== phone && d.data().profileComplete) {
           others.push({ id: d.id, ...d.data() });
@@ -467,7 +467,12 @@ export default function Swipe() {
       const alreadySwiped = new Set();
       swipesSnap.forEach(d => alreadySwiped.add(d.data().swipedId));
 
-      // 4. Filter + score + sort ascending (best match = last = on top of stack)
+      // 4. Filter by course if query parameter is provided
+      if (filterCourse) {
+        others = others.filter(p => (p.branch || []).includes(filterCourse));
+      }
+
+      // 5. Filter + score + sort ascending (best match = last = on top of stack)
       const blockedByMe = new Set(me.blockedUsers || []);
       const unseen = others
         .filter(p => !alreadySwiped.has(p.id))
@@ -708,7 +713,7 @@ export default function Swipe() {
           position: "relative",
           width: "calc(100% - 40px)",
           maxWidth: 440,
-          height: 560,
+          height: "min(560px, 65vh)",
           margin: "18px 20px 0",
           flexShrink: 0,
         }}>

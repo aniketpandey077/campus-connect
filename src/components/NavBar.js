@@ -104,10 +104,16 @@ export default function NavBar({ active }) {
                 {item.icon}
                 {item.label === "Inbox" && totalUnread > 0 && (
                   <span style={{
-                    position: "absolute", top: -2, right: -4,
-                    width: 10, height: 10, borderRadius: "50%",
+                    position: "absolute", top: -8, right: -12,
+                    minWidth: 18, height: 18, borderRadius: 9,
                     background: "#ffb2bf", border: "2px solid #1b1b1b",
-                  }} />
+                    fontSize: 8, fontWeight: 950, color: "#1b1b1b",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    padding: "0 4px",
+                    boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+                  }}>
+                    {totalUnread}
+                  </span>
                 )}
               </span>
               <span>{item.label}</span>

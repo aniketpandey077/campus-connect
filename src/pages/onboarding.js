@@ -560,6 +560,43 @@ export default function Onboarding() {
             {/* Step 10: Private ID Verification */}
             {step === 10 && (
               <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                
+                {/* Fallback Profile Photo Uploader if missed in Step 1 */}
+                {!profilePhotoFile && (
+                  <div className="neo-shadow-small" style={{
+                    border: "3px solid #1b1b1b", background: "#ffd9de",
+                    padding: "24px", display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center", position: "relative",
+                    cursor: "pointer"
+                  }} onClick={() => profilePickerRef.current?.click()}>
+                    <input
+                      ref={profilePickerRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={handleFileChange(setProfilePhotoFile, setProfilePhotoPreview)}
+                    />
+                    <div style={{
+                      width: "80px", height: "80px", borderRadius: "50%",
+                      border: "3px solid #1b1b1b", background: "#ffffff",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      overflow: "hidden"
+                    }}>
+                      {profilePhotoPreview ? (
+                        <img src={profilePhotoPreview} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <span style={{ fontSize: "36px" }}>📸</span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: "11px", fontWeight: 950, marginTop: "12px", textTransform: "uppercase", color: "#1b1b1b" }}>
+                      ⚠️ UPLOAD PROFILE PHOTO REQUIRED
+                    </p>
+                    <p style={{ fontSize: "9px", color: "#555", marginTop: "4px", fontWeight: 800, textTransform: "uppercase" }}>
+                      Tap to select your profile photo
+                    </p>
+                  </div>
+                )}
+
                 <div style={{ marginBottom: "8px" }}>
                   <h3 style={{ fontSize: "16px", fontWeight: 800, textTransform: "uppercase" }}>
                     Student Verification
