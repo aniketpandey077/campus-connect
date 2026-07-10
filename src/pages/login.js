@@ -57,7 +57,7 @@ export default function Login() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', -apple-system, sans-serif; }
 
@@ -67,47 +67,86 @@ export default function Login() {
           background: #fcf9f8;
         }
 
-        /* ── Left panel ── */
+        /* ── Left panel (Bento Splash Previews) ── */
         .hero-panel {
           display: none;
           position: relative;
-          overflow: hidden;
-          background: linear-gradient(135deg, #001452 0%, #003ec7 50%, #0052ff 100%);
+          overflow-y: auto;
+          background-color: #f3f3f3;
+          background-image: radial-gradient(#bcbcbc 1.5px, transparent 1.5px);
+          background-size: 30px 30px;
+          font-family: 'Montserrat', sans-serif;
+          border-right: 3px solid #1b1b1b;
         }
         @media(min-width: 900px) {
-          .hero-panel { display: flex; flex: 1; flex-direction: column; justify-content: center; padding: 60px 56px; }
+          .hero-panel { display: flex; flex: 1; flex-direction: column; justify-content: center; padding: 40px; }
         }
 
-        .hero-blur-1 {
-          position: absolute; top: -80px; right: -80px;
-          width: 320px; height: 320px; border-radius: 50%;
-          background: #0052ff; opacity: 0.25; filter: blur(80px);
-        }
-        .hero-blur-2 {
-          position: absolute; bottom: -60px; left: -60px;
-          width: 240px; height: 240px; border-radius: 50%;
-          background: #b7c4ff; opacity: 0.15; filter: blur(60px);
+        .preview-bento {
+          display: grid;
+          grid-template-columns: repeat(6, 1fr);
+          gap: 16px;
+          width: 100%;
+          max-width: 480px;
+          margin: 0 auto;
         }
 
-        .glass-card {
-          background: rgba(255,255,255,0.08);
-          backdrop-filter: blur(16px);
-          border: 1px solid rgba(255,255,255,0.15);
-          border-radius: 16px;
-          padding: 20px 22px;
-          margin-top: 36px;
-          display: flex;
-          align-items: center;
-          gap: 14px;
+        .preview-tile {
+          border: 3px solid #1b1b1b;
+          box-shadow: 4px 4px 0px 0px #1b1b1b;
+          padding: 18px;
+          position: relative;
+          overflow: hidden;
+          background: #fff;
+          color: #1b1b1b;
         }
 
-        .stat-row {
-          display: flex;
-          gap: 24px;
-          margin-top: 40px;
+        .preview-tile-main {
+          grid-column: span 6;
+          background: #bdff00;
+          padding: 24px;
+          box-shadow: 6px 6px 0px 0px #1b1b1b;
         }
-        .stat-item {
-          text-align: center;
+
+        .preview-tile-pulse {
+          grid-column: span 3;
+          background: #ecdcff;
+        }
+
+        .preview-tile-verified {
+          grid-column: span 3;
+          background: #ffb2bf;
+        }
+
+        .preview-tile-card {
+          grid-column: span 6;
+          background: #ffffff;
+        }
+
+        /* Pulse wave animation */
+        @keyframes pulse-wave {
+          0%, 100% { transform: scaleY(1); }
+          50% { transform: scaleY(1.6); }
+        }
+        .wave-bar {
+          display: inline-block;
+          width: 4px;
+          height: 16px;
+          background: #1b1b1b;
+          margin-right: 3px;
+          animation: pulse-wave 1s ease-in-out infinite;
+        }
+
+        .tag-chip {
+          display: inline-block;
+          padding: 3px 8px;
+          border-radius: 4px;
+          border: 1.5px solid #1b1b1b;
+          font-size: 11px;
+          font-weight: 850;
+          box-shadow: 1px 1px 0px 0px #1b1b1b;
+          margin-right: 6px;
+          margin-top: 4px;
         }
 
         /* ── Right panel ── */
@@ -220,70 +259,93 @@ export default function Login() {
 
       <div className="login-root">
 
-        {/* ── Left Hero Panel ── */}
+        {/* ── Left Hero Panel (Bento Splash Previews) ── */}
         <div className="hero-panel">
-          <div className="hero-blur-1" />
-          <div className="hero-blur-2" />
-
-          {/* Logo */}
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 52 }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 12,
-                background: "rgba(255,255,255,0.15)",
-                backdropFilter: "blur(8px)",
-                border: "1px solid rgba(255,255,255,0.2)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 20,
-              }}>🔥</div>
-              <span style={{ fontWeight: 800, fontSize: 16, color: "#fff", letterSpacing: -0.2 }}>Campus Connect</span>
+          <div className="preview-bento">
+            
+            {/* Main Branding Card */}
+            <div className="preview-tile preview-tile-main">
+              <span style={{
+                fontSize: "10px", fontWeight: 900, background: "#1b1b1b", color: "#bdff00",
+                padding: "4px 8px", textTransform: "uppercase", letterSpacing: "0.1em",
+                display: "inline-block", marginBottom: "12px"
+              }}>
+                VERSION 2.0
+              </span>
+              <h1 style={{
+                margin: 0, fontSize: "36px", fontWeight: 900,
+                color: "#1b1b1b", lineHeight: "1.0", letterSpacing: "-0.04em",
+                fontStyle: "italic", fontFamily: "Montserrat"
+              }}>
+                CAMPUS<br/>CONNECT
+              </h1>
+              <p style={{
+                margin: "12px 0 0", fontSize: "13px", fontWeight: 800,
+                color: "#1b1b1b", lineHeight: "1.4"
+              }}>
+                THE UNFILTERED SOCIAL NETWORK BUILT EXCLUSIVELY FOR UNIVERSITY STUDENTS. FIND YOUR PEOPLE, OWN YOUR CAMPUS.
+              </p>
             </div>
 
-            {/* Headline */}
-            <h1 style={{
-              fontSize: 44, fontWeight: 900, color: "#fff",
-              lineHeight: 1.1, letterSpacing: -1.5, maxWidth: 420,
-            }}>
-              Find your people.<br />
-              <span style={{ color: "#b7c4ff" }}>Own your campus.</span>
-            </h1>
-
-            <p style={{
-              marginTop: 18, fontSize: 16, color: "rgba(255,255,255,0.7)",
-              lineHeight: 1.7, maxWidth: 380, fontWeight: 400,
-            }}>
-              Swipe, match, and connect with real students from your university. No bots. Just your campus squad.
-            </p>
-
-            {/* Glass badge */}
-            <div className="glass-card">
-              <div style={{
-                width: 42, height: 42, borderRadius: 12, flexShrink: 0,
-                background: "rgba(183,196,255,0.2)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 20,
-              }}>🛡️</div>
-              <div>
-                <p style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>Verified Students Only</p>
-                <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, marginTop: 2 }}>
-                  ID-verified profiles. Your campus, your community.
-                </p>
+            {/* Pulse Card */}
+            <div className="preview-tile preview-tile-pulse" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "11px", fontWeight: 900 }}>CAMPUS PULSE</span>
+                <span>⚡</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "flex-end", height: "24px", marginTop: "12px" }}>
+                <span className="wave-bar" style={{ animationDelay: "0.1s", height: "12px" }} />
+                <span className="wave-bar" style={{ animationDelay: "0.3s", height: "20px" }} />
+                <span className="wave-bar" style={{ animationDelay: "0.2s", height: "16px" }} />
+                <span className="wave-bar" style={{ animationDelay: "0.5s", height: "24px" }} />
+                <span className="wave-bar" style={{ animationDelay: "0.4s", height: "14px" }} />
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="stat-row">
-              {[
-                { v: "100%", l: "Real Students" },
-                { v: "Private", l: "Your Data" },
-                { v: "Free", l: "Forever" },
-              ].map(s => (
-                <div key={s.l} className="stat-item">
-                  <p style={{ color: "#fff", fontWeight: 800, fontSize: 22 }}>{s.v}</p>
-                  <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, marginTop: 2 }}>{s.l}</p>
-                </div>
-              ))}
+            {/* Verified Card */}
+            <div className="preview-tile preview-tile-verified" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "11px", fontWeight: 900 }}>VERIFIED</span>
+                <span>🛡️</span>
+              </div>
+              <p style={{ margin: "12px 0 0", fontSize: "10px", fontWeight: 900, lineHeight: "1.3" }}>
+                100% REAL STUDENTS. .EDU EMAIL REQUIRED.
+              </p>
             </div>
+
+            {/* Mock Profile Preview Card */}
+            <div className="preview-tile preview-tile-card">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <span style={{ fontSize: "9px", fontWeight: 900, background: "#7531d3", color: "#fff", padding: "2px 6px" }}>
+                  SWIPE PREVIEW
+                </span>
+                <span style={{ fontSize: "14px" }}>🔥</span>
+              </div>
+
+              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <div style={{
+                  width: "44px", height: "44px", borderRadius: "50%",
+                  border: "2.5px solid #1b1b1b", background: "#ffd9de",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "22px", flexShrink: 0
+                }}>
+                  👑
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "13px", fontWeight: 900 }}>ANANYA · CSE</h3>
+                  <p style={{ margin: "2px 0 0", fontSize: "10px", fontWeight: 700, color: "#555" }}>
+                    3RD YEAR · HOSTEL
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ marginTop: "12px" }}>
+                <span className="tag-chip" style={{ background: "#ffd9de" }}>NIGHT OWL 🦉</span>
+                <span className="tag-chip" style={{ background: "#ecdcff" }}>GAMING 🎮</span>
+                <span className="tag-chip" style={{ background: "#eeeeee" }}>CANTEEN 📍</span>
+              </div>
+            </div>
+
           </div>
         </div>
 

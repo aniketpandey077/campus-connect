@@ -61,16 +61,19 @@ function computeScore(me, them) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function Tag({ children, color = "#F5F4F0", text = "#444" }) {
+function Tag({ children, color = "#ffffff", text = "#1b1b1b" }) {
   return (
     <span style={{
       display: "inline-block",
-      padding: "3px 10px",
-      borderRadius: 999,
+      padding: "5px 12px",
+      borderRadius: "6px",
       background: color,
       color: text,
+      border: "2px solid #1b1b1b",
+      boxShadow: "2px 2px 0px 0px #1b1b1b",
       fontSize: 11,
-      fontWeight: 600,
+      fontWeight: 800,
+      fontFamily: "'Montserrat', sans-serif",
       whiteSpace: "nowrap",
     }}>{children}</span>
   );
@@ -78,16 +81,23 @@ function Tag({ children, color = "#F5F4F0", text = "#444" }) {
 
 // The card content — what users see for each profile
 function ProfileCard({ profile, swipeHint }) {
-  const gradient = getGradient(profile.branch);
   const sharedCount = profile._shared || 0;
+
+  const cardBgs = {
+    CSE: "#ffd9de", IT: "#ecdcff", ECE: "#d6baff", Mechanical: "#eeeeee",
+    Civil: "#f0fdf4", EEE: "#fef3c7", Biotech: "#dcfce7", Chemical: "#ffedd5",
+    "MBA/BBA": "#fdf2f8"
+  };
+  const headerBg = cardBgs[profile.branch?.[0]] || "#bdff00";
 
   return (
     <div style={{
       width: "100%",
       height: "100%",
-      borderRadius: 24,
+      borderRadius: 16,
       background: "#fff",
-      boxShadow: "0 12px 48px rgba(0,0,0,0.14)",
+      border: "3px solid #1b1b1b",
+      boxShadow: "8px 8px 0px 0px #1b1b1b",
       display: "flex",
       flexDirection: "column",
       overflow: "hidden",
@@ -99,12 +109,14 @@ function ProfileCard({ profile, swipeHint }) {
       {swipeHint === "like" && (
         <div style={{
           position: "absolute", top: 130, left: 30, zIndex: 10,
-          border: "4px solid #10B981", color: "#10B981",
+          border: "4px solid #bdff00", color: "#1b1b1b",
           fontSize: 32, fontWeight: 900, borderRadius: 10,
           padding: "8px 16px",
           letterSpacing: "0.1em",
           animation: "stampIn 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards",
-          background: "rgba(255,255,255,0.9)",
+          background: "#bdff00",
+          boxShadow: "4px 4px 0px 0px #1b1b1b",
+          transform: "rotate(-12deg)",
         }}>
           LIKE
         </div>
@@ -112,20 +124,22 @@ function ProfileCard({ profile, swipeHint }) {
       {swipeHint === "pass" && (
         <div style={{
           position: "absolute", top: 130, right: 30, zIndex: 10,
-          border: "4px solid #FF4757", color: "#FF4757",
+          border: "4px solid #ffb2bf", color: "#1b1b1b",
           fontSize: 32, fontWeight: 900, borderRadius: 10,
           padding: "8px 16px",
           letterSpacing: "0.1em",
           animation: "stampInPass 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards",
-          background: "rgba(255,255,255,0.9)",
+          background: "#ffb2bf",
+          boxShadow: "4px 4px 0px 0px #1b1b1b",
+          transform: "rotate(12deg)",
         }}>
           NOPE
         </div>
       )}
 
-      {/* Gradient header — avatar, name, tagline */}
+      {/* Solid header — avatar, name, tagline */}
       <div style={{
-        background: gradient,
+        background: headerBg,
         minHeight: 230,
         flexShrink: 0,
         display: "flex",
@@ -134,6 +148,8 @@ function ProfileCard({ profile, swipeHint }) {
         justifyContent: "center",
         position: "relative",
         padding: "24px 20px 20px",
+        borderBottom: "3px solid #1b1b1b",
+        fontFamily: "'Montserrat', sans-serif",
       }}>
         {/* Photo-hidden badge & Verification badge */}
         <div style={{
@@ -144,25 +160,25 @@ function ProfileCard({ profile, swipeHint }) {
           alignItems: "flex-start",
         }}>
           <div style={{
-            background: "rgba(255,255,255,0.25)",
-            backdropFilter: "blur(6px)",
-            borderRadius: 999,
-            padding: "4px 10px",
-            fontSize: 9, fontWeight: 700, color: "#fff",
+            background: "#1b1b1b",
+            border: "1.5px solid #1b1b1b",
+            borderRadius: 4,
+            padding: "3px 8px",
+            fontSize: 9, fontWeight: 900, color: "#fff",
             letterSpacing: "0.06em",
           }}>
             🔒 PHOTO HIDDEN
           </div>
           <div style={{
-            background: profile.verificationStatus === "approved" ? "rgba(16,185,129,0.9)" : "rgba(239,68,68,0.9)",
-            backdropFilter: "blur(6px)",
-            borderRadius: 999,
-            padding: "4px 10px",
-            fontSize: 9, fontWeight: 800, color: "#fff",
+            background: profile.verificationStatus === "approved" ? "#bdff00" : "#ffb2bf",
+            border: "1.5px solid #1b1b1b",
+            borderRadius: 4,
+            padding: "3px 8px",
+            fontSize: 9, fontWeight: 950, color: "#1b1b1b",
             letterSpacing: "0.06em",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+            boxShadow: "1px 1px 0px 0px #1b1b1b",
           }}>
-            {profile.verificationStatus === "approved" ? "✅ VERIFIED" : "⚠️ NOT VERIFIED"}
+            {profile.verificationStatus === "approved" ? "VERIFIED 🛡️" : "PENDING ⏳"}
           </div>
         </div>
 
@@ -170,33 +186,35 @@ function ProfileCard({ profile, swipeHint }) {
         {sharedCount > 0 && (
           <div style={{
             position: "absolute", top: 14, right: 14,
-            background: "rgba(255,255,255,0.95)",
-            borderRadius: 999,
-            padding: "4px 10px",
-            fontSize: 11, fontWeight: 800,
-            color: "#111",
+            background: "#ffffff",
+            border: "2px solid #1b1b1b",
+            borderRadius: 6,
+            padding: "4px 8px",
+            fontSize: 10, fontWeight: 900,
+            color: "#1b1b1b",
+            boxShadow: "2px 2px 0px 0px #1b1b1b",
           }}>
-            ⚡ {sharedCount} common
+            ⚡ {sharedCount} COMMON
           </div>
         )}
 
-        {/* Avatar silhouette */}
+        {/* Avatar circle */}
         <div style={{
-          width: 96, height: 96, borderRadius: "50%",
-          background: "rgba(255,255,255,0.2)",
-          border: "3px solid rgba(255,255,255,0.5)",
+          width: 88, height: 88, borderRadius: "50%",
+          background: "#ffffff",
+          border: "3px solid #1b1b1b",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 52,
-          marginBottom: 14,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+          fontSize: 48,
+          marginBottom: 12,
+          boxShadow: "3px 3px 0px 0px #1b1b1b",
         }}>
           {profile.avatar || "😊"}
         </div>
 
-        <h3 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: -0.5 }}>
+        <h3 style={{ margin: 0, fontSize: 24, fontWeight: 950, color: "#1b1b1b", letterSpacing: -0.5, textTransform: "uppercase" }}>
           {profile.name}
         </h3>
-        <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>
+        <p style={{ margin: "4px 0 0", fontSize: 13, color: "#1b1b1b", fontWeight: 800, textTransform: "uppercase" }}>
           {(profile.branch || []).slice(0, 2).join(" + ")}
           {profile.year?.[0] ? ` · ${profile.year[0]}` : ""}
         </p>
@@ -204,11 +222,11 @@ function ProfileCard({ profile, swipeHint }) {
         {/* Swipe hint overlay */}
         {swipeHint && (
           <div style={{
-            position: "absolute", inset: 0, borderRadius: 24,
+            position: "absolute", inset: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
             background: swipeHint === "like"
-              ? "rgba(16,185,129,0.35)"
-              : "rgba(239,68,68,0.35)",
+              ? "rgba(189,255,0,0.4)"
+              : "rgba(255,178,191,0.4)",
             fontSize: 56,
             animation: "hintFade 0.4s ease forwards",
           }}>
@@ -301,60 +319,87 @@ function ProfileCard({ profile, swipeHint }) {
 
 // "It's a Match!" overlay modal
 function MatchModal({ matched, onContinue }) {
+  const cardBgs = {
+    CSE: "#ffd9de", IT: "#ecdcff", ECE: "#d6baff", Mechanical: "#eeeeee",
+    Civil: "#f0fdf4", EEE: "#fef3c7", Biotech: "#dcfce7", Chemical: "#ffedd5",
+    "MBA/BBA": "#fdf2f8"
+  };
+  const headerBg = cardBgs[matched.branch?.[0]] || "#bdff00";
+
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 200,
-      background: "rgba(0,0,0,0.88)",
+      background: "rgba(27,27,27,0.85)",
+      backdropFilter: "blur(4px)",
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      padding: 32,
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      padding: 24,
+      fontFamily: "'Montserrat', sans-serif",
     }}>
-      <div style={{ textAlign: "center", animation: "popIn 0.45s cubic-bezier(.22,1,.36,1) both" }}>
+      <div style={{ 
+        textAlign: "center", 
+        animation: "popIn 0.35s cubic-bezier(.22,1,.36,1) both",
+        background: "#ffffff",
+        border: "4px solid #1b1b1b",
+        boxShadow: "8px 8px 0px 0px #1b1b1b",
+        padding: "40px 24px",
+        maxWidth: 380,
+        width: "100%",
+      }}>
         {/* Avatars */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 24 }}>
           <div style={{
             width: 80, height: 80, borderRadius: "50%",
-            background: "rgba(255,255,255,0.12)",
-            border: "3px solid rgba(255,255,255,0.3)",
+            background: "#ffffff",
+            border: "3px solid #1b1b1b",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 42,
+            boxShadow: "3px 3px 0px 0px #1b1b1b",
           }}>{matched.myAvatar}</div>
-          <span style={{ fontSize: 28 }}>💫</span>
+          <span style={{ fontSize: 28 }}>⚡</span>
           <div style={{
             width: 80, height: 80, borderRadius: "50%",
-            background: getGradient(matched.branch),
-            border: "3px solid rgba(255,255,255,0.3)",
+            background: headerBg,
+            border: "3px solid #1b1b1b",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 42,
+            boxShadow: "3px 3px 0px 0px #1b1b1b",
           }}>{matched.avatar || "😊"}</div>
         </div>
 
         <h1 style={{
-          margin: "0 0 8px", fontSize: 36, fontWeight: 900,
-          color: "#fff", letterSpacing: -1,
-        }}>It's a Match! 🎉</h1>
-        <p style={{ margin: "0 0 6px", fontSize: 16, color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>
-          You and <strong>{matched.name}</strong> liked each other.
+          margin: "0 0 12px", fontSize: 28, fontWeight: 950,
+          color: "#1b1b1b", letterSpacing: -1, textTransform: "uppercase"
+        }}>IT'S A MATCH! 🎉</h1>
+        <p style={{ margin: "0 0 16px", fontSize: 14, color: "#555", fontWeight: 700 }}>
+          You and <strong>{matched.name.toUpperCase()}</strong> liked each other!
         </p>
         <p style={{
-          margin: "0 0 36px", fontSize: 12,
-          color: "rgba(255,255,255,0.4)",
-          padding: "8px 16px",
-          background: "rgba(255,255,255,0.06)",
-          borderRadius: 10,
+          margin: "0 0 28px", fontSize: 11,
+          color: "#1b1b1b",
+          padding: "10px 14px",
+          background: "#ffd9de",
+          border: "2px solid #1b1b1b",
+          boxShadow: "2px 2px 0px 0px #1b1b1b",
+          fontWeight: 800,
+          textTransform: "uppercase",
         }}>
-          🔒 Photos are still hidden — reach out and plan something first
+          🔒 Photos hidden until reveal session!
         </p>
 
         <button
           onClick={onContinue}
           style={{
-            padding: "14px 40px", borderRadius: 14, border: "none",
-            background: "#10B981",
-            color: "#fff", fontWeight: 800, fontSize: 16,
+            width: "100%",
+            padding: "14px 20px",
+            border: "3px solid #1b1b1b",
+            background: "#bdff00",
+            color: "#1b1b1b",
+            fontWeight: 900,
+            fontSize: 14,
+            textTransform: "uppercase",
             cursor: "pointer",
-            boxShadow: "0 4px 20px rgba(16,185,129,0.4)",
+            boxShadow: "4px 4px 0px 0px #1b1b1b",
             fontFamily: "inherit",
           }}
         >Keep swiping ✨</button>
@@ -515,9 +560,9 @@ export default function Swipe() {
     return (
       <PageShell>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 52, marginBottom: 16, animation: "spin 1.5s linear infinite" }}>⚡</div>
-          <p style={{ fontSize: 16, color: "#888", fontWeight: 600, margin: 0 }}>
-            Finding your campus people...
+          <div style={{ fontSize: 52, marginBottom: 16, animation: "spin 1.2s linear infinite" }}>⚡</div>
+          <p style={{ fontSize: 15, color: "#1b1b1b", fontWeight: 900, fontFamily: "Montserrat", margin: 0 }}>
+            FINDING YOUR CAMPUS PEOPLE...
           </p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -531,12 +576,12 @@ export default function Swipe() {
       <PageShell>
         <div style={{ textAlign: "center", maxWidth: 300 }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>😕</div>
-          <p style={{ color: "#C62828", fontWeight: 600, margin: "0 0 20px" }}>{fetchError}</p>
+          <p style={{ color: "#ba1a1a", fontWeight: 900, fontFamily: "Montserrat", margin: "0 0 20px" }}>{fetchError.toUpperCase()}</p>
           <button
             onClick={() => loadData(myPhoneRef.current)}
-            style={solidBtn("#FF4757")}
+            style={solidBtn("#bdff00")}
           >
-            Try again
+            TRY AGAIN
           </button>
         </div>
       </PageShell>
@@ -546,8 +591,15 @@ export default function Swipe() {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
         * { box-sizing: border-box; }
-        body { margin: 0; background: #F5F4F0; overflow-x: hidden; }
+        body { 
+          margin: 0; 
+          background-color: #f3f3f3;
+          background-image: radial-gradient(#bcbcbc 1.5px, transparent 1.5px);
+          background-size: 32px 32px;
+          overflow-x: hidden; 
+        }
         @keyframes popIn {
           from { transform: scale(0.7) translateY(20px); opacity: 0; }
           to   { transform: scale(1) translateY(0);      opacity: 1; }
@@ -565,13 +617,11 @@ export default function Swipe() {
           to   { transform: scale(1) rotate(12deg); opacity: 1; }
         }
         .action-btn {
-          transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.15s !important;
-        }
-        .action-btn:hover {
-          transform: scale(1.1) !important;
+          transition: all 0.1s ease;
         }
         .action-btn:active {
-          transform: scale(0.9) !important;
+          transform: translate(2px, 2px) !important;
+          box-shadow: 0px 0px 0px 0px #1b1b1b !important;
         }
         /* Make TinderCard wrapper fill the container */
         .tc-wrapper {
@@ -591,12 +641,11 @@ export default function Swipe() {
 
       <div style={{
         minHeight: "100vh",
-        background: "#F5F4F0",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        paddingBottom: 130,
+        fontFamily: "'Montserrat', sans-serif",
+        paddingBottom: 170,
       }}>
         {/* ── Top bar ── */}
         <div style={{
@@ -606,19 +655,24 @@ export default function Swipe() {
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{
-              width: 32, height: 32, borderRadius: 9,
-              background: "#FF4757",
+              width: 32, height: 32, borderRadius: 10,
+              background: "#7531d3",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 17, boxShadow: "0 3px 10px #FF475740",
+              fontSize: 16, border: "2px solid #1b1b1b",
+              boxShadow: "2px 2px 0px 0px #1b1b1b"
             }}>🔥</div>
-            <span style={{ fontWeight: 800, fontSize: 14, color: "#0D0D0D" }}>
-              Campus Connect
+            <span style={{ fontWeight: 900, fontSize: 15, color: "#1b1b1b", fontStyle: "italic", letterSpacing: "-0.02em" }}>
+              CAMPUS CONNECT
             </span>
           </div>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "#AAA" }}>
+          <span style={{ 
+            fontSize: 9, fontWeight: 900, color: "#1b1b1b", background: "#ffffff",
+            padding: "4px 8px", border: "2px solid #1b1b1b", boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+            textTransform: "uppercase"
+          }}>
             {currentIndex >= 0
-              ? `${currentIndex + 1} profile${currentIndex !== 0 ? "s" : ""} left`
-              : "All done"}
+              ? `${currentIndex + 1} REMAINING`
+              : "ALL DONE"}
           </span>
         </div>
 
@@ -627,20 +681,25 @@ export default function Swipe() {
           <div style={{
             width: "calc(100% - 40px)",
             maxWidth: 440,
-            background: "#FFF9E6",
-            border: "1.5px solid #FFE0B2",
-            borderRadius: 14,
+            background: "#fef3c7",
+            border: "3px solid #1b1b1b",
+            borderRadius: 12,
+            boxShadow: "4px 4px 0px 0px #1b1b1b",
             padding: "12px 16px",
             marginTop: 14,
             display: "flex",
-            gap: 10,
-            alignItems: "flex-start",
-            boxSizing: "border-box",
+            alignItems: "center",
+            gap: 12,
           }}>
-            <span style={{ fontSize: 18 }}>⏳</span>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#B78103", lineHeight: 1.4 }}>
-              Your profile is pending verification — you'll appear to others once approved.
-            </p>
+            <span style={{ fontSize: 24 }}>⏳</span>
+            <div>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 900, color: "#1b1b1b", textTransform: "uppercase" }}>
+                Profile Pending Verification
+              </p>
+              <p style={{ margin: "2px 0 0", fontSize: 10, color: "#555", fontWeight: 700, lineHeight: 1.4 }}>
+                You'll appear to others once verified.
+              </p>
+            </div>
           </div>
         )}
 
@@ -704,53 +763,53 @@ export default function Swipe() {
             ))
           )}
         </div>
-        {/* ── Bottom nav + like/pass ── */}
-        <nav style={{
-          position: "fixed", bottom: 0,
-          left: "50%", transform: "translateX(-50%)",
-          width: "100%", maxWidth: 480,
-          background: "rgba(245,244,240,0.96)",
-          backdropFilter: "blur(12px)",
-          borderTop: "1px solid #E8E6E0",
-          padding: "10px 20px 22px",
-          display: "flex", flexDirection: "column", gap: 8,
-        }}>
-          {currentIndex >= 0 && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 22 }}>
-              <button
-                onClick={() => triggerSwipe("left")}
-                className="action-btn"
-                style={{
-                  width: 56, height: 56, borderRadius: "50%",
-                  border: "2px solid #FF4757", background: "#fff",
-                  fontSize: 20, cursor: "pointer", fontFamily: "inherit",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 2px 12px rgba(255,71,87,0.18)",
-                }}
-              >✕</button>
-              <div style={{ textAlign: "center", minWidth: 100 }}>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "#0D0D0D" }}>
-                  {profiles[currentIndex]?.name}
-                </p>
-                <p style={{ margin: "2px 0 0", fontSize: 11, color: "#AAA", fontWeight: 600 }}>
-                  {(profiles[currentIndex]?.branch || []).slice(0, 1).join("")}
-                </p>
-              </div>
-              <button
-                onClick={() => triggerSwipe("right")}
-                className="action-btn"
-                style={{
-                  width: 56, height: 56, borderRadius: "50%",
-                  border: "none", background: "#10B981",
-                  fontSize: 20, cursor: "pointer", fontFamily: "inherit",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 4px 16px rgba(16,185,129,0.35)",
-                }}
-              >💚</button>
+        {/* ── Floating action buttons panel ── */}
+        {currentIndex >= 0 && (
+          <div style={{
+            position: "fixed", bottom: 92,
+            left: "50%", transform: "translateX(-50%)",
+            width: "calc(100% - 32px)", maxWidth: 440,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 24,
+            zIndex: 90,
+          }}>
+            <button
+              onClick={() => triggerSwipe("left")}
+              className="action-btn"
+              style={{
+                width: 56, height: 56, borderRadius: "50%",
+                border: "3px solid #1b1b1b", background: "#ffb2bf",
+                fontSize: 22, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "4px 4px 0px 0px #1b1b1b",
+              }}
+            >✕</button>
+            <div style={{
+              textAlign: "center", minWidth: 120,
+              background: "#ffffff", border: "2px solid #1b1b1b",
+              borderRadius: 10, padding: "6px 12px",
+              boxShadow: "2px 2px 0px 0px #1b1b1b",
+            }}>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: "#1b1b1b", textTransform: "uppercase" }}>
+                {profiles[currentIndex]?.name}
+              </p>
+              <p style={{ margin: "2px 0 0", fontSize: 10, color: "#555", fontWeight: 800, textTransform: "uppercase" }}>
+                {(profiles[currentIndex]?.branch || []).slice(0, 1).join("")}
+              </p>
             </div>
-          )}
-          <NavBar active="/swipe" />
-        </nav>
+            <button
+              onClick={() => triggerSwipe("right")}
+              className="action-btn"
+              style={{
+                width: 56, height: 56, borderRadius: "50%",
+                border: "3px solid #1b1b1b", background: "#bdff00",
+                fontSize: 22, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "4px 4px 0px 0px #1b1b1b",
+              }}
+            >💚</button>
+          </div>
+        )}
+        <NavBar active="/swipe" />
       </div>
     </>
   );
@@ -761,28 +820,30 @@ function PageShell({ children }) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#F5F4F0",
+      backgroundColor: "#f3f3f3",
+      backgroundImage: "radial-gradient(#bcbcbc 1.5px, transparent 1.5px)",
+      backgroundSize: "32px 32px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      fontFamily: "'Montserrat', sans-serif",
     }}>
       {children}
     </div>
   );
 }
 
-function solidBtn(bg) {
+function solidBtn(bg, color = "#1b1b1b") {
   return {
     padding: "12px 28px",
-    borderRadius: 12,
-    border: "none",
+    borderRadius: 8,
+    border: "3px solid #1b1b1b",
     background: bg,
-    color: "#fff",
-    fontWeight: 800,
+    color,
+    fontWeight: 900,
     fontSize: 14,
     cursor: "pointer",
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    boxShadow: `0 4px 14px ${bg}50`,
+    fontFamily: "'Montserrat', sans-serif",
+    boxShadow: "4px 4px 0px 0px #1b1b1b",
   };
 }

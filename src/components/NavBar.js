@@ -52,49 +52,69 @@ export default function NavBar({ active }) {
   const totalUnread = counts.user1Sum + counts.user2Sum;
 
   return (
-    <nav style={{
-      position: "fixed", bottom: 0,
-      left: "50%", transform: "translateX(-50%)",
-      width: "100%", maxWidth: 480,
-      background: "rgba(245,244,240,0.96)",
-      backdropFilter: "blur(12px)",
-      borderTop: "1px solid #E8E6E0",
-      padding: "10px 8px 22px",
-      display: "flex", justifyContent: "space-around",
-      zIndex: 50,
-    }}>
-      {NAV_ITEMS.map(item => {
-        const isActive = current === item.href;
-        return (
-          <button
-            key={item.href}
-            onClick={() => router.push(item.href)}
-            style={{
-              display: "flex", flexDirection: "column",
-              alignItems: "center", gap: 3,
-              background: "none", border: "none", cursor: "pointer",
-              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-              color: isActive ? "#FF4757" : "#BBB",
-              fontWeight: isActive ? 800 : 600,
-              fontSize: 10, padding: "4px 10px",
-              borderTop: isActive ? "2px solid #FF4757" : "2px solid transparent",
-              marginTop: isActive ? -2 : 0,
-            }}
-          >
-            <span style={{ fontSize: 20, position: "relative", display: "inline-block" }}>
-              {item.icon}
-              {item.label === "Inbox" && totalUnread > 0 && (
-                <span style={{
-                  position: "absolute", top: -2, right: -4,
-                  width: 8, height: 8, borderRadius: "50%",
-                  background: "#FF4757", border: "1.5px solid #F5F4F0",
-                }} />
-              )}
-            </span>
-            {item.label}
-          </button>
-        );
-      })}
-    </nav>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;750;900&display=swap');
+        .nav-btn {
+          transition: all 0.1s ease;
+        }
+        .nav-btn:active {
+          transform: translate(1px, 1px) !important;
+          box-shadow: 0px 0px 0px 0px #1b1b1b !important;
+        }
+      `}</style>
+      <nav style={{
+        position: "fixed", bottom: 16,
+        left: "50%", transform: "translateX(-50%)",
+        width: "calc(100% - 32px)", maxWidth: 440,
+        background: "#ffffff",
+        border: "3px solid #1b1b1b",
+        boxShadow: "4px 4px 0px 0px #1b1b1b",
+        borderRadius: 16,
+        padding: "8px 6px",
+        display: "flex", justifyContent: "space-around",
+        alignItems: "center",
+        zIndex: 100,
+      }}>
+        {NAV_ITEMS.map(item => {
+          const isActive = current === item.href;
+          return (
+            <button
+              key={item.href}
+              onClick={() => router.push(item.href)}
+              className="nav-btn"
+              style={{
+                display: "flex", flexDirection: "column",
+                alignItems: "center", gap: 2,
+                background: isActive ? "#bdff00" : "none",
+                border: isActive ? "2px solid #1b1b1b" : "2px solid transparent",
+                boxShadow: isActive ? "2px 2px 0px 0px #1b1b1b" : "none",
+                borderRadius: 10,
+                cursor: "pointer",
+                fontFamily: "'Montserrat', sans-serif",
+                color: "#1b1b1b",
+                fontWeight: 900,
+                fontSize: 10,
+                padding: "6px 12px",
+                textTransform: "uppercase",
+                letterSpacing: "0.02em",
+              }}
+            >
+              <span style={{ fontSize: 18, position: "relative", display: "inline-block" }}>
+                {item.icon}
+                {item.label === "Inbox" && totalUnread > 0 && (
+                  <span style={{
+                    position: "absolute", top: -2, right: -4,
+                    width: 10, height: 10, borderRadius: "50%",
+                    background: "#ffb2bf", border: "2px solid #1b1b1b",
+                  }} />
+                )}
+              </span>
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </>
   );
 }

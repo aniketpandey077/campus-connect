@@ -15,17 +15,17 @@ import { db } from "../../lib/firebase";
 import { useRequireAuth } from "../../lib/useAuth";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const BRANCH_COLORS = {
-  CSE: ["#6C63FF","#3B82F6"], IT: ["#8B5CF6","#EC4899"],
-  ECE: ["#F43F5E","#FB923C"], Mechanical: ["#0EA5E9","#06B6D4"],
-  Civil: ["#10B981","#34D399"], EEE: ["#F59E0B","#EF4444"],
-  Biotech: ["#34D399","#06B6D4"], "MBA/BBA": ["#A855F7","#EC4899"],
-  default: ["#6366F1","#8B5CF6"],
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const BRANCH_BGS = {
+  CSE: "#ffd9de", IT: "#ecdcff", ECE: "#d6baff", Mechanical: "#eeeeee",
+  Civil: "#f0fdf4", EEE: "#fef3c7", Biotech: "#dcfce7", Chemical: "#ffedd5",
+  "MBA/BBA": "#fdf2f8"
 };
-function getGradient(branches = []) {
-  const [a, b] = BRANCH_COLORS[branches?.[0]] || BRANCH_COLORS.default;
-  return `linear-gradient(135deg, ${a}, ${b})`;
+
+function getBranchBg(branches = []) {
+  return BRANCH_BGS[branches?.[0]] || "#bdff00";
 }
+
 function msgTime(ts) {
   if (!ts?.toDate) return "";
   return ts.toDate().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
@@ -35,7 +35,7 @@ const REPORT_REASONS = ["Harassment", "Fake profile", "Inappropriate content", "
 
 // ─── Avatar circle ────────────────────────────────────────────────────────────
 function Avatar({ profile, size = 38, revealed = false }) {
-  const gradient = getGradient(profile?.branch);
+  const bg = getBranchBg(profile?.branch);
   const showPhoto = revealed && profile?.photoUrl;
   return showPhoto ? (
     <img
@@ -43,17 +43,19 @@ function Avatar({ profile, size = 38, revealed = false }) {
       alt={profile?.name || ""}
       style={{
         width: size, height: size, borderRadius: "50%",
-        objectFit: "cover", border: "2px solid #10B981",
+        objectFit: "cover", border: "2px solid #1b1b1b",
         flexShrink: 0,
+        boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
       }}
     />
   ) : (
     <div style={{
       width: size, height: size, borderRadius: "50%",
-      background: gradient, flexShrink: 0,
+      background: bg, flexShrink: 0,
       display: "flex", alignItems: "center", justifyContent: "center",
       fontSize: size * 0.5,
-      border: revealed && !profile?.photoUrl ? "2px solid #10B981" : "none",
+      border: "2px solid #1b1b1b",
+      boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
     }}>
       {revealed && !profile?.photoUrl ? "🙈" : (profile?.avatar || "😊")}
     </div>
@@ -67,7 +69,8 @@ function Bubble({ msg, isMe, otherProfile, showAvatar, revealed }) {
       display: "flex",
       flexDirection: isMe ? "row-reverse" : "row",
       alignItems: "flex-end",
-      gap: 7, marginBottom: 3,
+      gap: 8, marginBottom: 8,
+      fontFamily: "'Montserrat', sans-serif",
     }}>
       {!isMe && (
         <div style={{ width: 28, height: 28, flexShrink: 0 }}>
@@ -80,16 +83,18 @@ function Bubble({ msg, isMe, otherProfile, showAvatar, revealed }) {
       <div style={{
         maxWidth: "72%",
         padding: "10px 14px",
-        borderRadius: isMe ? "18px 4px 18px 18px" : "4px 18px 18px 18px",
-        background: isMe ? "#FF4757" : "#fff",
-        color: isMe ? "#fff" : "#111",
-        fontSize: 14, lineHeight: 1.5,
-        boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+        borderRadius: isMe ? "12px 2px 12px 12px" : "2px 12px 12px 12px",
+        background: isMe ? "#ecdcff" : "#fff",
+        color: "#1b1b1b",
+        border: "2.5px solid #1b1b1b",
+        fontSize: 13, lineHeight: 1.5,
+        fontWeight: 700,
+        boxShadow: "3px 3px 0px 0px #1b1b1b",
       }}>
         <div>{msg.content}</div>
         <div style={{
-          fontSize: 10, marginTop: 3, textAlign: "right",
-          color: isMe ? "rgba(255,255,255,0.55)" : "#C0BDB8",
+          fontSize: 9, marginTop: 4, textAlign: "right",
+          color: "#555", fontWeight: 800,
         }}>{msgTime(msg.timestamp)}</div>
       </div>
     </div>
@@ -103,33 +108,41 @@ function ReportModal({ onSubmit, onClose }) {
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 200,
-      background: "rgba(0,0,0,0.55)",
+      background: "rgba(27,27,27,0.85)",
+      backdropFilter: "blur(4px)",
       display: "flex", alignItems: "flex-end",
-      fontFamily: "inherit",
+      fontFamily: "'Montserrat', sans-serif",
     }}>
       <div style={{
         width: "100%", background: "#fff",
-        borderRadius: "22px 22px 0 0",
+        borderTop: "4px solid #1b1b1b",
+        borderLeft: "4px solid #1b1b1b",
+        borderRight: "4px solid #1b1b1b",
+        borderRadius: "24px 24px 0 0",
         padding: "20px 20px 40px",
+        boxShadow: "0px -4px 0px 0px rgba(0,0,0,1)",
         animation: "slideUp 0.3s cubic-bezier(.22,1,.36,1)",
       }}>
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: "#E0DED8", margin: "0 auto 18px" }} />
-        <h3 style={{ margin: "0 0 4px", fontSize: 18, fontWeight: 900 }}>Report</h3>
-        <p style={{ margin: "0 0 16px", fontSize: 13, color: "#888" }}>
+        <style>{`@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}`}</style>
+        <div style={{ width: 44, height: 6, borderRadius: 3, background: "#1b1b1b", margin: "0 auto 18px" }} />
+        <h3 style={{ margin: "0 0 4px", fontSize: 20, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>Report</h3>
+        <p style={{ margin: "0 0 16px", fontSize: 13, color: "#555", fontWeight: 700 }}>
           We'll review this within 24 hours.
         </p>
         <select
           value={reason} onChange={e => setReason(e.target.value)}
           style={{
-            width: "100%", padding: "12px 14px", borderRadius: 12,
-            border: "2px solid #E0DED8", fontSize: 14, fontFamily: "inherit",
-            color: "#111", background: "#fff", marginBottom: 16,
+            width: "100%", padding: "12px 14px", borderRadius: 8,
+            border: "2.5px solid #1b1b1b", fontSize: 13, fontFamily: "inherit",
+            fontWeight: 800,
+            color: "#1b1b1b", background: "#fff", marginBottom: 20,
+            boxShadow: "2px 2px 0px 0px #1b1b1b",
           }}
         >
           <option value="">Select a reason…</option>
-          {REPORT_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+          {REPORT_REASONS.map(r => <option key={r} value={r}>{r.toUpperCase()}</option>)}
         </select>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 14 }}>
           <button onClick={onClose} style={outlineBtn}>Cancel</button>
           <button
             onClick={async () => {
@@ -138,8 +151,9 @@ function ReportModal({ onSubmit, onClose }) {
               await onSubmit(reason);
             }}
             disabled={!reason || busy}
-            style={{ ...fillBtn("#FF4757"), opacity: !reason || busy ? 0.5 : 1 }}
-          >{busy ? "Submitting…" : "Submit"}</button>
+            className="neo-btn"
+            style={{ ...fillBtn("#bdff00"), opacity: !reason || busy ? 0.5 : 1, boxShadow: !reason || busy ? "none" : "4px 4px 0px 0px #1b1b1b" }}
+          >{busy ? "SUBMITTING…" : "SUBMIT"}</button>
         </div>
       </div>
     </div>
@@ -152,15 +166,15 @@ function ChatMenu({ onReport, onBlock, onClose }) {
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 90 }} />
       <div style={{
-        position: "absolute", top: 52, right: 16, zIndex: 100,
-        background: "#fff", borderRadius: 14,
-        boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+        position: "absolute", top: 62, right: 16, zIndex: 100,
+        background: "#fff", border: "3px solid #1b1b1b", borderRadius: 8,
+        boxShadow: "4px 4px 0px 0px #1b1b1b",
         overflow: "hidden", minWidth: 160,
       }}>
         <button onClick={() => { onClose(); onReport(); }} style={menuItemStyle()}>
           🚩 Report
         </button>
-        <div style={{ height: 1, background: "#F0EEE8" }} />
+        <div style={{ height: 3, background: "#1b1b1b" }} />
         <button onClick={() => { onClose(); onBlock(); }} style={{ ...menuItemStyle(), color: "#DC2626" }}>
           🚫 Block
         </button>
@@ -172,9 +186,10 @@ function menuItemStyle() {
   return {
     display: "block", width: "100%", padding: "13px 18px",
     background: "none", border: "none", textAlign: "left",
-    fontSize: 14, fontWeight: 600, cursor: "pointer",
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    color: "#111",
+    fontSize: 11, fontWeight: 900, cursor: "pointer",
+    fontFamily: "'Montserrat', sans-serif",
+    textTransform: "uppercase",
+    color: "#1b1b1b",
   };
 }
 
@@ -374,75 +389,110 @@ export default function Chat() {
     : myWantsReveal ? "Click to cancel reveal request" : "Request photo reveal";
 
   // Guards
-  if (accessDenied) return <Shell><p style={{ color: "#C62828", fontWeight: 600 }}>You don't have access to this chat.</p></Shell>;
+  if (accessDenied) {
+    return (
+      <Shell>
+        <p style={{ color: "#ba1a1a", fontWeight: 900, textTransform: "uppercase", fontSize: 14 }}>
+          You don't have access to this chat.
+        </p>
+      </Shell>
+    );
+  }
   if (loading || !matchData) return (
     <Shell>
-      <div style={{ fontSize: 40, animation: "spin 1.2s linear infinite" }}>💬</div>
+      <div style={{ fontSize: 48, animation: "spin 1.2s linear infinite" }}>💬</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <p style={{ fontWeight: 900, fontSize: 14, marginTop: 12 }}>LOADING CHAT...</p>
     </Shell>
   );
 
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
         * { box-sizing: border-box; }
-        body { margin: 0; background: #F5F4F0; }
+        body { 
+          margin: 0; 
+          background-color: #f3f3f3;
+          background-image: radial-gradient(#bcbcbc 1.5px, transparent 1.5px);
+          background-size: 32px 32px;
+        }
         @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
         textarea:focus { outline: none; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .neo-btn {
+          transition: all 0.1s ease;
+        }
+        .neo-btn:active {
+          transform: translate(2px, 2px) !important;
+          box-shadow: 0px 0px 0px 0px #1b1b1b !important;
+        }
       `}</style>
 
       {showReport && <ReportModal onSubmit={submitReport} onClose={() => setShowReport(false)} />}
 
       <div style={{
         display: "flex", flexDirection: "column",
-        height: "100dvh", overflow: "hidden",
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        background: "#F5F4F0", position: "relative",
+        height: "100vh", overflow: "hidden",
+        fontFamily: "'Montserrat', sans-serif",
+        position: "relative",
       }}>
 
         {/* ── Header ── */}
         <header style={{
-          background: "#fff", borderBottom: "1px solid #EDECE8",
-          padding: "10px 12px",
+          background: "#ffffff",
+          borderBottom: "3px solid #1b1b1b",
+          padding: "12px 16px",
           display: "flex", alignItems: "center", gap: 10,
           flexShrink: 0, position: "relative",
+          boxShadow: "0px 4px 0px 0px rgba(0,0,0,1)",
+          zIndex: 10
         }}>
           {/* Back */}
-          <button onClick={() => router.push("/matches")} style={{
-            background: "none", border: "none", cursor: "pointer",
-            fontSize: 22, color: "#FF4757", fontFamily: "inherit", padding: "4px 6px 4px 0",
-          }}>‹</button>
+          <button
+            onClick={() => router.push("/matches")}
+            className="neo-btn"
+            style={{
+              background: "#ffffff", border: "2px solid #1b1b1b", fontSize: 16, cursor: "pointer",
+              width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
+              borderRadius: 6, boxShadow: "2px 2px 0px 0px #1b1b1b", fontWeight: 900,
+              fontFamily: "inherit"
+            }}
+          >
+            ←
+          </button>
 
           {/* Avatar — shows photo if revealed */}
           {isFullyRevealed ? (
-            <div style={{ display: "flex", alignItems: "center", position: "relative", width: 56, height: 40, flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", position: "relative", width: 52, height: 36, flexShrink: 0 }}>
               <div style={{ position: "absolute", left: 0, zIndex: 2 }}>
-                <Avatar profile={otherProfile} size={32} revealed={true} />
+                <Avatar profile={otherProfile} size={28} revealed={true} />
               </div>
-              <div style={{ position: "absolute", left: 20, zIndex: 1, opacity: 0.9 }}>
-                <Avatar profile={myProfile} size={32} revealed={true} />
+              <div style={{ position: "absolute", left: 16, zIndex: 1 }}>
+                <Avatar profile={myProfile} size={28} revealed={true} />
               </div>
             </div>
           ) : (
-            <Avatar profile={otherProfile} size={40} revealed={false} />
+            <Avatar profile={otherProfile} size={36} revealed={false} />
           )}
 
           {/* Name + status */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ flex: 1, minWidth: 0, paddingLeft: 4 }}>
             <p style={{
-              margin: 0, fontWeight: 800, fontSize: 15, color: "#0D0D0D",
+              margin: 0, fontWeight: 950, fontSize: 14, color: "#1b1b1b",
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              textTransform: "uppercase"
             }}>{otherProfile?.name || "…"}</p>
 
             {revealStatusText ? (
               <p style={{
-                margin: "1px 0 0", fontSize: 11, fontWeight: 600,
-                color: isFullyRevealed ? "#10B981" : theyWantReveal ? "#FF4757" : "#AAA",
+                margin: "2px 0 0", fontSize: 9, fontWeight: 900,
+                color: isFullyRevealed ? "#10B981" : theyWantReveal ? "#FF4757" : "#555",
                 animation: theyWantReveal && !myWantsReveal ? "pulse 2s infinite" : "none",
+                textTransform: "uppercase"
               }}>{revealStatusText}</p>
             ) : (
-              <p style={{ margin: "1px 0 0", fontSize: 11, color: "#C0BDB8", fontWeight: 500 }}>
+              <p style={{ margin: "2px 0 0", fontSize: 9, color: "#555", fontWeight: 900, textTransform: "uppercase" }}>
                 {(otherProfile?.branch || []).slice(0, 1).join("")}
                 {otherProfile?.year?.[0] ? ` · ${otherProfile.year[0]}` : ""}
               </p>
@@ -453,24 +503,26 @@ export default function Chat() {
           <button
             onClick={toggleReveal}
             title={revealBtnTitle}
+            className="neo-btn"
             style={{
-              width: 36, height: 36, borderRadius: 10, border: "none",
+              width: 32, height: 32, borderRadius: 6, border: "2px solid #1b1b1b",
               background: revealBtnBg,
               color: revealBtnColor,
-              fontSize: 17, cursor: isFullyRevealed ? "default" : "pointer",
+              fontSize: 15, cursor: isFullyRevealed ? "default" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontFamily: "inherit", flexShrink: 0,
-              transition: "all 0.2s",
-              boxShadow: myWantsReveal ? `0 2px 8px ${revealBtnColor}40` : "none",
+              boxShadow: "2px 2px 0px 0px #1b1b1b",
+              fontWeight: 900
             }}
           >{revealBtnLabel}</button>
 
           {/* ⋮ menu */}
-          <button onClick={() => setShowMenu(v => !v)} style={{
-            width: 36, height: 36, borderRadius: 10, border: "none",
-            background: "#F5F4F0", color: "#888", fontSize: 20,
+          <button onClick={() => setShowMenu(v => !v)} className="neo-btn" style={{
+            width: 32, height: 32, borderRadius: 6, border: "2px solid #1b1b1b",
+            background: "#ffffff", color: "#1b1b1b", fontSize: 16,
             cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "2px 2px 0px 0px #1b1b1b", fontWeight: 900
           }}>⋮</button>
 
           {showMenu && (
@@ -492,12 +544,12 @@ export default function Chat() {
             <div style={{
               flex: 1, display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
-              gap: 10, opacity: 0.7,
+              gap: 12, opacity: 0.8,
             }}>
               <Avatar profile={otherProfile} size={56} revealed={isFullyRevealed} />
-              <p style={{ margin: 0, fontSize: 14, color: "#888", fontWeight: 600, textAlign: "center" }}>
+              <p style={{ margin: 0, fontSize: 14, color: "#1b1b1b", fontWeight: 900, textAlign: "center", textTransform: "uppercase" }}>
                 You matched with {otherProfile?.name}!<br />
-                <span style={{ fontWeight: 400 }}>Break the ice 👋</span>
+                <span style={{ fontWeight: 700, fontSize: 12, color: "#555" }}>Break the ice 👋</span>
               </p>
             </div>
           )}
@@ -523,9 +575,9 @@ export default function Chat() {
         {/* ── Input bar ── */}
         <div style={{
           flexShrink: 0,
-          background: "#fff",
-          borderTop: "1px solid #EDECE8",
-          padding: "10px 12px 16px",
+          background: "#ffffff",
+          borderTop: "3px solid #1b1b1b",
+          padding: "12px 14px 18px",
           display: "flex", gap: 10, alignItems: "flex-end",
         }}>
           <textarea
@@ -542,24 +594,28 @@ export default function Chat() {
             }}
             placeholder="Message…"
             style={{
-              flex: 1, padding: "10px 14px", borderRadius: 22,
-              border: "2px solid #E0DED8", fontSize: 14,
+              flex: 1, padding: "10px 14px", borderRadius: 8,
+              border: "2px solid #1b1b1b", fontSize: 13,
               fontFamily: "inherit", resize: "none",
-              lineHeight: 1.5, background: "#F5F4F0",
-              color: "#111", maxHeight: 120, overflow: "hidden",
+              lineHeight: 1.5, background: "#ffffff",
+              color: "#1b1b1b", maxHeight: 120, overflow: "hidden",
+              boxShadow: "2px 2px 0px 0px #1b1b1b",
+              fontWeight: 700
             }}
           />
           <button
             onClick={sendMessage}
             disabled={!input.trim() || sending}
+            className="neo-btn"
             style={{
-              width: 44, height: 44, borderRadius: "50%", border: "none",
-              background: input.trim() && !sending ? "#FF4757" : "#E0DED8",
-              color: input.trim() && !sending ? "#fff" : "#AAA",
+              width: 44, height: 44, borderRadius: 8, border: "2px solid #1b1b1b",
+              background: input.trim() && !sending ? "#bdff00" : "#eeeeee",
+              color: "#1b1b1b",
               fontSize: 18, cursor: input.trim() ? "pointer" : "not-allowed",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: input.trim() ? "0 3px 12px #FF475750" : "none",
-              transition: "all 0.15s", fontFamily: "inherit", flexShrink: 0,
+              boxShadow: input.trim() ? "2.5px 2.5px 0px 0px #1b1b1b" : "none",
+              transition: "all 0.1s", fontFamily: "inherit", flexShrink: 0,
+              fontWeight: 950
             }}
           >{sending ? "…" : "↑"}</button>
         </div>
@@ -571,13 +627,30 @@ export default function Chat() {
 function Shell({ children }) {
   return (
     <div style={{
-      height: "100dvh", background: "#F5F4F0",
+      height: "100vh",
+      backgroundColor: "#f3f3f3",
+      backgroundImage: "radial-gradient(#bcbcbc 1.5px, transparent 1.5px)",
+      backgroundSize: "32px 32px",
       display: "flex", alignItems: "center", justifyContent: "center",
       gap: 12, flexDirection: "column",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      fontFamily: "'Montserrat', sans-serif",
+      color: "#1b1b1b"
     }}>{children}</div>
   );
 }
 
-const outlineBtn = { flex: 1, padding: 13, borderRadius: 12, border: "2px solid #E0DED8", background: "transparent", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit", color: "#666" };
-function fillBtn(bg) { return { flex: 2, padding: 13, borderRadius: 12, border: "none", background: bg, color: "#fff", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }; }
+const outlineBtn = {
+  flex: 1, padding: 13, borderRadius: 8, border: "3px solid #1b1b1b",
+  background: "#ffffff", fontWeight: 900, fontSize: 13, cursor: "pointer",
+  fontFamily: "'Montserrat', sans-serif", color: "#1b1b1b",
+  boxShadow: "3px 3px 0px 0px #1b1b1b", textTransform: "uppercase"
+};
+function fillBtn(bg) {
+  return {
+    flex: 2, padding: 13, borderRadius: 8, border: "3px solid #1b1b1b",
+    background: bg, color: "#1b1b1b", fontWeight: 950, fontSize: 13,
+    cursor: "pointer", fontFamily: "'Montserrat', sans-serif",
+    textTransform: "uppercase"
+  };
+}
+

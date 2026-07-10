@@ -3,6 +3,7 @@
 // Tap a course card to filter the swipe deck by that course.
 
 import { useRouter } from "next/router";
+import NavBar from "../components/NavBar";
 
 const COURSE_STREAMS = [
   {
@@ -146,63 +147,88 @@ export default function CoursesPage() {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
         * { box-sizing: border-box; }
-        body { margin: 0; background: #F5F4F0; }
+        body { 
+          margin: 0; 
+          background-color: #f3f3f3;
+          background-image: radial-gradient(#bcbcbc 1.5px, transparent 1.5px);
+          background-size: 32px 32px;
+        }
         .course-card {
-          background: #fff;
-          border-radius: 14px;
-          padding: 12px 14px;
+          background: #ffffff;
+          border: 3px solid #1b1b1b;
+          border-radius: 12px;
+          padding: 14px 16px;
           cursor: pointer;
-          border: 2px solid transparent;
-          transition: all 0.18s;
+          transition: all 0.1s ease;
           display: flex;
           align-items: center;
-          gap: 10px;
-          box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+          gap: 12px;
+          box-shadow: 4px 4px 0px 0px #1b1b1b;
         }
         .course-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+          transform: translate(2px, 2px);
+          box-shadow: 2px 2px 0px 0px #1b1b1b;
+        }
+        .course-card:active {
+          transform: translate(4px, 4px);
+          box-shadow: 0px 0px 0px 0px #1b1b1b;
         }
         .stream-section { animation: fadeUp 0.4s ease both; }
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(16px); }
+          from { opacity: 0; transform: translateY(12px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        .neo-btn {
+          transition: all 0.1s ease;
+        }
+        .neo-btn:active {
+          transform: translate(2px, 2px) !important;
+          box-shadow: 0px 0px 0px 0px #1b1b1b !important;
         }
       `}</style>
 
       <div style={{
         minHeight: "100vh",
-        background: "#F5F4F0",
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        paddingBottom: 60,
+        fontFamily: "'Montserrat', sans-serif",
+        paddingBottom: 110,
       }}>
         {/* Header */}
         <header style={{
-          background: "#fff",
-          borderBottom: "1px solid #EDECE8",
+          background: "#ffffff",
+          borderBottom: "3px solid #1b1b1b",
           padding: "16px 20px",
           position: "sticky", top: 0, zIndex: 10,
+          boxShadow: "0px 4px 0px 0px rgba(0,0,0,1)"
         }}>
           <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <button
                 onClick={() => router.back()}
-                style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", padding: 0, lineHeight: 1 }}
+                className="neo-btn"
+                style={{
+                  background: "#ffffff", border: "2px solid #1b1b1b", fontSize: 16, cursor: "pointer",
+                  width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
+                  borderRadius: 6, boxShadow: "2px 2px 0px 0px #1b1b1b", fontWeight: 900
+                }}
               >
                 ←
               </button>
               <div>
-                <h1 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: "#111" }}>Courses Directory</h1>
-                <p style={{ margin: 0, fontSize: 11, color: "#AAA", fontWeight: 600 }}>{totalCourses} programmes • {COURSE_STREAMS.length} streams</p>
+                <h1 style={{ margin: 0, fontSize: 16, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>Courses Directory</h1>
+                <p style={{ margin: 0, fontSize: 10, color: "#555", fontWeight: 800 }}>{totalCourses} PROGRAMMES • {COURSE_STREAMS.length} STREAMS</p>
               </div>
             </div>
             <button
               onClick={() => router.push("/swipe")}
+              className="neo-btn"
               style={{
-                padding: "8px 16px", borderRadius: 10, border: "none",
-                background: "#FF4757", color: "#fff",
-                fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+                padding: "8px 16px", borderRadius: 8, border: "2px solid #1b1b1b",
+                background: "#bdff00", color: "#1b1b1b",
+                boxShadow: "2px 2px 0px 0px #1b1b1b",
+                fontWeight: 900, fontSize: 11, cursor: "pointer", fontFamily: "inherit",
+                textTransform: "uppercase"
               }}
             >
               Start Swiping →
@@ -216,14 +242,16 @@ export default function CoursesPage() {
           padding: "28px 20px 12px",
         }}>
           <div style={{
-            background: "linear-gradient(135deg, #FF4757 0%, #6C5CE7 100%)",
-            borderRadius: 20, padding: "24px 22px",
-            color: "#fff", marginBottom: 28,
+            background: "#ecdcff",
+            border: "3px solid #1b1b1b",
+            boxShadow: "6px 6px 0px 0px #1b1b1b",
+            borderRadius: 16, padding: "24px 22px",
+            color: "#1b1b1b", marginBottom: 28,
           }}>
             <div style={{ fontSize: 36, marginBottom: 8 }}>🎓</div>
-            <h2 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 900 }}>All University Programmes</h2>
-            <p style={{ margin: 0, fontSize: 13, opacity: 0.85, lineHeight: 1.5 }}>
-              Browse every course offered across all departments. Tap any course to find batchmates.
+            <h2 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 950, textTransform: "uppercase" }}>All University Programmes</h2>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, opacity: 0.85, lineHeight: 1.5 }}>
+              Browse every course offered across all departments. Tap any course card to find batchmates.
             </p>
           </div>
 
@@ -232,69 +260,65 @@ export default function CoursesPage() {
             <div
               key={stream.stream}
               className="stream-section"
-              style={{ marginBottom: 24, animationDelay: `${si * 0.05}s` }}
+              style={{ marginBottom: 28, animationDelay: `${si * 0.05}s` }}
             >
               {/* Stream header */}
               <div style={{
-                display: "flex", alignItems: "center", gap: 8,
-                marginBottom: 12,
+                display: "flex", alignItems: "center", gap: 10,
+                marginBottom: 14,
               }}>
                 <div style={{
-                  width: 32, height: 32, borderRadius: 10,
+                  width: 32, height: 32, borderRadius: 6,
                   background: stream.color,
+                  border: "2px solid #1b1b1b",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 16,
+                  boxShadow: "2px 2px 0px 0px #1b1b1b",
                 }}>
                   {stream.emoji}
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontWeight: 900, fontSize: 14, color: "#111" }}>{stream.stream}</p>
-                  <p style={{ margin: 0, fontSize: 11, color: "#AAA", fontWeight: 600 }}>{stream.courses.length} programmes</p>
+                  <p style={{ margin: 0, fontWeight: 950, fontSize: 14, color: "#1b1b1b", textTransform: "uppercase" }}>{stream.stream}</p>
+                  <p style={{ margin: 0, fontSize: 10, color: "#555", fontWeight: 800 }}>{stream.courses.length} PROGRAMMES</p>
                 </div>
-                <div style={{
-                  marginLeft: "auto",
-                  height: 2, flex: 1, maxWidth: 120,
-                  background: `${stream.color}30`,
-                  borderRadius: 999,
-                }} />
               </div>
 
               {/* Course cards */}
               <div style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                gap: 8,
+                gap: 12,
               }}>
                 {stream.courses.map((course) => (
                   <div
                     key={course.l}
                     className="course-card"
                     onClick={() => router.push(`/swipe?course=${encodeURIComponent(course.l)}`)}
-                    style={{ borderColor: "transparent" }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = stream.color}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = "transparent"}
                   >
                     <div style={{
-                      width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-                      background: `${stream.color}15`,
+                      width: 38, height: 38, borderRadius: 8, flexShrink: 0,
+                      background: "#ffffff",
+                      border: "2px solid #1b1b1b",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 18,
+                      boxShadow: "2px 2px 0px 0px #1b1b1b",
                     }}>
                       {course.e}
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ margin: 0, fontWeight: 800, fontSize: 13, color: "#111" }}>{course.l}</p>
-                      <p style={{ margin: "2px 0 0", fontSize: 11, color: "#888", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div style={{ minWidth: 0, paddingLeft: 4 }}>
+                      <p style={{ margin: 0, fontWeight: 900, fontSize: 13, color: "#1b1b1b" }}>{course.l}</p>
+                      <p style={{ margin: "2px 0 0", fontSize: 11, color: "#555", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {course.full}
                       </p>
                     </div>
-                    <span style={{ marginLeft: "auto", fontSize: 14, color: "#CCC", flexShrink: 0 }}>→</span>
+                    <span style={{ marginLeft: "auto", fontSize: 14, color: "#1b1b1b", fontWeight: 900, flexShrink: 0 }}>→</span>
                   </div>
                 ))}
               </div>
             </div>
           ))}
         </div>
+        <NavBar active="/courses" />
       </div>
     </>
   );

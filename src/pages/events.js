@@ -60,61 +60,70 @@ function EventCard({ event, myPhone, onJoin, onLeave, creatorProfile }) {
 
   return (
     <div style={{
-      background: "#fff", borderRadius: 18,
-      boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+      background: "#fff",
+      border: "3px solid #1b1b1b",
+      boxShadow: "6px 6px 0px 0px #1b1b1b",
+      borderRadius: 16,
       overflow: "hidden",
     }}>
       {/* Colour strip */}
       <div style={{
         background: cat.bg, padding: "14px 16px 12px",
-        borderBottom: `2px solid ${cat.color}20`,
+        borderBottom: "3px solid #1b1b1b",
         display: "flex", alignItems: "flex-start", gap: 10,
       }}>
         {/* Category badge */}
         <span style={{
           fontSize: 22, width: 42, height: 42, flexShrink: 0,
-          background: "#fff", borderRadius: 12,
+          background: "#fff", borderRadius: 8,
+          border: "2px solid #1b1b1b",
           display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+          boxShadow: "2px 2px 0px 0px #1b1b1b",
         }}>{cat.icon}</span>
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
             <span style={{
-              fontSize: 10, fontWeight: 800, color: cat.color,
+              fontSize: 9, fontWeight: 900, color: cat.color,
               textTransform: "uppercase", letterSpacing: "0.06em",
+              fontFamily: "'Montserrat', sans-serif"
             }}>{event.category}</span>
             {isMine && (
               <span style={{
-                fontSize: 9, fontWeight: 700, color: "#fff",
-                background: "#6366F1", borderRadius: 999, padding: "1px 7px",
+                fontSize: 9, fontWeight: 900, color: "#fff",
+                background: "#7531d3", border: "1.5px solid #1b1b1b",
+                borderRadius: 4, padding: "1px 6px",
+                boxShadow: "1px 1px 0px 0px #1b1b1b",
+                fontFamily: "'Montserrat', sans-serif"
               }}>YOUR EVENT</span>
             )}
           </div>
           <h3 style={{
-            margin: 0, fontSize: 16, fontWeight: 800,
-            color: "#0D0D0D", lineHeight: 1.3,
+            margin: 0, fontSize: 16, fontWeight: 950,
+            color: "#1b1b1b", lineHeight: 1.3,
+            textTransform: "uppercase",
+            fontFamily: "'Montserrat', sans-serif"
           }}>{event.title}</h3>
         </div>
       </div>
 
       {/* Body */}
-      <div style={{ padding: "12px 16px 14px" }}>
+      <div style={{ padding: "12px 16px 14px", fontFamily: "'Montserrat', sans-serif" }}>
         {/* Location + when */}
-        <div style={{ display: "flex", gap: 14, marginBottom: 10 }}>
-          <span style={{ fontSize: 12, color: "#666", fontWeight: 500 }}>
-            📍 {event.location}
+        <div style={{ display: "flex", gap: 14, marginBottom: 10, fontWeight: 800, fontSize: 12, color: "#1b1b1b" }}>
+          <span>
+            📍 {event.location.toUpperCase()}
           </span>
-          <span style={{ fontSize: 12, color: "#666", fontWeight: 500 }}>
-            🕐 {event.when}
+          <span>
+            🕐 {event.when.toUpperCase()}
           </span>
         </div>
 
         {/* Description */}
         {event.description && (
           <p style={{
-            margin: "0 0 10px", fontSize: 13, color: "#888",
-            lineHeight: 1.5,
+            margin: "0 0 12px", fontSize: 13, color: "#555",
+            lineHeight: 1.5, fontWeight: 700,
           }}>{event.description}</p>
         )}
 
@@ -123,19 +132,19 @@ function EventCard({ event, myPhone, onJoin, onLeave, creatorProfile }) {
           {/* Creator avatar */}
           <div style={{
             fontSize: 18, width: 30, height: 30, borderRadius: "50%",
-            background: "#F5F4F0",
+            background: "#ffffff", border: "2px solid #1b1b1b",
             display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
+            flexShrink: 0, boxShadow: "1.5px 1.5px 0px 0px #1b1b1b"
           }}>
             {creatorProfile?.avatar || "😊"}
           </div>
 
           <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#888" }}>
-              {isMine ? "You" : (creatorProfile?.name || "Someone")} is going
+            <p style={{ margin: 0, fontSize: 11, fontWeight: 900, color: "#1b1b1b" }}>
+              {isMine ? "YOU" : (creatorProfile?.name || "Someone").toUpperCase()} IS GOING
             </p>
-            <p style={{ margin: 0, fontSize: 11, color: "#C0BDB8" }}>
-              {filled}/{event.maxPeople} spots • {timeAgo(event.createdAt)}
+            <p style={{ margin: 0, fontSize: 10, color: "#555", fontWeight: 800 }}>
+              {filled}/{event.maxPeople} SPOTS • {timeAgo(event.createdAt).toUpperCase()}
             </p>
           </div>
 
@@ -144,7 +153,8 @@ function EventCard({ event, myPhone, onJoin, onLeave, creatorProfile }) {
             {Array.from({ length: event.maxPeople }).map((_, i) => (
               <div key={i} style={{
                 width: 8, height: 8, borderRadius: "50%",
-                background: i < filled ? "#10B981" : "#E0DED8",
+                border: "1.5px solid #1b1b1b",
+                background: i < filled ? "#bdff00" : "#ffffff",
               }} />
             ))}
           </div>
@@ -154,13 +164,15 @@ function EventCard({ event, myPhone, onJoin, onLeave, creatorProfile }) {
             <button
               onClick={isJoined ? onLeave : onJoin}
               disabled={isFull}
+              className="neo-btn"
               style={{
-                padding: "7px 16px", borderRadius: 10, border: "none",
-                background: isFull ? "#E0DED8" : isJoined ? "#fff" : "#10B981",
-                color: isFull ? "#AAA" : isJoined ? "#DC2626" : "#fff",
-                border: isJoined ? "1.5px solid #DC262620" : "none",
-                fontWeight: 700, fontSize: 12, cursor: isFull ? "not-allowed" : "pointer",
+                padding: "7px 16px", borderRadius: 8, border: "2px solid #1b1b1b",
+                background: isFull ? "#eeeeee" : isJoined ? "#ffb2bf" : "#bdff00",
+                color: "#1b1b1b",
+                boxShadow: isFull ? "none" : "2px 2px 0px 0px #1b1b1b",
+                fontWeight: 900, fontSize: 11, cursor: isFull ? "not-allowed" : "pointer",
                 fontFamily: "inherit", flexShrink: 0,
+                textTransform: "uppercase"
               }}
             >
               {isFull ? "Full" : isJoined ? "Leave" : "Join"}
@@ -201,22 +213,28 @@ function CreateModal({ onClose, onCreate }) {
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 200,
-      background: "rgba(0,0,0,0.55)",
+      background: "rgba(27,27,27,0.85)",
+      backdropFilter: "blur(4px)",
       display: "flex", flexDirection: "column", justifyContent: "flex-end",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      fontFamily: "'Montserrat', sans-serif",
     }}>
       <div style={{
-        background: "#fff", borderRadius: "22px 22px 0 0",
+        background: "#fff",
+        borderTop: "4px solid #1b1b1b",
+        borderLeft: "4px solid #1b1b1b",
+        borderRight: "4px solid #1b1b1b",
+        borderRadius: "24px 24px 0 0",
         padding: "20px 20px 40px",
         maxHeight: "90vh", overflowY: "auto",
+        boxShadow: "0px -6px 0px 0px rgba(0,0,0,1)",
         animation: "slideUp 0.3s cubic-bezier(.22,1,.36,1)",
       }}>
         <style>{`@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}`}</style>
 
         {/* Drag handle */}
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: "#E0DED8", margin: "0 auto 18px" }} />
+        <div style={{ width: 44, height: 6, borderRadius: 3, background: "#1b1b1b", margin: "0 auto 20px" }} />
 
-        <h3 style={{ margin: "0 0 20px", fontSize: 20, fontWeight: 900, color: "#0D0D0D" }}>
+        <h3 style={{ margin: "0 0 20px", fontSize: 22, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>
           Create a hangout ✨
         </h3>
 
@@ -231,20 +249,21 @@ function CreateModal({ onClose, onCreate }) {
 
         {/* Category chips */}
         <label style={labelStyle}>Category</label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 18 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
           {catList.map(c => {
             const cat = CATEGORIES[c];
             const active = form.category === c;
             return (
-              <button key={c} onClick={() => set("category", c)} style={{
-                padding: "6px 14px", borderRadius: 999,
-                border: active ? `2px solid ${cat.color}` : "2px solid #E0DED8",
-                background: active ? cat.bg : "transparent",
-                color: active ? cat.color : "#888",
-                fontWeight: 700, fontSize: 12, cursor: "pointer",
+              <button key={c} onClick={() => set("category", c)} className="neo-btn" style={{
+                padding: "8px 14px", borderRadius: 8,
+                border: "2px solid #1b1b1b",
+                background: active ? cat.bg : "#ffffff",
+                color: "#1b1b1b",
+                boxShadow: active ? "2.5px 2.5px 0px 0px #1b1b1b" : "none",
+                fontWeight: 900, fontSize: 12, cursor: "pointer",
                 fontFamily: "inherit",
               }}>
-                {cat.icon} {c}
+                {cat.icon} {c.toUpperCase()}
               </button>
             );
           })}
@@ -252,16 +271,17 @@ function CreateModal({ onClose, onCreate }) {
 
         {/* Location chips */}
         <label style={labelStyle}>Where?</label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: form.location === "Other" ? 8 : 18 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: form.location === "Other" ? 8 : 18 }}>
           {LOCATIONS.map(loc => (
-            <button key={loc} onClick={() => set("location", loc)} style={{
-              padding: "6px 14px", borderRadius: 999,
-              border: form.location === loc ? "2px solid #FF4757" : "2px solid #E0DED8",
-              background: form.location === loc ? "#FFF0F1" : "transparent",
-              color: form.location === loc ? "#FF4757" : "#888",
-              fontWeight: 700, fontSize: 12, cursor: "pointer",
+            <button key={loc} onClick={() => set("location", loc)} className="neo-btn" style={{
+              padding: "8px 14px", borderRadius: 8,
+              border: "2px solid #1b1b1b",
+              background: form.location === loc ? "#ffb2bf" : "#ffffff",
+              color: "#1b1b1b",
+              boxShadow: form.location === loc ? "2.5px 2.5px 0px 0px #1b1b1b" : "none",
+              fontWeight: 900, fontSize: 12, cursor: "pointer",
               fontFamily: "inherit",
-            }}>{loc}</button>
+            }}>{loc.toUpperCase()}</button>
           ))}
         </div>
         {form.location === "Other" && (
@@ -275,16 +295,17 @@ function CreateModal({ onClose, onCreate }) {
 
         {/* When chips */}
         <label style={labelStyle}>When?</label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 18 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
           {WHEN_OPTIONS.map(w => (
-            <button key={w} onClick={() => set("when", w)} style={{
-              padding: "6px 14px", borderRadius: 999,
-              border: form.when === w ? "2px solid #6366F1" : "2px solid #E0DED8",
-              background: form.when === w ? "#EEF2FF" : "transparent",
-              color: form.when === w ? "#4338CA" : "#888",
-              fontWeight: 700, fontSize: 12, cursor: "pointer",
+            <button key={w} onClick={() => set("when", w)} className="neo-btn" style={{
+              padding: "8px 14px", borderRadius: 8,
+              border: "2px solid #1b1b1b",
+              background: form.when === w ? "#ecdcff" : "#ffffff",
+              color: "#1b1b1b",
+              boxShadow: form.when === w ? "2.5px 2.5px 0px 0px #1b1b1b" : "none",
+              fontWeight: 900, fontSize: 12, cursor: "pointer",
               fontFamily: "inherit",
-            }}>{w}</button>
+            }}>{w.toUpperCase()}</button>
           ))}
         </div>
 
@@ -292,12 +313,13 @@ function CreateModal({ onClose, onCreate }) {
         <label style={labelStyle}>How many people? (including you)</label>
         <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
           {MAX_PEOPLE_OPTIONS.map(n => (
-            <button key={n} onClick={() => set("maxPeople", n)} style={{
-              width: 42, height: 42, borderRadius: 10,
-              border: form.maxPeople === n ? "2px solid #FF4757" : "2px solid #E0DED8",
-              background: form.maxPeople === n ? "#FFF0F1" : "transparent",
-              color: form.maxPeople === n ? "#FF4757" : "#888",
-              fontWeight: 800, fontSize: 14, cursor: "pointer",
+            <button key={n} onClick={() => set("maxPeople", n)} className="neo-btn" style={{
+              width: 42, height: 42, borderRadius: 8,
+              border: "2px solid #1b1b1b",
+              background: form.maxPeople === n ? "#bdff00" : "#ffffff",
+              color: "#1b1b1b",
+              boxShadow: form.maxPeople === n ? "2.5px 2.5px 0px 0px #1b1b1b" : "none",
+              fontWeight: 950, fontSize: 14, cursor: "pointer",
               fontFamily: "inherit",
             }}>{n}</button>
           ))}
@@ -312,27 +334,31 @@ function CreateModal({ onClose, onCreate }) {
           rows={2}
           style={{
             ...inputStyle,
-            resize: "none", height: 70, marginBottom: 20,
+            resize: "none", height: 70, marginBottom: 24,
           }}
         />
 
         {/* Buttons */}
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onClose} style={{
-            flex: 1, padding: 13, borderRadius: 12,
-            border: "2px solid #E0DED8", background: "transparent",
-            fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit", color: "#666",
+        <div style={{ display: "flex", gap: 14 }}>
+          <button onClick={onClose} className="neo-btn" style={{
+            flex: 1, padding: 14, borderRadius: 8,
+            border: "3px solid #1b1b1b", background: "#ffffff",
+            fontWeight: 900, fontSize: 14, cursor: "pointer", fontFamily: "inherit", color: "#1b1b1b",
+            boxShadow: "3px 3px 0px 0px #1b1b1b", textTransform: "uppercase"
           }}>Cancel</button>
           <button
             onClick={submit}
             disabled={!form.title.trim() || submitting}
+            className="neo-btn"
             style={{
-              flex: 2, padding: 13, borderRadius: 12, border: "none",
-              background: form.title.trim() && !submitting ? "#FF4757" : "#E0DED8",
-              color: form.title.trim() && !submitting ? "#fff" : "#AAA",
-              fontWeight: 800, fontSize: 14,
+              flex: 2, padding: 14, borderRadius: 8, border: "3px solid #1b1b1b",
+              background: form.title.trim() && !submitting ? "#bdff00" : "#eeeeee",
+              color: "#1b1b1b",
+              fontWeight: 950, fontSize: 14,
               cursor: form.title.trim() ? "pointer" : "not-allowed",
               fontFamily: "inherit",
+              boxShadow: form.title.trim() && !submitting ? "4px 4px 0px 0px #1b1b1b" : "none",
+              textTransform: "uppercase"
             }}
           >{submitting ? "Posting…" : "Post Event 🎉"}</button>
         </div>
@@ -342,15 +368,18 @@ function CreateModal({ onClose, onCreate }) {
 }
 
 const labelStyle = {
-  display: "block", fontSize: 10, fontWeight: 800,
-  color: "#C0BDB8", textTransform: "uppercase",
+  display: "block", fontSize: 10, fontWeight: 900,
+  color: "#1b1b1b", textTransform: "uppercase",
   letterSpacing: "0.1em", marginBottom: 8,
+  fontFamily: "'Montserrat', sans-serif",
 };
 const inputStyle = {
-  width: "100%", padding: "12px 14px", borderRadius: 12,
-  border: "2px solid #E0DED8", fontSize: 14,
-  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  color: "#111", background: "#FAFAF8", marginBottom: 18,
+  width: "100%", padding: "12px 14px", borderRadius: 8,
+  border: "2px solid #1b1b1b", fontSize: 14,
+  fontFamily: "'Montserrat', sans-serif",
+  fontWeight: 700,
+  color: "#1b1b1b", background: "#ffffff", marginBottom: 18,
+  boxShadow: "2px 2px 0px 0px #1b1b1b",
 };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -451,8 +480,21 @@ export default function Events() {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
         * { box-sizing: border-box; }
-        body { margin: 0; background: #F5F4F0; }
+        body { 
+          margin: 0; 
+          background-color: #f3f3f3;
+          background-image: radial-gradient(#bcbcbc 1.5px, transparent 1.5px);
+          background-size: 32px 32px;
+        }
+        .neo-btn {
+          transition: all 0.1s ease;
+        }
+        .neo-btn:active {
+          transform: translate(2px, 2px) !important;
+          box-shadow: 0px 0px 0px 0px #1b1b1b !important;
+        }
       `}</style>
 
       {showCreate && (
@@ -463,54 +505,58 @@ export default function Events() {
       )}
 
       <div style={{
-        minHeight: "100dvh", background: "#F5F4F0",
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        paddingBottom: 100,
+        minHeight: "100vh",
+        fontFamily: "'Montserrat', sans-serif",
+        paddingBottom: 110,
       }}>
         {/* ── Header ── */}
         <div style={{
-          background: "#fff", borderBottom: "1px solid #EDECE8",
+          background: "#ffffff",
+          borderBottom: "3px solid #1b1b1b",
           position: "sticky", top: 0, zIndex: 10,
           padding: "16px 20px 0",
+          boxShadow: "0px 4px 0px 0px rgba(0,0,0,1)"
         }}>
           <div style={{ maxWidth: 480, margin: "0 auto" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <div>
-                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: "#0D0D0D" }}>
+                <h1 style={{ margin: 0, fontSize: 20, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>
                   Campus Events 🗓️
                 </h1>
-                <p style={{ margin: "2px 0 0", fontSize: 12, color: "#AAA" }}>
-                  Casual hangouts, right on campus
+                <p style={{ margin: "2px 0 0", fontSize: 11, color: "#555", fontWeight: 800 }}>
+                  CASUAL HANGOUTS, RIGHT ON CAMPUS
                 </p>
               </div>
               <button
                 onClick={() => setShowCreate(true)}
+                className="neo-btn"
                 style={{
-                  padding: "9px 16px", borderRadius: 12, border: "none",
-                  background: "#FF4757", color: "#fff",
-                  fontWeight: 800, fontSize: 13, cursor: "pointer",
+                  padding: "9px 16px", borderRadius: 8, border: "2px solid #1b1b1b",
+                  background: "#bdff00", color: "#1b1b1b",
+                  fontWeight: 950, fontSize: 12, cursor: "pointer",
                   fontFamily: "inherit",
-                  boxShadow: "0 3px 12px #FF475745",
+                  boxShadow: "2px 2px 0px 0px #1b1b1b",
+                  textTransform: "uppercase"
                 }}
               >+ Create</button>
             </div>
 
             {/* Filter tabs */}
-            <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 14, scrollbarWidth: "none" }}>
+            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 14, scrollbarWidth: "none" }}>
               {Object.keys(CATEGORIES).map(cat => {
                 const c = CATEGORIES[cat];
                 const active = filter === cat;
                 return (
-                  <button key={cat} onClick={() => setFilter(cat)} style={{
-                    padding: "6px 14px", borderRadius: 999, flexShrink: 0,
-                    border: "none",
-                    background: active ? c.bg : "#F5F4F0",
-                    color: active ? c.color : "#888",
-                    fontWeight: active ? 800 : 600, fontSize: 12,
+                  <button key={cat} onClick={() => setFilter(cat)} className="neo-btn" style={{
+                    padding: "6px 14px", borderRadius: 8, flexShrink: 0,
+                    border: "2px solid #1b1b1b",
+                    background: active ? c.bg : "#ffffff",
+                    color: "#1b1b1b",
+                    fontWeight: 900, fontSize: 12,
                     cursor: "pointer", fontFamily: "inherit",
-                    outline: active ? `2px solid ${c.color}40` : "none",
+                    boxShadow: active ? "2px 2px 0px 0px #1b1b1b" : "none",
                   }}>
-                    {c.icon} {cat}
+                    {c.icon} {cat.toUpperCase()}
                   </button>
                 );
               })}
@@ -527,30 +573,33 @@ export default function Events() {
             </div>
           ) : filtered.length === 0 ? (
             <div style={{
-              background: "#fff", borderRadius: 20,
+              background: "#ffffff",
+              border: "3px solid #1b1b1b",
+              boxShadow: "6px 6px 0px 0px #1b1b1b",
+              borderRadius: 16,
               padding: "48px 28px", textAlign: "center",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
             }}>
               <div style={{ fontSize: 56, marginBottom: 14 }}>
                 {CATEGORIES[filter]?.icon || "✨"}
               </div>
-              <h2 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 900, color: "#0D0D0D" }}>
+              <h2 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>
                 {filter === "All" ? "No events yet" : `No ${filter} events yet`}
               </h2>
-              <p style={{ margin: "0 0 24px", fontSize: 14, color: "#888", lineHeight: 1.6 }}>
+              <p style={{ margin: "0 0 24px", fontSize: 13, color: "#555", fontWeight: 700, lineHeight: 1.6 }}>
                 Be the first to create one — your campus crew is waiting!
               </p>
-              <button onClick={() => setShowCreate(true)} style={{
-                padding: "12px 28px", borderRadius: 12, border: "none",
-                background: "#FF4757", color: "#fff",
-                fontWeight: 800, fontSize: 14, cursor: "pointer",
-                fontFamily: "inherit", boxShadow: "0 4px 14px #FF475750",
+              <button onClick={() => setShowCreate(true)} className="neo-btn" style={{
+                padding: "12px 28px", borderRadius: 8, border: "3px solid #1b1b1b",
+                background: "#bdff00", color: "#1b1b1b",
+                fontWeight: 950, fontSize: 13, cursor: "pointer",
+                fontFamily: "inherit", boxShadow: "4px 4px 0px 0px #1b1b1b",
+                textTransform: "uppercase"
               }}>
                 Create event 🎉
               </button>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {filtered.map(event => (
                 <EventCard
                   key={event.id}

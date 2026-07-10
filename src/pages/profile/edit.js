@@ -108,18 +108,20 @@ function Chip({ label, emoji, selected, onClick, color = "#FF4757" }) {
     <button
       type="button"
       onClick={onClick}
+      className="neo-btn"
       style={{
         display: "inline-flex", alignItems: "center", gap: emoji ? 6 : 0,
-        padding: "8px 14px", borderRadius: 999,
-        border: selected ? `2px solid ${color}` : "2px solid #E8E6E0",
-        background: selected ? `${color}10` : "#fff",
-        color: selected ? color : "#444",
-        fontSize: 13, fontWeight: 700, cursor: "pointer",
-        transition: "all 0.15s", fontFamily: "inherit",
+        padding: "8px 14px", borderRadius: 8,
+        border: "2px solid #1b1b1b",
+        background: selected ? color : "#ffffff",
+        color: "#1b1b1b",
+        fontSize: 12, fontWeight: 900, cursor: "pointer",
+        transition: "all 0.1s", fontFamily: "inherit",
+        boxShadow: selected ? "2.5px 2.5px 0px 0px #1b1b1b" : "none",
       }}
     >
       {emoji && <span>{emoji}</span>}
-      {label}
+      {label.toUpperCase()}
     </button>
   );
 }
@@ -127,13 +129,17 @@ function Chip({ label, emoji, selected, onClick, color = "#FF4757" }) {
 function Section({ title, children }) {
   return (
     <div style={{
-      background: "#fff", borderRadius: 20, padding: 20,
-      marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.04)"
+      background: "#fff", border: "3px solid #1b1b1b", borderRadius: 12, padding: 20,
+      marginBottom: 20, boxShadow: "4px 4px 0px 0px #1b1b1b"
     }}>
-      <h3 style={{ margin: "0 0 14px", fontSize: 13, fontWeight: 800, color: "#C0BDB8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+      <h3 style={{
+        margin: "0 0 14px", fontSize: 11, fontWeight: 950,
+        color: "#1b1b1b", textTransform: "uppercase", letterSpacing: "0.08em",
+        borderBottom: "2px solid #1b1b1b", paddingBottom: 6
+      }}>
         {title}
       </h3>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
         {children}
       </div>
     </div>
@@ -208,25 +214,28 @@ export default function EditProfile() {
 
   const renderCustomInput = (key, setList, list, color = "#FF4757") => {
     return (
-      <div style={{ display: "flex", gap: 6, width: "100%", marginTop: 8 }}>
+      <div style={{ display: "flex", gap: 10, width: "100%", marginTop: 12 }}>
         <input
           type="text"
           value={customText[key] || ""}
           onChange={(e) => setCustomText(prev => ({ ...prev, [key]: e.target.value }))}
           placeholder="Write your own..."
           style={{
-            flex: 1, padding: "8px 12px", borderRadius: 10,
-            border: "2px solid #E8E6E0", fontSize: 13, outline: "none",
-            fontFamily: "inherit"
+            flex: 1, padding: "8px 12px", borderRadius: 8,
+            border: "2px solid #1b1b1b", fontSize: 13, outline: "none",
+            fontFamily: "inherit", color: "#1b1b1b", background: "#ffffff",
+            boxShadow: "2px 2px 0px 0px #1b1b1b",
           }}
         />
         <button
           type="button"
           onClick={() => handleAddCustom(key, setList, list)}
+          className="neo-btn"
           style={{
-            padding: "8px 14px", borderRadius: 10, border: "none",
-            background: color, color: "#fff", fontWeight: 700,
-            fontSize: 12, cursor: "pointer", fontFamily: "inherit"
+            padding: "8px 16px", borderRadius: 8, border: "2px solid #1b1b1b",
+            background: "#bdff00", color: "#1b1b1b", fontWeight: 900,
+            fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+            boxShadow: "2px 2px 0px 0px #1b1b1b", textTransform: "uppercase"
           }}
         >
           Add
@@ -265,9 +274,21 @@ export default function EditProfile() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>
-        <div style={{ fontSize: 40, animation: "spin 1.2s linear infinite" }}>🔄</div>
+      <div style={{
+        minHeight: "100vh",
+        backgroundColor: "#f3f3f3",
+        backgroundImage: "radial-gradient(#bcbcbc 1.5px, transparent 1.5px)",
+        backgroundSize: "32px 32px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 16,
+        fontFamily: "'Montserrat', sans-serif"
+      }}>
+        <div style={{ fontSize: 48, animation: "spin 1.2s linear infinite" }}>⚙️</div>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        <p style={{ fontWeight: 900, fontSize: 14 }}>LOADING PROFILE DETAILS...</p>
       </div>
     );
   }
@@ -275,32 +296,51 @@ export default function EditProfile() {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
         * { box-sizing: border-box; }
-        body { margin: 0; background: #F5F4F0; }
-        input:focus { border-color: #FF4757 !important; }
+        body { 
+          margin: 0; 
+          background-color: #f3f3f3;
+          background-image: radial-gradient(#bcbcbc 1.5px, transparent 1.5px);
+          background-size: 32px 32px;
+        }
+        .neo-btn {
+          transition: all 0.1s ease;
+        }
+        .neo-btn:active {
+          transform: translate(2px, 2px) !important;
+          box-shadow: 0px 0px 0px 0px #1b1b1b !important;
+        }
       `}</style>
 
       <div style={{
-        minHeight: "100vh", background: "#F5F4F0",
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        paddingBottom: 40
+        minHeight: "100vh",
+        fontFamily: "'Montserrat', sans-serif",
+        paddingBottom: 60
       }}>
         {/* Sticky Header */}
         <header style={{
-          background: "#fff", borderBottom: "1px solid #EDECE8",
-          padding: "16px 20px", position: "sticky", top: 0, zIndex: 10,
+          background: "#ffffff",
+          borderBottom: "3px solid #1b1b1b",
+          padding: "16px 20px",
+          position: "sticky", top: 0, zIndex: 10,
+          boxShadow: "0px 4px 0px 0px rgba(0,0,0,1)"
         }}>
           <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <button onClick={() => router.push("/profile")} style={{
-              background: "none", border: "none", color: "#666",
-              fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit"
+            <button onClick={() => router.push("/profile")} className="neo-btn" style={{
+              background: "#ffffff", border: "2px solid #1b1b1b", color: "#1b1b1b",
+              fontWeight: 900, fontSize: 11, cursor: "pointer", fontFamily: "inherit",
+              boxShadow: "2px 2px 0px 0px #1b1b1b", textTransform: "uppercase",
+              padding: "6px 12px", borderRadius: 6
             }}>
               Cancel
             </button>
-            <span style={{ fontWeight: 900, fontSize: 15, color: "#111" }}>Edit Profile</span>
-            <button onClick={handleSave} disabled={saving} style={{
-              background: "none", border: "none", color: "#FF4757",
-              fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit"
+            <span style={{ fontWeight: 950, fontSize: 16, color: "#1b1b1b", textTransform: "uppercase" }}>Edit Profile</span>
+            <button onClick={handleSave} disabled={saving} className="neo-btn" style={{
+              background: "#bdff00", border: "2px solid #1b1b1b", color: "#1b1b1b",
+              fontWeight: 950, fontSize: 11, cursor: "pointer", fontFamily: "inherit",
+              boxShadow: "2px 2px 0px 0px #1b1b1b", textTransform: "uppercase",
+              padding: "6px 12px", borderRadius: 6
             }}>
               {saving ? "Saving..." : "Save"}
             </button>
@@ -312,10 +352,14 @@ export default function EditProfile() {
           
           {/* Section: Name */}
           <div style={{
-            background: "#fff", borderRadius: 20, padding: 20,
-            marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.04)"
+            background: "#fff", border: "3px solid #1b1b1b", borderRadius: 12, padding: 20,
+            marginBottom: 20, boxShadow: "4px 4px 0px 0px #1b1b1b"
           }}>
-            <h3 style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 800, color: "#C0BDB8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            <h3 style={{
+              margin: "0 0 12px", fontSize: 11, fontWeight: 950,
+              color: "#1b1b1b", textTransform: "uppercase", letterSpacing: "0.08em",
+              borderBottom: "2px solid #1b1b1b", paddingBottom: 6
+            }}>
               Your Name
             </h3>
             <input
@@ -324,9 +368,11 @@ export default function EditProfile() {
               onChange={(e) => setName(e.target.value)}
               placeholder="Display name..."
               style={{
-                width: "100%", padding: "12px 16px", borderRadius: 12,
-                border: "2px solid #E8E6E0", fontSize: 15, outline: "none",
-                fontFamily: "inherit", transition: "all 0.15s"
+                width: "100%", padding: "12px 16px", borderRadius: 8,
+                border: "2px solid #1b1b1b", fontSize: 14, outline: "none",
+                fontFamily: "inherit", color: "#1b1b1b", background: "#ffffff",
+                boxShadow: "2px 2px 0px 0px #1b1b1b", marginTop: 12,
+                fontWeight: 700
               }}
             />
           </div>
@@ -338,12 +384,14 @@ export default function EditProfile() {
                 key={av}
                 type="button"
                 onClick={() => setAvatar(av)}
+                className="neo-btn"
                 style={{
-                  width: 48, height: 48, borderRadius: 12, fontSize: 24,
-                  border: avatar === av ? "2px solid #FF4757" : "2px solid #E8E6E0",
-                  background: avatar === av ? "#FF475710" : "#fff",
+                  width: 48, height: 48, borderRadius: 8, fontSize: 24,
+                  border: "2px solid #1b1b1b",
+                  background: avatar === av ? "#bdff00" : "#ffffff",
                   cursor: "pointer", display: "flex", alignItems: "center",
-                  justifyContent: "center", transition: "all 0.15s"
+                  justifyContent: "center", transition: "all 0.1s",
+                  boxShadow: avatar === av ? "2px 2px 0px 0px #1b1b1b" : "none"
                 }}
               >
                 {av}
@@ -355,7 +403,7 @@ export default function EditProfile() {
           <Section title="Branch / Major">
             {OPT.branch.map(b => (
               <Chip
-                key={b.l} label={b.l} emoji={b.e} color="#00B894"
+                key={b.l} label={b.l} emoji={b.e} color="#ffd9de"
                 selected={branch.includes(b.l)}
                 onClick={() => handleChipToggle(branch, setBranch, b.l)}
               />
@@ -363,19 +411,19 @@ export default function EditProfile() {
             {/* Custom items already added */}
             {branch.filter(b => !OPT.branch.map(x => x.l).includes(b)).map(customVal => (
               <Chip
-                key={customVal} label={customVal} emoji="✏️" color="#00B894"
+                key={customVal} label={customVal} emoji="✏️" color="#ffd9de"
                 selected={true}
                 onClick={() => handleChipToggle(branch, setBranch, customVal)}
               />
             ))}
-            {renderCustomInput("branch", setBranch, branch, "#00B894")}
+            {renderCustomInput("branch", setBranch, branch, "#ffd9de")}
           </Section>
 
           {/* Section: Year */}
           <Section title="Year">
             {OPT.year.map(y => (
               <Chip
-                key={y.l} label={y.l} emoji={y.e} color="#FDCB6E"
+                key={y.l} label={y.l} emoji={y.e} color="#fef3c7"
                 selected={year.includes(y.l)}
                 onClick={() => handleChipToggle(year, setYear, y.l, true)}
               />
@@ -383,19 +431,19 @@ export default function EditProfile() {
             {/* Custom items already added */}
             {year.filter(y => !OPT.year.map(x => x.l).includes(y)).map(customVal => (
               <Chip
-                key={customVal} label={customVal} emoji="✏️" color="#FDCB6E"
+                key={customVal} label={customVal} emoji="✏️" color="#fef3c7"
                 selected={true}
                 onClick={() => handleChipToggle(year, setYear, customVal, true)}
               />
             ))}
-            {renderCustomInput("year", setYear, year, "#FDCB6E")}
+            {renderCustomInput("year", setYear, year, "#fef3c7")}
           </Section>
 
           {/* Section: Stay */}
           <Section title="Stay Type">
             {OPT.stay.map(s => (
               <Chip
-                key={s.l} label={s.l} emoji={s.e} color="#0984E3"
+                key={s.l} label={s.l} emoji={s.e} color="#f0fdf4"
                 selected={stay.includes(s.l)}
                 onClick={() => handleChipToggle(stay, setStay, s.l)}
               />
@@ -403,19 +451,19 @@ export default function EditProfile() {
             {/* Custom items already added */}
             {stay.filter(s => !OPT.stay.map(x => x.l).includes(s)).map(customVal => (
               <Chip
-                key={customVal} label={customVal} emoji="✏️" color="#0984E3"
+                key={customVal} label={customVal} emoji="✏️" color="#f0fdf4"
                 selected={true}
                 onClick={() => handleChipToggle(stay, setStay, customVal)}
               />
             ))}
-            {renderCustomInput("stay", setStay, stay, "#0984E3")}
+            {renderCustomInput("stay", setStay, stay, "#f0fdf4")}
           </Section>
 
           {/* Section: Vibe */}
           <Section title="Campus Vibe">
             {OPT.vibe.map(v => (
               <Chip
-                key={v.l} label={v.l} emoji={v.e} color="#E84393"
+                key={v.l} label={v.l} emoji={v.e} color="#ffd9de"
                 selected={vibe.includes(v.l)}
                 onClick={() => handleChipToggle(vibe, setVibe, v.l)}
               />
@@ -423,19 +471,19 @@ export default function EditProfile() {
             {/* Custom items already added */}
             {vibe.filter(v => !OPT.vibe.map(x => x.l).includes(v)).map(customVal => (
               <Chip
-                key={customVal} label={customVal} emoji="✏️" color="#E84393"
+                key={customVal} label={customVal} emoji="✏️" color="#ffd9de"
                 selected={true}
                 onClick={() => handleChipToggle(vibe, setVibe, customVal)}
               />
             ))}
-            {renderCustomInput("vibe", setVibe, vibe, "#E84393")}
+            {renderCustomInput("vibe", setVibe, vibe, "#ffd9de")}
           </Section>
 
           {/* Section: Interests */}
           <Section title="Interests (select at least 3)">
             {OPT.interests.map(i => (
               <Chip
-                key={i.l} label={i.l} emoji={i.e} color="#E17055"
+                key={i.l} label={i.l} emoji={i.e} color="#ecdcff"
                 selected={interests.includes(i.l)}
                 onClick={() => handleChipToggle(interests, setInterests, i.l)}
               />
@@ -443,19 +491,19 @@ export default function EditProfile() {
             {/* Custom items already added */}
             {interests.filter(i => !OPT.interests.map(x => x.l).includes(i)).map(customVal => (
               <Chip
-                key={customVal} label={customVal} emoji="✏️" color="#E17055"
+                key={customVal} label={customVal} emoji="✏️" color="#ecdcff"
                 selected={true}
                 onClick={() => handleChipToggle(interests, setInterests, customVal)}
               />
             ))}
-            {renderCustomInput("interests", setInterests, interests, "#E17055")}
+            {renderCustomInput("interests", setInterests, interests, "#ecdcff")}
           </Section>
 
           {/* Section: Squad Goals */}
           <Section title="Looking For">
             {OPT.squad.map(sq => (
               <Chip
-                key={sq.l} label={sq.l} emoji={sq.e} color="#6C5CE7"
+                key={sq.l} label={sq.l} emoji={sq.e} color="#d6baff"
                 selected={squad.includes(sq.l)}
                 onClick={() => handleChipToggle(squad, setSquad, sq.l)}
               />
@@ -463,19 +511,19 @@ export default function EditProfile() {
             {/* Custom items already added */}
             {squad.filter(sq => !OPT.squad.map(x => x.l).includes(sq)).map(customVal => (
               <Chip
-                key={customVal} label={customVal} emoji="✏️" color="#6C5CE7"
+                key={customVal} label={customVal} emoji="✏️" color="#d6baff"
                 selected={true}
                 onClick={() => handleChipToggle(squad, setSquad, customVal)}
               />
             ))}
-            {renderCustomInput("squad", setSquad, squad, "#6C5CE7")}
+            {renderCustomInput("squad", setSquad, squad, "#d6baff")}
           </Section>
 
           {/* Section: Spots */}
           <Section title="Go-to Spots">
             {OPT.spot.map(sp => (
               <Chip
-                key={sp.l} label={sp.l} emoji={sp.e} color="#00CEC9"
+                key={sp.l} label={sp.l} emoji={sp.e} color="#eeeeee"
                 selected={spot.includes(sp.l)}
                 onClick={() => handleChipToggle(spot, setSpot, sp.l)}
               />
@@ -483,19 +531,19 @@ export default function EditProfile() {
             {/* Custom items already added */}
             {spot.filter(sp => !OPT.spot.map(x => x.l).includes(sp)).map(customVal => (
               <Chip
-                key={customVal} label={customVal} emoji="✏️" color="#00CEC9"
+                key={customVal} label={customVal} emoji="✏️" color="#eeeeee"
                 selected={true}
                 onClick={() => handleChipToggle(spot, setSpot, customVal)}
               />
             ))}
-            {renderCustomInput("spot", setSpot, spot, "#00CEC9")}
+            {renderCustomInput("spot", setSpot, spot, "#eeeeee")}
           </Section>
 
           {/* Section: Prompts */}
           <Section title="My ideal Saturday looks like...">
             {OPT.prompt.map(p => (
               <Chip
-                key={p.l} label={p.l} emoji={p.e} color="#F9A825"
+                key={p.l} label={p.l} emoji={p.e} color="#bdff00"
                 selected={prompt.includes(p.l)}
                 onClick={() => handleChipToggle(prompt, setPrompt, p.l)}
               />
@@ -503,19 +551,20 @@ export default function EditProfile() {
             {/* Custom items already added */}
             {prompt.filter(p => !OPT.prompt.map(x => x.l).includes(p)).map(customVal => (
               <Chip
-                key={customVal} label={customVal} emoji="✏️" color="#F9A825"
+                key={customVal} label={customVal} emoji="✏️" color="#bdff00"
                 selected={true}
                 onClick={() => handleChipToggle(prompt, setPrompt, customVal)}
               />
             ))}
-            {renderCustomInput("prompt", setPrompt, prompt, "#F9A825")}
+            {renderCustomInput("prompt", setPrompt, prompt, "#bdff00")}
           </Section>
 
-          <button onClick={handleSave} disabled={saving} style={{
-            width: "100%", padding: 14, borderRadius: 14, border: "none",
-            background: "#FF4757", color: "#fff", fontWeight: 800,
+          <button onClick={handleSave} disabled={saving} className="neo-btn" style={{
+            width: "100%", padding: 16, borderRadius: 8, border: "3px solid #1b1b1b",
+            background: "#bdff00", color: "#1b1b1b", fontWeight: 950,
             fontSize: 15, cursor: "pointer", fontFamily: "inherit",
-            boxShadow: "0 4px 16px rgba(255,71,87,0.3)", marginTop: 24
+            boxShadow: "4px 4px 0px 0px #1b1b1b", marginTop: 24,
+            textTransform: "uppercase"
           }}>
             {saving ? "Saving Changes..." : "Save Changes"}
           </button>
