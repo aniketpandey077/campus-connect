@@ -427,6 +427,11 @@ export default function Swipe() {
   const [swipeHint, setSwipeHint] = useState(null); // "like" | "pass"
   const [myVerificationStatus, setMyVerificationStatus] = useState("pending");
 
+  // Filter state
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({ branch: [], squad: [], interests: [], year: [], stay: [] });
+  const activeFilterCount = Object.values(activeFilters).flat().length;
+
   useEffect(() => {
     import("react-tinder-card").then(mod => {
       setTinderCard(() => mod.default);
@@ -446,6 +451,13 @@ export default function Swipe() {
     myPhoneRef.current = userId;
     loadData(userId, router.query.course);
   }, [user, router.isReady, router.query.course]);
+
+  // Reload when filters change (after initial load)
+  useEffect(() => {
+    if (!myPhoneRef.current) return;
+    loadData(myPhoneRef.current, router.query.course);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(activeFilters)]);
 
   async function loadData(phone, filterCourse) {
     setLoading(true);
@@ -474,9 +486,29 @@ export default function Swipe() {
       const alreadySwiped = new Set();
       swipesSnap.forEach(d => alreadySwiped.add(d.data().swipedId));
 
-      // 4. Filter by course if query parameter is provided
+      // 4. Filter by course (from URL query) OR by active branch filters
       if (filterCourse) {
         others = others.filter(p => (p.branch || []).includes(filterCourse));
+      }
+      // Active branch filter (from drawer)
+      if (activeFilters.branch.length > 0) {
+        others = others.filter(p => activeFilters.branch.some(b => (p.branch || []).includes(b)));
+      }
+      // Squad filter
+      if (activeFilters.squad.length > 0) {
+        others = others.filter(p => activeFilters.squad.some(s => (p.squad || []).includes(s)));
+      }
+      // Interests filter
+      if (activeFilters.interests.length > 0) {
+        others = others.filter(p => activeFilters.interests.some(i => (p.interests || []).includes(i)));
+      }
+      // Year filter
+      if (activeFilters.year.length > 0) {
+        others = others.filter(p => activeFilters.year.some(y => (p.year || []).includes(y)));
+      }
+      // Stay filter
+      if (activeFilters.stay.length > 0) {
+        others = others.filter(p => activeFilters.stay.some(s => (p.stay || []).includes(s)));
       }
 
       // 5. Filter + score + sort ascending (best match = last = on top of stack)
@@ -677,16 +709,53 @@ export default function Swipe() {
               CAMPUS CONNECT
             </span>
           </div>
-          <span style={{ 
-            fontSize: 9, fontWeight: 900, color: "#1b1b1b", background: "#ffffff",
-            padding: "4px 8px", border: "2px solid #1b1b1b", boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
-            textTransform: "uppercase"
-          }}>
-            {currentIndex >= 0
-              ? `${currentIndex + 1} REMAINING`
-              : "ALL DONE"}
-          </span>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {/* Filter Button */}
+            <button
+              onClick={() => setFilterOpen(true)}
+              className="action-btn"
+              style={{
+                position: "relative",
+                padding: "5px 12px", borderRadius: 8,
+                border: "2px solid #1b1b1b",
+                background: activeFilterCount > 0 ? "#ecdcff" : "#ffffff",
+                color: "#1b1b1b", fontWeight: 900, fontSize: 11,
+                cursor: "pointer", fontFamily: "inherit",
+                boxShadow: "2px 2px 0px 0px #1b1b1b",
+                textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5,
+              }}
+            >
+              🎛 Filter
+              {activeFilterCount > 0 && (
+                <span style={{
+                  background: "#7531d3", color: "#fff",
+                  borderRadius: "50%", width: 16, height: 16,
+                  fontSize: 9, fontWeight: 950,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  border: "1.5px solid #1b1b1b",
+                }}>{activeFilterCount}</span>
+              )}
+            </button>
+            <span style={{ 
+              fontSize: 9, fontWeight: 900, color: "#1b1b1b", background: "#ffffff",
+              padding: "4px 8px", border: "2px solid #1b1b1b", boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+              textTransform: "uppercase"
+            }}>
+              {currentIndex >= 0
+                ? `${currentIndex + 1} LEFT`
+                : "ALL DONE"}
+            </span>
+          </div>
         </div>
+
+        {/* Filter Drawer */}
+        {filterOpen && (
+          <FilterDrawer
+            active={activeFilters}
+            onApply={(f) => { setActiveFilters(f); setFilterOpen(false); }}
+            onClose={() => setFilterOpen(false)}
+          />
+        )}
 
         {/* Verification pending banner */}
         {myVerificationStatus === "pending" && (
@@ -824,6 +893,140 @@ export default function Swipe() {
         <NavBar active="/swipe" />
       </div>
     </>
+  );
+}
+
+// ─── Filter Drawer ────────────────────────────────────────────────────────────
+const FILTER_OPTS = {
+  branch: [
+    "CSE", "IT", "ECE", "Mechanical", "Civil", "EEE",
+    "BCA", "MCA", "BBA", "MBA", "BSc CS", "B.Arch", "LLB", "MBBS", "BPharm",
+  ],
+  squad: [
+    "Study group", "Canteen crew", "Fest buddies", "Late-night talks",
+    "Gaming gang", "Gym partners", "Project partners", "Campus explorers",
+    "Hostel hangout", "Road trip crew", "Just vibe",
+  ],
+  interests: [
+    "Music", "Gaming", "Sports", "Reading", "Fitness", "Movies/TV",
+    "Travel", "Art", "Tech/Coding", "Cooking", "Photography", "Dance",
+    "Anime", "Fashion", "Hackathons", "Memes",
+  ],
+  year: ["1st Year", "2nd Year", "3rd Year", "4th Year"],
+  stay: ["Hostel", "Day Scholar"],
+};
+
+const FILTER_LABELS = {
+  branch: "🎓 Department",
+  squad: "🤝 Looking For",
+  interests: "✨ Interests",
+  year: "📅 Year",
+  stay: "🏠 Stay Type",
+};
+
+function FilterDrawer({ active, onApply, onClose }) {
+  const [local, setLocal] = useState(active);
+
+  const toggle = (key, val) => {
+    setLocal(prev => ({
+      ...prev,
+      [key]: prev[key].includes(val)
+        ? prev[key].filter(v => v !== val)
+        : [...prev[key], val],
+    }));
+  };
+
+  const clearAll = () => setLocal({ branch: [], squad: [], interests: [], year: [], stay: [] });
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 200,
+      background: "rgba(27,27,27,0.75)",
+      backdropFilter: "blur(3px)",
+      display: "flex", flexDirection: "column", justifyContent: "flex-end",
+      fontFamily: "'Montserrat', sans-serif",
+    }} onClick={onClose}>
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: "#fff",
+          borderTop: "4px solid #1b1b1b",
+          borderLeft: "4px solid #1b1b1b",
+          borderRight: "4px solid #1b1b1b",
+          borderRadius: "24px 24px 0 0",
+          padding: "20px 20px 40px",
+          maxHeight: "85vh", overflowY: "auto",
+          boxShadow: "0px -6px 0px 0px rgba(0,0,0,1)",
+          animation: "slideUp 0.28s cubic-bezier(.22,1,.36,1)",
+        }}
+      >
+        <style>{"@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}"}</style>
+
+        {/* Handle */}
+        <div style={{ width: 44, height: 6, borderRadius: 3, background: "#1b1b1b", margin: "0 auto 18px" }} />
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>
+            🎛 Filter People
+          </h3>
+          <button onClick={clearAll} style={{
+            padding: "5px 12px", borderRadius: 6,
+            border: "2px solid #1b1b1b", background: "#ffb2bf",
+            fontWeight: 900, fontSize: 11, cursor: "pointer",
+            fontFamily: "inherit", color: "#1b1b1b",
+            boxShadow: "2px 2px 0px 0px #1b1b1b",
+            textTransform: "uppercase",
+          }}>Clear All</button>
+        </div>
+
+        {/* Filter sections */}
+        {Object.entries(FILTER_OPTS).map(([key, opts]) => (
+          <div key={key} style={{ marginBottom: 20 }}>
+            <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 950, color: "#1b1b1b",
+              textTransform: "uppercase", letterSpacing: "0.06em",
+              borderBottom: "2px solid #1b1b1b", paddingBottom: 6,
+            }}>{FILTER_LABELS[key]}</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {opts.map(opt => {
+                const sel = local[key].includes(opt);
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => toggle(key, opt)}
+                    style={{
+                      padding: "7px 13px", borderRadius: 8,
+                      border: "2px solid #1b1b1b",
+                      background: sel ? "#ecdcff" : "#ffffff",
+                      color: "#1b1b1b",
+                      boxShadow: sel ? "2px 2px 0px 0px #1b1b1b" : "none",
+                      fontWeight: 900, fontSize: 11, cursor: "pointer",
+                      fontFamily: "inherit",
+                      textTransform: "uppercase",
+                    }}
+                  >{opt}</button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        {/* Apply */}
+        <button
+          onClick={() => onApply(local)}
+          style={{
+            width: "100%", padding: "14px", borderRadius: 10,
+            border: "3px solid #1b1b1b",
+            background: "#bdff00", color: "#1b1b1b",
+            fontWeight: 950, fontSize: 14, cursor: "pointer",
+            fontFamily: "inherit",
+            boxShadow: "4px 4px 0px 0px #1b1b1b",
+            textTransform: "uppercase",
+            marginTop: 8,
+          }}
+        >Apply Filters ✅</button>
+      </div>
+    </div>
   );
 }
 
