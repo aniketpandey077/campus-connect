@@ -90,6 +90,8 @@ function Bubble({ msg, isMe, otherProfile, showAvatar, revealed }) {
         fontSize: 13, lineHeight: 1.5,
         fontWeight: 700,
         boxShadow: "3px 3px 0px 0px #1b1b1b",
+        wordBreak: "break-word",
+        overflowWrap: "break-word",
       }}>
         <div>{msg.content}</div>
         <div style={{

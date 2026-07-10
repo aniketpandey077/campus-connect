@@ -28,9 +28,10 @@ const CATEGORIES = {
 };
 
 const LOCATIONS = [
-  "Library", "Canteen", "Hostel Common Room", "Basketball Court",
-  "Football Ground", "Seminar Hall", "Parking Lot", "Rooftop",
-  "College Cafe", "Lab Block", "Other",
+  "Library", "Canteen", "Uni Mall (LPU)", "Unipolis (LPU)", "Block 33 (LPU)",
+  "Block 34 (LPU)", "Block 36 (LPU)", "Block 37 (LPU)", "Block 38 (LPU)", "Block 13 (LPU)",
+  "Block 25 (LPU)", "Block 28 (LPU)", "Indoor Stadium", "Main Gate",
+  "Hostel Common Room", "Lab Block", "Other",
 ];
 
 const WHEN_OPTIONS = [
@@ -189,7 +190,7 @@ function CreateModal({ onClose, onCreate }) {
   const [form, setForm] = useState({
     title: "", category: "Chill", location: "Canteen",
     when: "Right now", maxPeople: 4, description: "",
-    customLocation: "",
+    customLocation: "", roomNumber: "",
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -198,10 +199,12 @@ function CreateModal({ onClose, onCreate }) {
   const submit = async () => {
     if (!form.title.trim()) return;
     setSubmitting(true);
+    const baseLoc = form.location === "Other" ? (form.customLocation.trim() || "Other") : form.location;
+    const finalLoc = baseLoc + (form.roomNumber?.trim() ? ` (Room ${form.roomNumber.trim()})` : "");
     await onCreate({
       title: form.title.trim(),
       category: form.category,
-      location: form.location === "Other" ? form.customLocation || "Other" : form.location,
+      location: finalLoc,
       when: form.when,
       maxPeople: form.maxPeople,
       description: form.description.trim(),
@@ -285,13 +288,25 @@ function CreateModal({ onClose, onCreate }) {
           ))}
         </div>
         {form.location === "Other" && (
-          <input
-            placeholder="Type location..."
-            value={form.customLocation}
-            onChange={e => set("customLocation", e.target.value)}
-            style={{ ...inputStyle, marginBottom: 18 }}
-          />
+          <>
+            <label style={labelStyle}>Custom Place Name</label>
+            <input
+              placeholder='e.g. "Mechanical Workshop", "Audi 2"'
+              value={form.customLocation}
+              onChange={e => set("customLocation", e.target.value)}
+              style={{ ...inputStyle, marginBottom: 18 }}
+            />
+          </>
         )}
+
+        {/* Room Number Option */}
+        <label style={labelStyle}>Room / Lab Number (Optional)</label>
+        <input
+          placeholder='e.g. "Room 402", "Lab 203"'
+          value={form.roomNumber}
+          onChange={e => set("roomNumber", e.target.value)}
+          style={{ ...inputStyle, marginBottom: 18 }}
+        />
 
         {/* When chips */}
         <label style={labelStyle}>When?</label>
