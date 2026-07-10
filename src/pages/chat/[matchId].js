@@ -224,27 +224,27 @@ export default function Chat() {
 
   // ── Load match + other profile + my profile ──
   useEffect(() => {
-    if (!router.isReady || !matchId || !myPhoneRef.current) return;
+    if (!router.isReady || !matchId || !myPhone) return;
     (async () => {
       try {
         const snap = await getDoc(doc(db, "matches", matchId));
         if (!snap.exists()) { router.push("/matches"); return; }
         const data = { id: snap.id, ...snap.data() };
-        if (data.user1Id !== myPhoneRef.current && data.user2Id !== myPhoneRef.current) {
+        if (data.user1Id !== myPhone && data.user2Id !== myPhone) {
           setAccessDenied(true); return;
         }
-        const otherId = data.user1Id === myPhoneRef.current ? data.user2Id : data.user1Id;
+        const otherId = data.user1Id === myPhone ? data.user2Id : data.user1Id;
         const profSnap = await getDoc(doc(db, "profiles", otherId));
         if (profSnap.exists()) setOtherProfile({ id: otherId, ...profSnap.data() });
-        const myProfSnap = await getDoc(doc(db, "profiles", myPhoneRef.current));
-        if (myProfSnap.exists()) setMyProfile({ id: myPhoneRef.current, ...myProfSnap.data() });
+        const myProfSnap = await getDoc(doc(db, "profiles", myPhone));
+        if (myProfSnap.exists()) setMyProfile({ id: myPhone, ...myProfSnap.data() });
         setLoading(false);
       } catch (e) {
         console.error("loadMatch:", e);
         setLoading(false);
       }
     })();
-  }, [router.isReady, matchId]);
+  }, [router.isReady, matchId, myPhone]);
 
   // ── Real-time match doc (reveal state, etc.) ──
   useEffect(() => {
