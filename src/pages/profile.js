@@ -12,10 +12,6 @@ import NavBar from "../components/NavBar";
 import { useRequireAuth } from "../lib/useAuth";
 import { fileToFirestorePhoto } from "../lib/imageUtils";
 
-// ─── Admin UID — only this account sees the admin panel ───────────────────────
-// Replace the value below with your own Firebase UID (phone number used as UID).
-const ADMIN_UID = "YOUR_UID_HERE"; // ← update this!
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function Tag({ children, bg = "#fff", color = "#1b1b1b" }) {
   return (
@@ -79,6 +75,7 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(""); // success / error toast
   const [pendingCount, setPendingCount] = useState(0); // admin: pending verifications
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -86,12 +83,16 @@ export default function Profile() {
     setMyPhone(uid);
     loadProfile(uid);
 
-    // Live pending verifications count — only for admin
-    if (uid === ADMIN_UID || true) { // remove "|| true" after setting ADMIN_UID
-      const q = query(collection(db, "verifications"), where("status", "==", "pending"));
-      const unsub = onSnapshot(q, snap => setPendingCount(snap.size));
-      return () => unsub();
-    }
+    // Check Firestore 'admins' collection — managed from Firebase Console
+    getDoc(doc(db, "admins", uid)).then(snap => {
+      if (snap.exists()) {
+        setIsAdmin(true);
+        // Subscribe to live pending verification count
+        const q = query(collection(db, "verifications"), where("status", "==", "pending"));
+        const unsub = onSnapshot(q, snap => setPendingCount(snap.size));
+        return unsub; // cleanup
+      }
+    });
   }, [user]);
 
   async function loadProfile(phone) {
@@ -471,8 +472,8 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Admin Panel Shortcut — visible to admin only */}
-          {pendingCount >= 0 && (
+          {/* Admin Panel Shortcut — only visible if UID is in Firestore 'admins' collection */}
+          {isAdmin && (
             <div style={{
               background: pendingCount > 0 ? "#fef3c7" : "#f3f3f3",
               border: `3px solid ${pendingCount > 0 ? "#f59e0b" : "#1b1b1b"}`,
