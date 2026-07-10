@@ -3,7 +3,7 @@
 // Tapping a match opens the chat screen.
 // TODO: replace localStorage "cc_phone" with auth.currentUser.uid once Firebase Auth is live.
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/router";
 import {
   collection, query, where, onSnapshot, doc, getDoc, addDoc, serverTimestamp,
@@ -190,40 +190,46 @@ export default function Matches() {
   const [loading, setLoading]     = useState(true);
   const [myPhone, setMyPhone]     = useState(null);
 
-  const [likesReceived, setLikesReceived]   = useState([]); // Likers' userIds
+  const [incomingLikes, setIncomingLikes] = useState([]);
+  const [mySwipes, setMySwipes] = useState([]);
   const [likersProfiles, setLikersProfiles] = useState({}); // id -> profile
 
-  // Real-time query incoming swipes where swipedId is me and direction is like
+  // Listen to incoming likes directed at me
   useEffect(() => {
     if (!myPhone) return;
-
-    const qIncoming = query(
+    const q = query(
       collection(db, "swipes"),
       where("swipedId", "==", myPhone),
       where("direction", "==", "like")
     );
-    const unsubIncoming = onSnapshot(qIncoming, snapIncoming => {
-      const incomingIds = snapIncoming.docs.map(d => d.data().swiperId);
-
-      // Listen to my own swipes
-      const qMySwipes = query(collection(db, "swipes"), where("swiperId", "==", myPhone));
-      const unsubMySwipes = onSnapshot(qMySwipes, snapMySwipes => {
-        const mySwiped = new Set(snapMySwipes.docs.map(d => d.data().swipedId));
-        // Only keep likers whom I have NOT swiped on yet
-        const activeLikers = incomingIds.filter(id => !mySwiped.has(id));
-        setLikesReceived(activeLikers);
-      });
-
-      return () => { unsubMySwipes(); };
+    return onSnapshot(q, snap => {
+      setIncomingLikes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
-
-    return () => { unsubIncoming(); };
   }, [myPhone]);
+
+  // Listen to my own swipes
+  useEffect(() => {
+    if (!myPhone) return;
+    const q = query(
+      collection(db, "swipes"),
+      where("swiperId", "==", myPhone)
+    );
+    return onSnapshot(q, snap => {
+      setMySwipes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+  }, [myPhone]);
+
+  // Compute active likers whom I haven't swiped on yet
+  const likesReceived = useMemo(() => {
+    const swipedSet = new Set(mySwipes.map(s => s.swipedId));
+    // Unique userIds who liked me
+    const uniqueIds = Array.from(new Set(incomingLikes.map(s => s.swiperId)));
+    return uniqueIds.filter(id => id && !swipedSet.has(id));
+  }, [incomingLikes, mySwipes]);
 
   // Fetch profiles of these likers
   useEffect(() => {
     if (!myPhone || likesReceived.length === 0) {
-      setLikersProfiles({});
       return;
     }
     const needed = likesReceived.filter(id => !likersProfiles[id]);
@@ -232,11 +238,13 @@ export default function Matches() {
     Promise.all(needed.map(id => getDoc(doc(db, "profiles", id)))).then(snaps => {
       const updates = {};
       snaps.forEach((snap, i) => {
-        if (snap.exists()) updates[needed[i]] = { id: needed[i], ...snap.data() };
+        if (snap.exists()) {
+          updates[needed[i]] = { id: needed[i], ...snap.data() };
+        }
       });
       setLikersProfiles(prev => ({ ...prev, ...updates }));
     });
-  }, [likesReceived, myPhone]);
+  }, [likesReceived.join(","), myPhone]);
 
   // Handle like back or pass action
   const handleLikerAction = async (likerId, direction) => {
