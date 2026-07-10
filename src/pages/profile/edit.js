@@ -156,6 +156,7 @@ export default function EditProfile() {
   // Form states
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState("😎");
+  const [alwaysOpen, setAlwaysOpen] = useState(false);
   const [branch, setBranch] = useState([]);
   const [year, setYear] = useState([]);
   const [stay, setStay] = useState([]);
@@ -181,6 +182,7 @@ export default function EditProfile() {
       const data = snap.data();
       setName(data.name || "");
       setAvatar(data.avatar || "😎");
+      setAlwaysOpen(data.alwaysOpen || false);
       setBranch(data.branch || []);
       setYear(data.year || []);
       setStay(data.stay || []);
@@ -255,6 +257,7 @@ export default function EditProfile() {
       await updateDoc(doc(db, "profiles", phone), {
         name: name.trim(),
         avatar,
+        alwaysOpen,
         branch,
         year,
         stay,
@@ -398,6 +401,47 @@ export default function EditProfile() {
               </button>
             ))}
           </Section>
+
+          {/* Section: Visibility / Privacy Toggle */}
+          <div style={{
+            background: "#fff", border: "3px solid #1b1b1b", borderRadius: 12, padding: 20,
+            marginBottom: 20, boxShadow: "4px 4px 0px 0px #1b1b1b"
+          }}>
+            <h3 style={{
+              margin: "0 0 12px", fontSize: 11, fontWeight: 950,
+              color: "#1b1b1b", textTransform: "uppercase", letterSpacing: "0.08em",
+              borderBottom: "2px solid #1b1b1b", paddingBottom: 6
+            }}>
+              Profile Visibility
+            </h3>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
+              <div style={{ paddingRight: 10 }}>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#1b1b1b" }}>
+                  ALWAYS KEEP PROFILE OPEN
+                </p>
+                <p style={{ margin: "4px 0 0", fontSize: 10, color: "#555", fontWeight: 700, lineHeight: 1.4 }}>
+                  Turn this on to skip anonymous matching and always reveal your name and avatar by default.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAlwaysOpen(!alwaysOpen)}
+                className="neo-btn"
+                style={{
+                  padding: "8px 16px", borderRadius: 8,
+                  border: "2.5px solid #1b1b1b",
+                  background: alwaysOpen ? "#bdff00" : "#ffb2bf",
+                  color: "#1b1b1b",
+                  fontSize: 11, fontWeight: 950, cursor: "pointer",
+                  boxShadow: "2.5px 2.5px 0px 0px #1b1b1b",
+                  flexShrink: 0,
+                  textTransform: "uppercase"
+                }}
+              >
+                {alwaysOpen ? "ON 🟢" : "OFF 🔴"}
+              </button>
+            </div>
+          </div>
 
           {/* Section: Branch */}
           <Section title="Branch / Major">
