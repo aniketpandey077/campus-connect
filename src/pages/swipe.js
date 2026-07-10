@@ -15,8 +15,7 @@ import { db } from "../lib/firebase";
 import NavBar from "../components/NavBar";
 import { useRequireAuth } from "../lib/useAuth";
 
-// SSR-safe: react-tinder-card uses DOM APIs, must be client-only
-const TinderCard = dynamic(() => import("react-tinder-card"), { ssr: false });
+
 
 // ─── Branch → gradient map ────────────────────────────────────────────────────
 const BRANCH_GRAD = {
@@ -415,6 +414,8 @@ export default function Swipe() {
   const myPhoneRef = useRef(null);
   const myProfileRef = useRef(null);
 
+  const [TinderCard, setTinderCard] = useState(null);
+
   // profiles sorted ascending by score: profiles[last] = best match = visually on top
   const [profiles, setProfiles] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
@@ -425,6 +426,12 @@ export default function Swipe() {
   const [matchModal, setMatchModal] = useState(null);
   const [swipeHint, setSwipeHint] = useState(null); // "like" | "pass"
   const [myVerificationStatus, setMyVerificationStatus] = useState("pending");
+
+  useEffect(() => {
+    import("react-tinder-card").then(mod => {
+      setTinderCard(() => mod.default);
+    });
+  }, []);
 
   // One ref per card — must be stable per profiles array
   const childRefs = useMemo(
@@ -561,7 +568,7 @@ export default function Swipe() {
   };
 
   // ── Loading ──
-  if (loading) {
+  if (loading || !TinderCard) {
     return (
       <PageShell>
         <div style={{ textAlign: "center" }}>
