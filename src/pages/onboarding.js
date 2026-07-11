@@ -90,6 +90,8 @@ const OPT = {
     { l: "Bunking Champion (UMS Victim)", e: "😴" }, { l: "Coding Grinder in Block 36", e: "💻" },
     { l: "MBA Suit-walker in Block 13", e: "💼" }, { l: "LPUNET Login Loop Survivor", e: "🌐" },
     { l: "Main Gate Chai Tapri Regular", e: "☕" },
+    { l: "UMC Survivor (Scholarship intact!)", e: "🚨" },
+    { l: "Minor UMC / Indiscipline Warning recipient", e: "⚠️" },
   ],
   interests: [
     { l: "Music", e: "🎵" }, { l: "Gaming", e: "🎮" }, { l: "Sports", e: "⚽" },
@@ -115,6 +117,8 @@ const OPT = {
   ],
   prompt: [
     { l: "Requesting Outpass on UMS", e: "📝" },
+    { l: "Pleading to DSA for Indiscipline fine waiver", e: "🙏" },
+    { l: "Calculating UMC risk before exam", e: "📝" },
     { l: "Excursion to Jalandhar/Phagwara", e: "🛵" },
     { l: "Struggling to connect to LPUNET", e: "🌐" },
     { l: "Chilling at Unipolis concert", e: "🎵" },
