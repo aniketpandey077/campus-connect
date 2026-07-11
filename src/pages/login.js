@@ -600,7 +600,7 @@ export default function Login() {
                 margin: "12px 0 0", fontSize: "13px", fontWeight: 800,
                 color: "#1b1b1b", lineHeight: "1.4"
               }}>
-                THE EXCLUSIVE LPU SOCIAL NETWORK. DODGE THE SECURITY GUARDS ON CYCLES, KEEP YOUR UMS ATTENDANCE ABOVE 75%, AND FIND YOUR CAMPUS CREW.
+                THE EXCLUSIVE LPU SOCIAL NETWORK. KEEP YOUR UMS ATTENDANCE ABOVE 75%, FIND YOUR CAMPUS CREW, AND DISCOVER YOUR CIRCLE.
               </p>
             </div>
 
@@ -752,7 +752,7 @@ export default function Login() {
 
             {/* Feature chips */}
             <div className="feature-row fade-up delay-4">
-              {["🔒 No Security Guards", "🎓 Block 35 Approved", "💬 Canteen Tea Talk", "🆓 Faster than Wi-Fi"].map(f => (
+              {["🔒 Verified Accounts", "🎓 Block 35 Approved", "💬 Canteen Tea Talk", "🆓 Faster than Wi-Fi"].map(f => (
                 <span key={f} className="feature-chip">{f}</span>
               ))}
             </div>

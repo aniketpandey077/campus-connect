@@ -405,11 +405,14 @@ export default function Profile() {
           }}>
             {(profile.stay || []).length > 0 && (
               <BentoCard title="Where I Stay" icon="🏠">
-                {(profile.stay || []).map(s => (
-                  <Tag key={s} bg={s === "Hostel" ? "#ffd9de" : "#ecdcff"}>
-                    {s.toUpperCase()}
-                  </Tag>
-                ))}
+                {(profile.stay || []).map(s => {
+                  const isHostel = s?.startsWith("BH") || s?.startsWith("GH") || s?.includes("Hostel");
+                  return (
+                    <Tag key={s} bg={isHostel ? "#ffd9de" : "#ecdcff"}>
+                      {s.toUpperCase()}
+                    </Tag>
+                  );
+                })}
               </BentoCard>
             )}
 

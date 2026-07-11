@@ -265,14 +265,17 @@ function ProfileCard({ profile, swipeHint }) {
       }}>
         {/* Stay + Vibe badges */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {(profile.stay || []).map(s => (
-            <Tag key={s}
-              color={s === "Hostel" ? "#DCFCE7" : "#EEF2FF"}
-              text={s === "Hostel" ? "#15803D" : "#4338CA"}
-            >
-              {s === "Hostel" ? "🏠 " : "🏡 "}{s}
-            </Tag>
-          ))}
+          {(profile.stay || []).map(s => {
+            const isHostel = s?.startsWith("BH") || s?.startsWith("GH") || s?.includes("Hostel");
+            return (
+              <Tag key={s}
+                color={isHostel ? "#DCFCE7" : "#EEF2FF"}
+                text={isHostel ? "#15803D" : "#4338CA"}
+              >
+                {isHostel ? "🏠 " : "🏡 "}{s}
+              </Tag>
+            );
+          })}
           {(profile.campusVibe || []).slice(0, 2).map(v => (
             <Tag key={v} color="#FEF3C7" text="#92400E">{v}</Tag>
           ))}
