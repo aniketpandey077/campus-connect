@@ -37,18 +37,40 @@ const REPORT_REASONS = ["Harassment", "Fake profile", "Inappropriate content", "
 function Avatar({ profile, size = 38, revealed = false }) {
   const bg = getBranchBg(profile?.branch);
   const showPhoto = revealed && profile?.photoUrl;
-  return showPhoto ? (
-    <img
-      src={profile.photoUrl}
-      alt={profile?.name || ""}
-      style={{
-        width: size, height: size, borderRadius: "50%",
-        objectFit: "cover", border: "2px solid #1b1b1b",
-        flexShrink: 0,
-        boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
-      }}
-    />
-  ) : (
+  const showBlurred = !revealed && profile?.blurredPhotoUrl;
+
+  if (showPhoto) {
+    return (
+      <img
+        src={profile.photoUrl}
+        alt={profile?.name || ""}
+        style={{
+          width: size, height: size, borderRadius: "50%",
+          objectFit: "cover", border: "2px solid #1b1b1b",
+          flexShrink: 0,
+          boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+        }}
+      />
+    );
+  }
+
+  if (showBlurred) {
+    return (
+      <img
+        src={profile.blurredPhotoUrl}
+        alt={profile?.name || ""}
+        style={{
+          width: size, height: size, borderRadius: "50%",
+          objectFit: "cover", border: "2px solid #1b1b1b",
+          flexShrink: 0,
+          boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+          filter: "blur(1.5px) contrast(1.05)",
+        }}
+      />
+    );
+  }
+
+  return (
     <div style={{
       width: size, height: size, borderRadius: "50%",
       background: bg, flexShrink: 0,
@@ -195,6 +217,144 @@ function menuItemStyle() {
   };
 }
 
+// ─── Profile Modal ────────────────────────────────────────────────────────────
+function ProfileModal({ profile, revealed, onClose }) {
+  if (!profile) return null;
+  const isHostel = (stayVal) => stayVal && (stayVal.startsWith("BH") || stayVal.startsWith("GH") || stayVal.includes("Hostel"));
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 1000,
+      background: "rgba(0,0,0,0.5)", display: "flex",
+      alignItems: "center", justifyContent: "center",
+      padding: 16,
+    }} onClick={onClose}>
+      <div style={{
+        background: "#ffffff", border: "3px solid #1b1b1b",
+        borderRadius: 16, boxShadow: "8px 8px 0px 0px #1b1b1b",
+        width: "100%", maxWidth: 400, overflow: "hidden",
+        position: "relative",
+      }} onClick={e => e.stopPropagation()}>
+        {/* Close Button */}
+        <button 
+          onClick={onClose}
+          style={{
+            position: "absolute", top: 14, right: 14, zIndex: 10,
+            background: "#ffffff", border: "2px solid #1b1b1b",
+            borderRadius: "50%", width: 32, height: 32,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontWeight: 900, cursor: "pointer", boxShadow: "2px 2px 0px 0px #1b1b1b"
+          }}
+        >✕</button>
+
+        {/* Blurred / Unblurred Photo */}
+        <div style={{
+          height: 200, background: "#f0edec", position: "relative",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          overflow: "hidden", borderBottom: "3px solid #1b1b1b"
+        }}>
+          {revealed && profile.photoUrl ? (
+            <img 
+              src={profile.photoUrl} 
+              alt={profile.name} 
+              style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+            />
+          ) : profile.blurredPhotoUrl ? (
+            <img 
+              src={profile.blurredPhotoUrl} 
+              alt={profile.name} 
+              style={{ width: "100%", height: "100%", objectFit: "cover", filter: "blur(4.5px) contrast(1.05)" }} 
+            />
+          ) : (
+            <div style={{ fontSize: 72 }}>{profile.avatar || "😊"}</div>
+          )}
+
+          {/* Verification Badge */}
+          <div style={{
+            position: "absolute", bottom: 12, left: 12,
+            background: profile.verificationStatus === "approved" ? "#bdff00" : "#ffb2bf",
+            border: "1.5px solid #1b1b1b", borderRadius: 4,
+            padding: "3px 8px", fontSize: 9, fontWeight: 950, color: "#1b1b1b",
+            boxShadow: "1px 1px 0px 0px #1b1b1b",
+          }}>
+            {profile.verificationStatus === "approved" ? "VERIFIED 🛡️" : "PENDING ⏳"}
+          </div>
+        </div>
+
+        {/* Details Container */}
+        <div style={{ padding: "16px 18px 24px", maxHeight: "60vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* Header Name */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: "50%", background: "#bdff00",
+              border: "2px solid #1b1b1b", display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 28, boxShadow: "2px 2px 0px 0px #1b1b1b"
+            }}>{profile.avatar || "😊"}</div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>{profile.name}</h3>
+              <p style={{ margin: 0, fontSize: 11, color: "#555", fontWeight: 800, textTransform: "uppercase" }}>
+                {(profile.branch || []).join(" + ")} · {profile.year?.[0]}
+              </p>
+              {profile.username && (
+                <p style={{ margin: "2px 0 0", fontSize: 11, color: "#7531d3", fontWeight: 900 }}>
+                  @{profile.username.toLowerCase()}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Stay / Vibes */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {(profile.stay || []).map(s => (
+              <span key={s} style={{
+                display: "inline-block", padding: "4px 10px", borderRadius: 6,
+                background: isHostel(s) ? "#DCFCE7" : "#EEF2FF",
+                color: isHostel(s) ? "#15803D" : "#4338CA",
+                border: "2px solid #1b1b1b", fontSize: 10, fontWeight: 800,
+                boxShadow: "1.5px 1.5px 0px 0px #1b1b1b"
+              }}>
+                {isHostel(s) ? "🏠 " : "🏡 "}{s}
+              </span>
+            ))}
+            {(profile.campusVibe || []).map(v => (
+              <span key={v} style={{
+                display: "inline-block", padding: "4px 10px", borderRadius: 6,
+                background: "#FEF3C7", color: "#92400E",
+                border: "2px solid #1b1b1b", fontSize: 10, fontWeight: 800,
+                boxShadow: "1.5px 1.5px 0px 0px #1b1b1b"
+              }}>{v}</span>
+            ))}
+          </div>
+
+          {/* Interests */}
+          {(profile.interests || []).length > 0 && (
+            <div>
+              <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#BCBCBC", textTransform: "uppercase", letterSpacing: "0.08em" }}>Interests</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {(profile.interests || []).map(i => (
+                  <span key={i} style={{
+                    display: "inline-block", padding: "4px 10px", borderRadius: 6,
+                    background: "#ffffff", border: "2px solid #1b1b1b", fontSize: 10, fontWeight: 800,
+                    boxShadow: "1.5px 1.5px 0px 0px #1b1b1b"
+                  }}>{i}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Saturday Plan */}
+          {(profile.weekendVibe || []).length > 0 && (
+            <div style={{ background: "#F5F4F0", borderRadius: 12, padding: "10px 12px", border: "2.5px solid #1b1b1b", boxShadow: "2px 2px 0px 0px #1b1b1b" }}>
+              <p style={{ margin: "0 0 3px", fontSize: 9, fontWeight: 900, color: "#BCBCBC", textTransform: "uppercase", letterSpacing: "0.08em" }}>Ideal Saturday</p>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#222" }}>{(profile.weekendVibe || []).join("  ·  ")}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Chat() {
   const router = useRouter();
@@ -212,6 +372,7 @@ export default function Chat() {
   const [showMenu,     setShowMenu]     = useState(false);
   const [showReport,   setShowReport]   = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const bottomRef  = useRef(null);
   const inputRef   = useRef(null);
@@ -461,6 +622,13 @@ export default function Chat() {
       `}</style>
 
       {showReport && <ReportModal onSubmit={submitReport} onClose={() => setShowReport(false)} />}
+      {showProfileModal && (
+        <ProfileModal
+          profile={otherProfile}
+          revealed={isFullyRevealed}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
 
       <div style={{
         display: "flex", flexDirection: "column",
@@ -493,41 +661,59 @@ export default function Chat() {
             ←
           </button>
 
-          {/* Avatar — shows photo if revealed */}
-          {isFullyRevealed ? (
-            <div style={{ display: "flex", alignItems: "center", position: "relative", width: 52, height: 36, flexShrink: 0 }}>
-              <div style={{ position: "absolute", left: 0, zIndex: 2 }}>
-                <Avatar profile={otherProfile} size={28} revealed={true} />
+          {/* Avatar + Name section - clickable to see profile card */}
+          <div
+            onClick={() => setShowProfileModal(true)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flex: 1,
+              minWidth: 0,
+              cursor: "pointer",
+              padding: "4px 8px",
+              borderRadius: 8,
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(27,27,27,0.06)"}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+          >
+            {/* Avatar — shows photo if revealed */}
+            {isFullyRevealed ? (
+              <div style={{ display: "flex", alignItems: "center", position: "relative", width: 52, height: 36, flexShrink: 0 }}>
+                <div style={{ position: "absolute", left: 0, zIndex: 2 }}>
+                  <Avatar profile={otherProfile} size={28} revealed={true} />
+                </div>
+                <div style={{ position: "absolute", left: 16, zIndex: 1 }}>
+                  <Avatar profile={myProfile} size={28} revealed={true} />
+                </div>
               </div>
-              <div style={{ position: "absolute", left: 16, zIndex: 1 }}>
-                <Avatar profile={myProfile} size={28} revealed={true} />
-              </div>
-            </div>
-          ) : (
-            <Avatar profile={otherProfile} size={36} revealed={false} />
-          )}
-
-          {/* Name + status */}
-          <div style={{ flex: 1, minWidth: 0, paddingLeft: 4 }}>
-            <p style={{
-              margin: 0, fontWeight: 950, fontSize: 14, color: "#1b1b1b",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              textTransform: "uppercase"
-            }}>{otherProfile?.name || "…"}</p>
-
-            {revealStatusText ? (
-              <p style={{
-                margin: "2px 0 0", fontSize: 9, fontWeight: 900,
-                color: isFullyRevealed ? "#10B981" : theyWantReveal ? "#FF4757" : "#555",
-                animation: theyWantReveal && !myWantsReveal ? "pulse 2s infinite" : "none",
-                textTransform: "uppercase"
-              }}>{revealStatusText}</p>
             ) : (
-              <p style={{ margin: "2px 0 0", fontSize: 9, color: "#555", fontWeight: 900, textTransform: "uppercase" }}>
-                {(otherProfile?.branch || []).slice(0, 1).join("")}
-                {otherProfile?.year?.[0] ? ` · ${otherProfile.year[0]}` : ""}
-              </p>
+              <Avatar profile={otherProfile} size={36} revealed={false} />
             )}
+
+            {/* Name + status */}
+            <div style={{ flex: 1, minWidth: 0, paddingLeft: 4 }}>
+              <p style={{
+                margin: 0, fontWeight: 950, fontSize: 14, color: "#1b1b1b",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                textTransform: "uppercase"
+              }}>{otherProfile?.name || "…"}</p>
+
+              {revealStatusText ? (
+                <p style={{
+                  margin: "2px 0 0", fontSize: 9, fontWeight: 900,
+                  color: isFullyRevealed ? "#10B981" : theyWantReveal ? "#FF4757" : "#555",
+                  animation: theyWantReveal && !myWantsReveal ? "pulse 2s infinite" : "none",
+                  textTransform: "uppercase"
+                }}>{revealStatusText}</p>
+              ) : (
+                <p style={{ margin: "2px 0 0", fontSize: 9, color: "#555", fontWeight: 900, textTransform: "uppercase" }}>
+                  {(otherProfile?.branch || []).slice(0, 1).join("")}
+                  {otherProfile?.year?.[0] ? ` · ${otherProfile.year[0]}` : ""}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* 👁️ Reveal toggle button */}

@@ -341,10 +341,10 @@ export default function Profile() {
                 {profile.name}
               </h1>
               <p style={{
-                margin: "4px 0 0", fontFamily: "Montserrat", fontSize: "15px", fontWeight: 800,
+                margin: "4px 0 0", fontFamily: "Montserrat", fontSize: "14px", fontWeight: 900,
                 color: "#7531d3"
               }}>
-                {profile.handle ? `@${profile.handle.toUpperCase()}` : ""}
+                {profile.username ? `@${profile.username.toLowerCase()}` : ""}
               </p>
               <p style={{
                 margin: "6px 0 0", fontFamily: "Montserrat", fontSize: "13px", fontWeight: 800,

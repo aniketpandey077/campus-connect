@@ -94,7 +94,7 @@ function ProfileCard({ profile, swipeHint }) {
       width: "100%",
       height: "100%",
       borderRadius: 16,
-      background: "#fff",
+      background: "#f0f0f0",
       border: "3px solid #1b1b1b",
       boxShadow: "8px 8px 0px 0px #1b1b1b",
       display: "flex",
@@ -104,6 +104,20 @@ function ProfileCard({ profile, swipeHint }) {
       WebkitUserSelect: "none",
       position: "relative",
     }}>
+      {/* 10-20% Blurred background photo covering the WHOLE CARD */}
+      {profile.blurredPhotoUrl && (
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `url(${profile.blurredPhotoUrl})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          filter: "blur(4.5px) brightness(0.95)",
+          transform: "scale(1.05)",
+          zIndex: 0,
+        }} />
+      )}
+
       {/* Visual Stamps Overlay */}
       {swipeHint === "like" && (
         <div style={{
@@ -136,10 +150,10 @@ function ProfileCard({ profile, swipeHint }) {
         </div>
       )}
 
-      {/* Solid header — avatar, name, tagline */}
+      {/* Transparent header section for profile name + avatar */}
       <div style={{
-        background: headerBg,
-        minHeight: 230,
+        background: "transparent",
+        minHeight: 220,
         flexShrink: 0,
         display: "flex",
         flexDirection: "column",
@@ -147,25 +161,10 @@ function ProfileCard({ profile, swipeHint }) {
         justifyContent: "center",
         position: "relative",
         padding: "24px 20px 20px",
-        borderBottom: "3px solid #1b1b1b",
         fontFamily: "'Montserrat', sans-serif",
         overflow: "hidden",
+        zIndex: 2,
       }}>
-        {/* Blurred background photo container */}
-        {profile.blurredPhotoUrl && (
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: `url(${profile.blurredPhotoUrl})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            filter: "blur(20px) brightness(0.9)",
-            transform: "scale(1.2)",
-            opacity: 0.8,
-            zIndex: 0,
-          }} />
-        )}
-
         {/* Photo-hidden badge & Verification badge */}
         <div style={{
           position: "absolute", top: 14, left: 14,
@@ -173,7 +172,7 @@ function ProfileCard({ profile, swipeHint }) {
           flexDirection: "column",
           gap: 6,
           alignItems: "flex-start",
-          zIndex: 2,
+          zIndex: 3,
         }}>
           <div style={{
             background: "#1b1b1b",
@@ -183,7 +182,7 @@ function ProfileCard({ profile, swipeHint }) {
             fontSize: 9, fontWeight: 900, color: "#fff",
             letterSpacing: "0.06em",
           }}>
-            🔒 PHOTO HIDDEN
+            🔒 PHOTO BLURRED
           </div>
           <div style={{
             background: profile.verificationStatus === "approved" ? "#bdff00" : "#ffb2bf",
@@ -209,7 +208,7 @@ function ProfileCard({ profile, swipeHint }) {
             fontSize: 10, fontWeight: 900,
             color: "#1b1b1b",
             boxShadow: "2px 2px 0px 0px #1b1b1b",
-            zIndex: 2,
+            zIndex: 3,
           }}>
             ⚡ {sharedCount} COMMON
           </div>
@@ -217,26 +216,42 @@ function ProfileCard({ profile, swipeHint }) {
 
         {/* Avatar circle */}
         <div style={{
-          width: 88, height: 88, borderRadius: "50%",
+          width: 80, height: 80, borderRadius: "50%",
           background: "#ffffff",
           border: "3px solid #1b1b1b",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 48,
-          marginBottom: 12,
+          fontSize: 44,
+          marginBottom: 10,
           boxShadow: "3px 3px 0px 0px #1b1b1b",
           position: "relative",
-          zIndex: 1,
+          zIndex: 2,
         }}>
           {profile.avatar || "😊"}
         </div>
 
-        <h3 style={{ margin: 0, fontSize: 24, fontWeight: 950, color: "#1b1b1b", letterSpacing: -0.5, textTransform: "uppercase", position: "relative", zIndex: 1 }}>
-          {profile.name}
-        </h3>
-        <p style={{ margin: "4px 0 0", fontSize: 13, color: "#1b1b1b", fontWeight: 800, textTransform: "uppercase", position: "relative", zIndex: 1 }}>
-          {(profile.branch || []).slice(0, 2).join(" + ")}
-          {profile.year?.[0] ? ` · ${profile.year[0]}` : ""}
-        </p>
+        {/* Floating Neo-brutalist Name Tag */}
+        <div style={{
+          background: "#ffffff",
+          border: "3px solid #1b1b1b",
+          padding: "6px 16px",
+          borderRadius: 10,
+          boxShadow: "3px 3px 0px 0px #1b1b1b",
+          textAlign: "center",
+          zIndex: 2,
+        }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: "#1b1b1b", letterSpacing: -0.5, textTransform: "uppercase" }}>
+            {profile.name}
+          </h3>
+          {profile.username && (
+            <p style={{ margin: "1px 0 0", fontSize: 10, color: "#7531d3", fontWeight: 900 }}>
+              @{profile.username.toLowerCase()}
+            </p>
+          )}
+          <p style={{ margin: "2px 0 0", fontSize: 11, color: "#555", fontWeight: 800, textTransform: "uppercase" }}>
+            {(profile.branch || []).slice(0, 2).join(" + ")}
+            {profile.year?.[0] ? ` · ${profile.year[0]}` : ""}
+          </p>
+        </div>
 
         {/* Swipe hint overlay */}
         {swipeHint && (
@@ -248,20 +263,28 @@ function ProfileCard({ profile, swipeHint }) {
               : "rgba(255,178,191,0.4)",
             fontSize: 56,
             animation: "hintFade 0.4s ease forwards",
+            zIndex: 4,
           }}>
             {swipeHint === "like" ? "💚" : "✕"}
           </div>
         )}
       </div>
 
-      {/* Info section */}
+      {/* Info section - positioned at the bottom of the card */}
       <div style={{
-        flex: 1,
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        maxHeight: "50%",
         overflowY: "auto",
+        background: "rgba(255, 255, 255, 0.96)",
+        borderTop: "3.5px solid #1b1b1b",
         padding: "16px 18px 20px",
         display: "flex",
         flexDirection: "column",
         gap: 12,
+        zIndex: 5,
       }}>
         {/* Stay + Vibe badges */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>

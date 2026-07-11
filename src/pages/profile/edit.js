@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../../lib/firebase";
 import { useRequireAuth } from "../../lib/useAuth";
 
@@ -172,6 +172,7 @@ export default function EditProfile() {
 
   // Form states
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [avatar, setAvatar] = useState("😎");
   const [alwaysOpen, setAlwaysOpen] = useState(false);
   const [branch, setBranch] = useState([]);
@@ -198,6 +199,7 @@ export default function EditProfile() {
       if (!snap.exists()) { router.push("/onboarding"); return; }
       const data = snap.data();
       setName(data.name || "");
+      setUsername(data.username || "");
       setAvatar(data.avatar || "😎");
       setAlwaysOpen(data.alwaysOpen || false);
       setBranch(data.branch || []);
@@ -265,14 +267,33 @@ export default function EditProfile() {
 
   const handleSave = async () => {
     if (name.trim().length < 2) { alert("Please enter at least 2 characters for your name."); return; }
+    if (username.trim().length < 3) { alert("Username must be at least 3 characters."); return; }
+    if (!/^[a-z0-9_]+$/.test(username.trim())) { alert("Username can only contain small letters, numbers, and underscores."); return; }
     if (branch.length === 0) { alert("Please select your branch."); return; }
     if (year.length === 0) { alert("Please select your year."); return; }
     if (interests.length < 3) { alert("Please select at least 3 interests."); return; }
 
     setSaving(true);
     try {
+      // Check username uniqueness if changed
+      const oldSnap = await getDoc(doc(db, "profiles", phone));
+      const oldUsername = oldSnap.data()?.username || "";
+      if (username.trim().toLowerCase() !== oldUsername.toLowerCase()) {
+        const uQuery = query(
+          collection(db, "profiles"),
+          where("username", "==", username.trim().toLowerCase())
+        );
+        const uSnap = await getDocs(uQuery);
+        if (!uSnap.empty) {
+          alert("This username is already taken. Choose a different one!");
+          setSaving(false);
+          return;
+        }
+      }
+
       await updateDoc(doc(db, "profiles", phone), {
         name: name.trim(),
+        username: username.trim().toLowerCase(),
         avatar,
         alwaysOpen,
         branch,
@@ -422,10 +443,34 @@ export default function EditProfile() {
                 width: "100%", padding: "12px 16px", borderRadius: 8,
                 border: "2px solid #1b1b1b", fontSize: 14, outline: "none",
                 fontFamily: "inherit", color: "#1b1b1b", background: "#ffffff",
-                boxShadow: "2px 2px 0px 0px #1b1b1b", marginTop: 12,
+                boxShadow: "2px 2px 0px 0px #1b1b1b", marginTop: 4,
                 fontWeight: 700
               }}
             />
+
+            <h3 style={{
+              margin: "16px 0 12px", fontSize: 11, fontWeight: 950,
+              color: "#1b1b1b", textTransform: "uppercase", letterSpacing: "0.08em",
+              borderBottom: "2px solid #1b1b1b", paddingBottom: 6
+            }}>
+              Your Username (For Search)
+            </h3>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+              placeholder="e.g. alex_rivera"
+              style={{
+                width: "100%", padding: "12px 16px", borderRadius: 8,
+                border: "2px solid #1b1b1b", fontSize: 14, outline: "none",
+                fontFamily: "inherit", color: "#1b1b1b", background: "#ffffff",
+                boxShadow: "2px 2px 0px 0px #1b1b1b", marginTop: 4,
+                fontWeight: 700
+              }}
+            />
+            <span style={{ fontSize: 10, fontWeight: 800, color: "#888", display: "block", marginTop: 6 }}>
+              Handles are shown as @{username || "your_handle"} (small letters, numbers, underscores only)
+            </span>
           </div>
 
           {/* Section: Avatar */}

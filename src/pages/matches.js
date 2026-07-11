@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/router";
 import {
-  collection, query, where, onSnapshot, doc, getDoc, addDoc, serverTimestamp,
+  collection, query, where, onSnapshot, doc, getDoc, addDoc, serverTimestamp, getDocs,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import NavBar from "../components/NavBar";
@@ -66,15 +66,38 @@ function MatchRow({ match, profile, myPhone, onClick }) {
       }}
     >
       {/* Avatar */}
-      <div style={{
-        width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
-        background: getBranchBg(profile?.branch),
-        border: "2px solid #1b1b1b",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 26, boxShadow: "2px 2px 0px 0px #1b1b1b",
-      }}>
-        {profile?.avatar || "😊"}
-      </div>
+      {match.revealStatus === "revealed" && profile?.photoUrl ? (
+        <img
+          src={profile.photoUrl}
+          alt=""
+          style={{
+            width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
+            objectFit: "cover", border: "2px solid #1b1b1b",
+            boxShadow: "2px 2px 0px 0px #1b1b1b",
+          }}
+        />
+      ) : profile?.blurredPhotoUrl ? (
+        <img
+          src={profile.blurredPhotoUrl}
+          alt=""
+          style={{
+            width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
+            objectFit: "cover", border: "2px solid #1b1b1b",
+            boxShadow: "2px 2px 0px 0px #1b1b1b",
+            filter: "blur(1.5px) contrast(1.05)",
+          }}
+        />
+      ) : (
+        <div style={{
+          width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
+          background: getBranchBg(profile?.branch),
+          border: "2px solid #1b1b1b",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 26, boxShadow: "2px 2px 0px 0px #1b1b1b",
+        }}>
+          {profile?.avatar || "😊"}
+        </div>
+      )}
 
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0, paddingLeft: 4 }}>
@@ -131,14 +154,27 @@ function LikerCard({ profile, onLike, onPass }) {
       fontFamily: "'Montserrat', sans-serif"
     }}>
       {/* Avatar */}
-      <div style={{
-        width: 44, height: 44, borderRadius: "50%",
-        background: bg, border: "2px solid #1b1b1b",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 22, boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
-      }}>
-        {profile?.avatar || "😊"}
-      </div>
+      {profile?.blurredPhotoUrl ? (
+        <img
+          src={profile.blurredPhotoUrl}
+          alt=""
+          style={{
+            width: 44, height: 44, borderRadius: "50%",
+            objectFit: "cover", border: "2px solid #1b1b1b",
+            boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+            filter: "blur(1.5px) contrast(1.05)",
+          }}
+        />
+      ) : (
+        <div style={{
+          width: 44, height: 44, borderRadius: "50%",
+          background: bg, border: "2px solid #1b1b1b",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 22, boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+        }}>
+          {profile?.avatar || "😊"}
+        </div>
+      )}
 
       <div style={{ minWidth: 0, width: "100%" }}>
         <p style={{
@@ -189,6 +225,11 @@ export default function Matches() {
   const [profiles, setProfiles]   = useState({}); // id → profile data
   const [loading, setLoading]     = useState(true);
   const [myPhone, setMyPhone]     = useState(null);
+
+  // Username search
+  const [searchQuery, setSearchQuery]   = useState("");
+  const [searchResult, setSearchResult] = useState(null); // null = no search, false = not found, obj = found
+  const [searching, setSearching]       = useState(false);
 
   const [incomingLikes, setIncomingLikes] = useState([]);
   const [mySwipes, setMySwipes] = useState([]);
@@ -324,13 +365,42 @@ export default function Matches() {
       snaps.forEach((snap, i) => {
         if (snap.exists()) {
           const profileData = snap.data();
-          delete profileData.photoUrl; // Security: do not expose private photoUrl in matches list
-          updates[needed[i]] = profileData;
+          const targetId = needed[i];
+          const matchDoc = matchDocs.find(m => m.user1Id === targetId || m.user2Id === targetId);
+          if (!matchDoc || matchDoc.revealStatus !== "revealed") {
+            delete profileData.photoUrl; // Security: hide raw photo until revealed
+          }
+          updates[targetId] = profileData;
         }
       });
       setProfiles(prev => ({ ...prev, ...updates }));
     });
-  }, [matchDocs.length, myPhone]);
+  }, [matchDocs, myPhone]);
+
+  // ── Username Search ──
+  const handleUsernameSearch = async (e) => {
+    e.preventDefault();
+    const handle = searchQuery.trim().replace(/^@/, "").toLowerCase();
+    if (!handle) return;
+    setSearching(true);
+    setSearchResult(null);
+    try {
+      const q = query(collection(db, "profiles"), where("username", "==", handle));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        setSearchResult(false);
+      } else {
+        const data = snap.docs[0].data();
+        // Strip private photo
+        setSearchResult({ ...data, photoUrl: undefined });
+      }
+    } catch (e) {
+      console.error("Username search failed:", e);
+      setSearchResult(false);
+    } finally {
+      setSearching(false);
+    }
+  };
 
   // ── Render ──
   return (
@@ -386,6 +456,66 @@ export default function Matches() {
               </span>
             )}
           </div>
+          {/* Username Search Bar */}
+          <form onSubmit={handleUsernameSearch} style={{ maxWidth: 480, margin: "12px auto 0", display: "flex", gap: 8 }}>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); if (!e.target.value.trim()) setSearchResult(null); }}
+              placeholder="Search by @username"
+              style={{
+                flex: 1, padding: "10px 14px", border: "2.5px solid #1b1b1b",
+                borderRadius: 8, fontSize: 13, fontWeight: 700,
+                fontFamily: "inherit", outline: "none",
+                boxShadow: "2px 2px 0px 0px #1b1b1b",
+                background: "#fff",
+              }}
+            />
+            <button
+              type="submit"
+              disabled={searching}
+              style={{
+                padding: "10px 16px", background: "#1b1b1b", color: "#bdff00",
+                border: "2.5px solid #1b1b1b", borderRadius: 8, cursor: "pointer",
+                fontSize: 13, fontWeight: 900, fontFamily: "inherit",
+                boxShadow: "2px 2px 0px 0px #555",
+                textTransform: "uppercase",
+              }}
+            >
+              {searching ? "…" : "Search"}
+            </button>
+          </form>
+          {/* Search Result */}
+          {searchResult === false && (
+            <div style={{ maxWidth: 480, margin: "10px auto 0", padding: "10px 14px", background: "#ffe0e0", border: "2px solid #1b1b1b", borderRadius: 8, fontSize: 12, fontWeight: 800 }}>
+              No user found with that username 🙁
+            </div>
+          )}
+          {searchResult && searchResult !== false && (
+            <div style={{
+              maxWidth: 480, margin: "10px auto 0",
+              background: "#fff", border: "2.5px solid #1b1b1b", borderRadius: 10,
+              boxShadow: "3px 3px 0px 0px #1b1b1b",
+              padding: "12px 14px", display: "flex", alignItems: "center", gap: 12,
+            }}>
+              {searchResult.blurredPhotoUrl ? (
+                <img src={searchResult.blurredPhotoUrl} alt="" style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover", border: "2px solid #1b1b1b", filter: "blur(2px) contrast(1.05)", flexShrink: 0 }} />
+              ) : (
+                <div style={{ width: 46, height: 46, borderRadius: "50%", background: "#bdff00", border: "2px solid #1b1b1b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>{searchResult.avatar || "😊"}</div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontWeight: 950, fontSize: 14, textTransform: "uppercase", color: "#1b1b1b" }}>{searchResult.name}</p>
+                <p style={{ margin: "2px 0 0", fontWeight: 800, fontSize: 11, color: "#7531d3" }}>@{searchResult.username}</p>
+                <p style={{ margin: "2px 0 0", fontWeight: 700, fontSize: 10, color: "#555", textTransform: "uppercase" }}>
+                  {(searchResult.branch || []).join(" + ")} · {searchResult.year?.[0]}
+                </p>
+              </div>
+              <button
+                onClick={() => setSearchResult(null)}
+                style={{ background: "#f3f3f3", border: "2px solid #1b1b1b", borderRadius: 6, padding: "4px 8px", cursor: "pointer", fontWeight: 900, fontSize: 11 }}
+              >✕</button>
+            </div>
+          )}
         </div>
 
         <div style={{ maxWidth: 480, margin: "0 auto", padding: "16px 20px" }}>

@@ -4,7 +4,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/router";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../lib/firebase";
 import { signOut } from "firebase/auth";
 import { useRequireAuth } from "../lib/useAuth";
@@ -142,6 +142,7 @@ export default function Onboarding() {
 
   // States
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [avatar, setAvatar] = useState("😎");
   const [branch, setBranch] = useState([]);
   const [year, setYear] = useState([]);
@@ -172,7 +173,11 @@ export default function Onboarding() {
   };
 
   const validate = () => {
-    if (step === 1 && name.trim().length < 2) return "Enter at least 2 characters for your name";
+    if (step === 1) {
+      if (name.trim().length < 2) return "Enter at least 2 characters for your name";
+      if (username.trim().length < 3) return "Username must be at least 3 characters";
+      if (!/^[a-z0-9_]+$/.test(username.trim())) return "Username can only contain small letters, numbers, and underscores";
+    }
     if (step === 2 && branch.length === 0) return "Pick at least one branch";
     if (step === 3 && year.length === 0) return "Select your year";
     if (step === 4 && stay.length === 0) return "Hostel or Day Scholar?";
@@ -189,6 +194,25 @@ export default function Onboarding() {
     const err = validate();
     if (err) { setError(err); return; }
     setError("");
+
+    if (step === 1) {
+      setSaving(true);
+      try {
+        const uQuery = query(
+          collection(db, "profiles"),
+          where("username", "==", username.trim().toLowerCase())
+        );
+        const snap = await getDocs(uQuery);
+        if (!snap.empty) {
+          setError("This username is already taken. Choose a different one!");
+          setSaving(false);
+          return;
+        }
+      } catch (e) {
+        console.error("Username validation query failed:", e);
+      }
+      setSaving(false);
+    }
 
     if (step < STEPS.length) {
       setStep(s => s + 1);
@@ -219,6 +243,7 @@ export default function Onboarding() {
       setUploadProgress("Saving profile…");
       await setDoc(doc(db, "profiles", userId), {
         id: userId, phone, avatar,
+        username: username.trim().toLowerCase(),
         name: name.trim(), branch, year, stay,
         campusVibe: vibe, interests, squad,
         defaultSpot: spot, weekendVibe: prompt,
@@ -495,6 +520,28 @@ export default function Onboarding() {
                       boxShadow: name.length >= 2 ? "3px 3px 0px 0px #1b1b1b" : "none"
                     }}
                   />
+                </div>
+
+                {/* Unique Username Input */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: 900, textTransform: "uppercase", color: SECONDARY }}>
+                    CHOOSE UNIQUE USERNAME (FOR SEARCHES)
+                  </label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                    placeholder="e.g. alex_rivera"
+                    style={{
+                      width: "100%", background: "#fff", border: "3px solid #1b1b1b",
+                      padding: "16px", fontSize: "18px", fontWeight: 700,
+                      borderRadius: "0px",
+                      boxShadow: username.length >= 3 ? "3px 3px 0px 0px #1b1b1b" : "none"
+                    }}
+                  />
+                  <span style={{ fontSize: "10px", fontWeight: 800, color: "#888" }}>
+                    Handles will be shown as @{username || "your_handle"} (letters, numbers, underscores only)
+                  </span>
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
