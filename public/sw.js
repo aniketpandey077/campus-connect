@@ -2,7 +2,7 @@
 // Basic service worker for Progressive Web App.
 // Enables caching for essential static assets and offline mode.
 
-const CACHE_NAME = "unihood-cache-v4";
+const CACHE_NAME = "unihood-cache-v5";
 const ASSETS = [
   "/",
   "/manifest.json",
