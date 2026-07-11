@@ -316,7 +316,7 @@ export default function Login() {
                 color: "#1b1b1b", lineHeight: "1.0", letterSpacing: "-0.04em",
                 fontStyle: "italic", fontFamily: "Montserrat"
               }}>
-                CAMPUS<br/>CONNECT
+                UNIHOOD
               </h1>
               <p style={{
                 margin: "12px 0 0", fontSize: "13px", fontWeight: 800,
