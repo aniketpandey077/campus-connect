@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { signInWithRedirect, getRedirectResult, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { useAuth } from "../lib/useAuth";
 
@@ -18,6 +18,23 @@ export default function Login() {
     if (!loading && user) router.replace("/");
   }, [loading, user, router]);
 
+  // Detect if user returned from Google redirect but login failed
+  useEffect(() => {
+    if (!auth) return;
+    getRedirectResult(auth).then((result) => {
+      if (result) {
+        sessionStorage.removeItem("unihood_signing_in");
+      } else if (sessionStorage.getItem("unihood_signing_in")) {
+        setError("Sign-in was not completed. Please try again.");
+        sessionStorage.removeItem("unihood_signing_in");
+      }
+    }).catch((e) => {
+      console.error("Redirect result error:", e);
+      setError(`Sign-in failed: [${e.code || "unknown_error"}] ${e.message}`);
+      sessionStorage.removeItem("unihood_signing_in");
+    });
+  }, []);
+
   const handleGoogleSignIn = async () => {
     if (!auth) {
       setError("Firebase is not initialized. Please verify your environment configuration.");
@@ -27,12 +44,13 @@ export default function Login() {
     setError("");
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      router.replace("/");
+      sessionStorage.setItem("unihood_signing_in", "true");
+      await signInWithRedirect(auth, provider);
     } catch (e) {
       console.error("Google sign-in failed:", e);
       setError(`Sign-in failed: [${e.code || "unknown_error"}] ${e.message}`);
       setSigningIn(false);
+      sessionStorage.removeItem("unihood_signing_in");
     }
   };
 
