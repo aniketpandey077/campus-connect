@@ -51,7 +51,7 @@ function timeAgo(ts) {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-// ─── Event card ───────────────────────────────────────────────────────────────
+// ── Event card ─────────────────────────────────────────────────────────────────────────────────
 function EventCard({ event, myPhone, onJoin, onLeave, creatorProfile }) {
   const cat = CATEGORIES[event.category] || CATEGORIES.Other;
   const isJoined = (event.attendees || []).includes(myPhone);
@@ -98,6 +98,14 @@ function EventCard({ event, myPhone, onJoin, onLeave, creatorProfile }) {
                 fontFamily: "'Montserrat', sans-serif"
               }}>YOUR EVENT</span>
             )}
+            {/* OPEN TO ALL badge */}
+            <span style={{
+              fontSize: 9, fontWeight: 900, color: "#15803D",
+              background: "#DCFCE7", border: "1.5px solid #1b1b1b",
+              borderRadius: 4, padding: "1px 6px",
+              boxShadow: "1px 1px 0px 0px #1b1b1b",
+              fontFamily: "'Montserrat', sans-serif"
+            }}>OPEN TO ALL 🌍</span>
           </div>
           <h3 style={{
             margin: 0, fontSize: 16, fontWeight: 950,
@@ -130,14 +138,26 @@ function EventCard({ event, myPhone, onJoin, onLeave, creatorProfile }) {
 
         {/* Creator + attendees + CTA */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Creator avatar */}
+          {/* Creator avatar — blurred photo if available, else emoji */}
           <div style={{
-            fontSize: 18, width: 30, height: 30, borderRadius: "50%",
-            background: "#ffffff", border: "2px solid #1b1b1b",
+            width: 36, height: 36, borderRadius: "50%",
+            background: "#f0edec", border: "2px solid #1b1b1b",
             display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0, boxShadow: "1.5px 1.5px 0px 0px #1b1b1b"
+            flexShrink: 0, boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+            overflow: "hidden", position: "relative",
           }}>
-            {creatorProfile?.avatar || "😊"}
+            {creatorProfile?.blurredPhotoUrl ? (
+              <img
+                src={creatorProfile.blurredPhotoUrl}
+                alt=""
+                style={{
+                  width: "100%", height: "100%", objectFit: "cover",
+                  filter: "blur(1.5px) contrast(1.05)",
+                }}
+              />
+            ) : (
+              <span style={{ fontSize: 18 }}>{creatorProfile?.avatar || "😊"}</span>
+            )}
           </div>
 
           <div style={{ flex: 1 }}>
@@ -543,7 +563,7 @@ export default function Events() {
                   Campus Events 🗓️
                 </h1>
                 <p style={{ margin: "2px 0 0", fontSize: 11, color: "#555", fontWeight: 800 }}>
-                  CASUAL HANGOUTS, RIGHT ON CAMPUS
+                  OPEN TO ALL · JOIN ANY EVENT, NO MATCH NEEDED
                 </p>
               </div>
               <button

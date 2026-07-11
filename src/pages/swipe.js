@@ -81,13 +81,7 @@ function Tag({ children, color = "#ffffff", text = "#1b1b1b" }) {
 // The card content — what users see for each profile
 function ProfileCard({ profile, swipeHint }) {
   const sharedCount = profile._shared || 0;
-
-  const cardBgs = {
-    CSE: "#ffd9de", IT: "#ecdcff", ECE: "#d6baff", Mechanical: "#eeeeee",
-    Civil: "#f0fdf4", EEE: "#fef3c7", Biotech: "#dcfce7", Chemical: "#ffedd5",
-    "MBA/BBA": "#fdf2f8"
-  };
-  const headerBg = cardBgs[profile.branch?.[0]] || "#bdff00";
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <div style={{
@@ -104,16 +98,22 @@ function ProfileCard({ profile, swipeHint }) {
       WebkitUserSelect: "none",
       position: "relative",
     }}>
-      {/* 10-20% Blurred background photo covering the WHOLE CARD */}
-      {profile.blurredPhotoUrl && (
+      {/* Full-card blurred photo — lighter blur so face shape is visible */}
+      {profile.blurredPhotoUrl ? (
         <div style={{
           position: "absolute",
           inset: 0,
           backgroundImage: `url(${profile.blurredPhotoUrl})`,
           backgroundSize: "cover",
-          backgroundPosition: "center",
-          filter: "blur(4.5px) brightness(0.95)",
-          transform: "scale(1.05)",
+          backgroundPosition: "center top",
+          filter: "blur(2.5px) brightness(0.9)",
+          transform: "scale(1.04)",
+          zIndex: 0,
+        }} />
+      ) : (
+        <div style={{
+          position: "absolute", inset: 0,
+          background: getGradient(profile.branch || []),
           zIndex: 0,
         }} />
       )}
@@ -150,7 +150,129 @@ function ProfileCard({ profile, swipeHint }) {
         </div>
       )}
 
-      {/* Transparent header section for profile name + avatar */}
+      {/* Bottom gradient overlay — always shows name + course only */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 4,
+        background: "linear-gradient(to top, rgba(5,5,5,0.88) 0%, rgba(5,5,5,0.5) 50%, transparent 100%)",
+        padding: "70px 16px 80px",
+        pointerEvents: "none",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: "50%",
+            background: "rgba(255,255,255,0.18)", backdropFilter: "blur(6px)",
+            border: "2px solid rgba(255,255,255,0.65)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 26, flexShrink: 0,
+          }}>{profile.avatar || "😊"}</div>
+          <div style={{ minWidth: 0 }}>
+            <h3 style={{
+              margin: 0, fontSize: 20, fontWeight: 950, color: "#fff",
+              letterSpacing: -0.5, textTransform: "uppercase",
+              textShadow: "0 1px 6px rgba(0,0,0,0.5)",
+            }}>{profile.name}</h3>
+            {profile.username && (
+              <p style={{ margin: "1px 0 0", fontSize: 10, color: "#bdff00", fontWeight: 900 }}>
+                @{profile.username.toLowerCase()}
+              </p>
+            )}
+            <p style={{
+              margin: "2px 0 0", fontSize: 12,
+              color: "rgba(255,255,255,0.82)", fontWeight: 800, textTransform: "uppercase",
+            }}>
+              {(profile.branch || []).slice(0, 2).join(" + ")}
+              {profile.year?.[0] ? ` · ${profile.year[0]}` : ""}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* SEE MORE / LESS button */}
+      <button
+        onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+        style={{
+          position: "absolute", bottom: 74, right: 14, zIndex: 6,
+          background: "rgba(255,255,255,0.92)", backdropFilter: "blur(6px)",
+          border: "2px solid #1b1b1b", borderRadius: 20,
+          padding: "5px 12px", fontSize: 10, fontWeight: 900,
+          color: "#1b1b1b", cursor: "pointer",
+          boxShadow: "2px 2px 0px 0px #1b1b1b",
+          textTransform: "uppercase",
+          fontFamily: "'Montserrat', sans-serif",
+        }}
+      >
+        {expanded ? "✕ LESS" : "☰ MORE"}
+      </button>
+
+      {/* Expandable drawer — slides up with interests/vibes */}
+      <div style={{
+        position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 5,
+        maxHeight: expanded ? "62%" : 0,
+        overflow: "hidden",
+        transition: "max-height 0.32s cubic-bezier(0.4,0,0.2,1)",
+      }}>
+        <div style={{
+          background: "rgba(255,255,255,0.97)",
+          borderTop: "3px solid #1b1b1b",
+          padding: "14px 16px 20px",
+          display: "flex", flexDirection: "column", gap: 10,
+          fontFamily: "'Montserrat', sans-serif",
+          maxHeight: "62vh", overflowY: "auto",
+        }}>
+          {/* Stay + Vibe */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {(profile.stay || []).map(s => {
+              const isHostel = s?.startsWith("BH") || s?.startsWith("GH") || s?.includes("Hostel");
+              return (
+                <Tag key={s} color={isHostel ? "#DCFCE7" : "#EEF2FF"} text={isHostel ? "#15803D" : "#4338CA"}>
+                  {isHostel ? "🏠 " : "🏡 "}{s}
+                </Tag>
+              );
+            })}
+            {(profile.campusVibe || []).slice(0, 2).map(v => (
+              <Tag key={v} color="#FEF3C7" text="#92400E">{v}</Tag>
+            ))}
+          </div>
+
+          {/* Interests */}
+          {(profile.interests || []).length > 0 && (
+            <div>
+              <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Into</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {(profile.interests || []).slice(0, 7).map(i => <Tag key={i}>{i}</Tag>)}
+                {(profile.interests || []).length > 7 && <Tag color="transparent" text="#AAA">+{profile.interests.length - 7}</Tag>}
+              </div>
+            </div>
+          )}
+
+          {/* Squad */}
+          {(profile.squad || []).length > 0 && (
+            <div>
+              <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Looking for</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {(profile.squad || []).slice(0, 4).map(s => <Tag key={s} color="#EEF2FF" text="#4338CA">{s}</Tag>)}
+              </div>
+            </div>
+          )}
+
+          {/* Weekend vibe */}
+          {(profile.weekendVibe || []).length > 0 && (
+            <div style={{ background: "#F5F4F0", borderRadius: 10, padding: "8px 12px" }}>
+              <p style={{ margin: "0 0 2px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Ideal Saturday</p>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#222" }}>{(profile.weekendVibe || []).join("  ·  ")}</p>
+            </div>
+          )}
+
+          {/* Spot */}
+          {(profile.defaultSpot || []).length > 0 && (
+            <p style={{ margin: 0, fontSize: 11, color: "#888", fontWeight: 600 }}>
+              📍 Usually at: {(profile.defaultSpot || []).slice(0, 2).join(", ")}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Transparent header section for top badges + swipe hint */}
       <div style={{
         background: "transparent",
         minHeight: 220,
@@ -270,94 +392,6 @@ function ProfileCard({ profile, swipeHint }) {
         )}
       </div>
 
-      {/* Info section - positioned at the bottom of the card */}
-      <div style={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        maxHeight: "50%",
-        overflowY: "auto",
-        background: "rgba(255, 255, 255, 0.96)",
-        borderTop: "3.5px solid #1b1b1b",
-        padding: "16px 18px 20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        zIndex: 5,
-      }}>
-        {/* Stay + Vibe badges */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {(profile.stay || []).map(s => {
-            const isHostel = s?.startsWith("BH") || s?.startsWith("GH") || s?.includes("Hostel");
-            return (
-              <Tag key={s}
-                color={isHostel ? "#DCFCE7" : "#EEF2FF"}
-                text={isHostel ? "#15803D" : "#4338CA"}
-              >
-                {isHostel ? "🏠 " : "🏡 "}{s}
-              </Tag>
-            );
-          })}
-          {(profile.campusVibe || []).slice(0, 2).map(v => (
-            <Tag key={v} color="#FEF3C7" text="#92400E">{v}</Tag>
-          ))}
-        </div>
-
-        {/* Interests */}
-        {(profile.interests || []).length > 0 && (
-          <div>
-            <p style={{ margin: "0 0 7px", fontSize: 10, fontWeight: 800, color: "#BCBCBC", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              Into
-            </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {(profile.interests || []).slice(0, 7).map(i => (
-                <Tag key={i}>{i}</Tag>
-              ))}
-              {(profile.interests || []).length > 7 && (
-                <Tag color="transparent" text="#AAA">+{(profile.interests).length - 7}</Tag>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Squad / Looking for */}
-        {(profile.squad || []).length > 0 && (
-          <div>
-            <p style={{ margin: "0 0 7px", fontSize: 10, fontWeight: 800, color: "#BCBCBC", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              Looking for
-            </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {(profile.squad || []).slice(0, 4).map(s => (
-                <Tag key={s} color="#EEF2FF" text="#4338CA">{s}</Tag>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Weekend vibe prompt */}
-        {(profile.weekendVibe || []).length > 0 && (
-          <div style={{
-            background: "#F5F4F0",
-            borderRadius: 12,
-            padding: "10px 13px",
-          }}>
-            <p style={{ margin: "0 0 3px", fontSize: 10, fontWeight: 800, color: "#BCBCBC", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              My ideal Saturday
-            </p>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#222" }}>
-              {(profile.weekendVibe || []).join("  ·  ")}
-            </p>
-          </div>
-        )}
-
-        {/* Default campus spot */}
-        {(profile.defaultSpot || []).length > 0 && (
-          <p style={{ margin: 0, fontSize: 12, color: "#888", fontWeight: 500 }}>
-            📍 Usually at: {(profile.defaultSpot || []).slice(0, 2).join(", ")}
-          </p>
-        )}
-      </div>
     </div>
   );
 }
