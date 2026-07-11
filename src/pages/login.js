@@ -18,6 +18,12 @@ export default function Login() {
     if (!loading && user) router.replace("/");
   }, [loading, user, router]);
 
+  useEffect(() => {
+    if (auth) {
+      console.log("UniHood Auth Domain initialized:", auth.config?.authDomain);
+    }
+  }, []);
+
   // Detect if user returned from Google redirect but login failed
   useEffect(() => {
     if (!auth) return;
