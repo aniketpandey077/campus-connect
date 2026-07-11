@@ -240,7 +240,7 @@ export default function Profile() {
           fontFamily: "Montserrat", fontSize: "20px", fontWeight: 900,
           fontStyle: "italic", tracking: "-0.05em", color: "#4b6700"
         }}>
-          CAMPUS CONNECT
+          UNIHOOD
         </div>
         <button onClick={handleLogout} className="neo-button-hover" style={{
           padding: "8px 16px", border: "2.5px solid #1b1b1b",

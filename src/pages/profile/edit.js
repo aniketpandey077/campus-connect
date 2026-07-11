@@ -272,7 +272,7 @@ export default function EditProfile() {
 
   const handleDeleteAccount = async () => {
     const doubleConfirm = confirm(
-      "WARNING: Are you sure you want to delete your account? This will permanently remove your profile, verification, and all data from Campus Connect. This action cannot be undone."
+      "WARNING: Are you sure you want to delete your account? This will permanently remove your profile, verification, and all data from Unihood. This action cannot be undone."
     );
     if (!doubleConfirm) return;
 

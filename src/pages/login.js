@@ -361,7 +361,7 @@ export default function Login() {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 18,
               }}>🔥</div>
-              <span style={{ fontWeight: 900, fontSize: 16, color: "#111" }}>Campus Connect</span>
+              <span style={{ fontWeight: 900, fontSize: 16, color: "#111" }}>Unihood</span>
             </div>
 
             {/* Heading */}

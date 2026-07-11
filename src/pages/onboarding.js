@@ -323,7 +323,7 @@ export default function Onboarding() {
           fontFamily: "Montserrat", fontSize: "24px", fontWeight: 900,
           fontStyle: "italic", tracking: "-0.04em", color: PRIMARY
         }}>
-          CAMPUS CONNECT
+          UNIHOOD
         </div>
         <div style={{
           background: BLK, color: PRIMARY_CONTAINER,
@@ -726,10 +726,10 @@ export default function Onboarding() {
         alignItems: "center", gap: "12px", color: "#fff"
       }}>
         <div style={{ fontFamily: "Montserrat", fontSize: "18px", fontWeight: 900, fontStyle: "italic" }}>
-          CAMPUS CONNECT
+          UNIHOOD
         </div>
         <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em" }}>
-          © 2026 CAMPUS CONNECT. BUILT FOR THE BOLD.
+          © 2026 UNIHOOD. BUILT FOR THE BOLD.
         </p>
       </footer>
     </>

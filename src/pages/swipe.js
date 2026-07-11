@@ -728,7 +728,7 @@ export default function Swipe() {
               boxShadow: "2px 2px 0px 0px #1b1b1b"
             }}>🔥</div>
             <span style={{ fontWeight: 900, fontSize: 15, color: "#1b1b1b", fontStyle: "italic", letterSpacing: "-0.02em" }}>
-              CAMPUS CONNECT
+              UNIHOOD
             </span>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
