@@ -1,0 +1,11 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /api
+Disallow: /chat
+
+# Host
+Host: https://unihood.online
+
+# Sitemaps
+Sitemap: https://unihood.online/sitemap.xml
