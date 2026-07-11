@@ -106,7 +106,7 @@ function ProfileCard({ profile, swipeHint }) {
           backgroundImage: `url(${profile.blurredPhotoUrl})`,
           backgroundSize: "cover",
           backgroundPosition: "center top",
-          filter: "blur(2.5px) brightness(0.9)",
+          filter: "blur(1.2px) brightness(0.92)",
           transform: "scale(1.04)",
           zIndex: 0,
         }} />

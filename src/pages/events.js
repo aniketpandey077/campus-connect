@@ -152,7 +152,7 @@ function EventCard({ event, myPhone, onJoin, onLeave, creatorProfile }) {
                 alt=""
                 style={{
                   width: "100%", height: "100%", objectFit: "cover",
-                  filter: "blur(1.5px) contrast(1.05)",
+                  filter: "blur(0.8px) contrast(1.05)",
                 }}
               />
             ) : (
