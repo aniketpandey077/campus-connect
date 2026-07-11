@@ -43,3 +43,6 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+
+### Custom Auth Domain Note
+Authentication requests are routed securely through the subdomain `auth.unihood.online` to bypass third-party cookie restrictions in modern browsers. Ensure `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` is set to `auth.unihood.online` in the Vercel project environment variables.
