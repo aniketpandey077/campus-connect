@@ -54,7 +54,7 @@ export async function fileToFirestorePhoto(file) {
 
 /** Generates a tiny 16x16 pixel thumbnail to be used as a secure blurred placeholder on cards. */
 export async function fileToBlurredPlaceholder(file) {
-  const blob = await compressToBlob(file, 16, 0.4);
+  const blob = await compressToBlob(file, 80, 0.6);
   return await blobToDataUrl(blob);
 }
 

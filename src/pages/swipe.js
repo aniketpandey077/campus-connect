@@ -336,44 +336,7 @@ function ProfileCard({ profile, swipeHint }) {
           </div>
         )}
 
-        {/* Avatar circle */}
-        <div style={{
-          width: 80, height: 80, borderRadius: "50%",
-          background: "#ffffff",
-          border: "3px solid #1b1b1b",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 44,
-          marginBottom: 10,
-          boxShadow: "3px 3px 0px 0px #1b1b1b",
-          position: "relative",
-          zIndex: 2,
-        }}>
-          {profile.avatar || "😊"}
-        </div>
 
-        {/* Floating Neo-brutalist Name Tag */}
-        <div style={{
-          background: "#ffffff",
-          border: "3px solid #1b1b1b",
-          padding: "6px 16px",
-          borderRadius: 10,
-          boxShadow: "3px 3px 0px 0px #1b1b1b",
-          textAlign: "center",
-          zIndex: 2,
-        }}>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: "#1b1b1b", letterSpacing: -0.5, textTransform: "uppercase" }}>
-            {profile.name}
-          </h3>
-          {profile.username && (
-            <p style={{ margin: "1px 0 0", fontSize: 10, color: "#7531d3", fontWeight: 900 }}>
-              @{profile.username.toLowerCase()}
-            </p>
-          )}
-          <p style={{ margin: "2px 0 0", fontSize: 11, color: "#555", fontWeight: 800, textTransform: "uppercase" }}>
-            {(profile.branch || []).slice(0, 2).join(" + ")}
-            {profile.year?.[0] ? ` · ${profile.year[0]}` : ""}
-          </p>
-        </div>
 
         {/* Swipe hint overlay */}
         {swipeHint && (
