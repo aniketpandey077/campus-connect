@@ -20,10 +20,11 @@ export default function Login() {
 
   // Load and initialize Google Identity Services (GIS)
   useEffect(() => {
-    if (!auth) return;
+    if (!auth || loading || user) return;
 
     const initializeAndRender = () => {
-      if (window.google?.accounts?.id) {
+      const container = document.getElementById("google-signin-btn-container");
+      if (window.google?.accounts?.id && container) {
         window.google.accounts.id.initialize({
           client_id: "516141805560-cp4gj3udv2rkvu04uki9v7qdd6a4ceb4.apps.googleusercontent.com",
           callback: handleCredentialResponse,
@@ -31,7 +32,7 @@ export default function Login() {
 
         // Render the official Google Button inside the container
         window.google.accounts.id.renderButton(
-          document.getElementById("google-signin-btn-container"),
+          container,
           {
             theme: "outline",
             size: "large",
@@ -64,7 +65,7 @@ export default function Login() {
         existingScript.remove();
       }
     };
-  }, []);
+  }, [loading, user]);
 
   const handleCredentialResponse = async (response) => {
     setSigningIn(true);
