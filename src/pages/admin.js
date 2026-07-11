@@ -220,9 +220,22 @@ export default function Admin() {
             width: "100%", padding: 13, borderRadius: 12, border: "none",
             background: "#FF4757", color: "#fff", fontWeight: 800,
             fontSize: 14, cursor: "pointer", fontFamily: "inherit",
-            boxShadow: "0 4px 14px rgba(255,71,87,0.3)"
+            boxShadow: "0 4px 14px rgba(255,71,87,0.3)", marginBottom: 12
           }}>
             Unlock Dashboard →
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            style={{
+              width: "100%", padding: 12, borderRadius: 12,
+              border: "2px solid #E0DED8", background: "transparent",
+              color: "#666", fontWeight: 700, fontSize: 13,
+              cursor: "pointer", fontFamily: "inherit",
+              transition: "all 0.2s"
+            }}
+          >
+            ← Go Back to App
           </button>
         </form>
       </div>

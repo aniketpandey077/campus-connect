@@ -5,7 +5,8 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/router";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { db, auth } from "../lib/firebase";
+import { signOut } from "firebase/auth";
 import { useRequireAuth } from "../lib/useAuth";
 import { fileToFirestorePhoto, fileToBlurredPlaceholder } from "../lib/imageUtils";
 
@@ -217,6 +218,15 @@ export default function Onboarding() {
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/login");
+    } catch (e) {
+      console.error("Sign out failed:", e);
+    }
+  };
+
   const toggleOption = (list, setList, item, single = false) => {
     if (single) {
       setList(list.includes(item) ? [] : [item]);
@@ -259,20 +269,23 @@ export default function Onboarding() {
           background-size: 32px 32px;
           font-family: 'Montserrat', sans-serif;
           color: #1b1b1b;
+          min-height: 100vh;
         }
 
         .neo-shadow {
-          box-shadow: 6px 6px 0px 0px #1b1b1b;
+          box-shadow: 8px 8px 0px 0px #1b1b1b;
         }
 
         .neo-shadow-small {
-          box-shadow: 3px 3px 0px 0px #1b1b1b;
+          box-shadow: 4px 4px 0px 0px #1b1b1b;
         }
 
         .neo-button-hover {
           transition: all 0.1s ease;
         }
         .neo-button-hover:hover {
+          background: #bdff00 !important;
+          color: #1b1b1b !important;
           transform: translate(2px, 2px);
           box-shadow: 2px 2px 0px 0px #1b1b1b;
         }
@@ -282,9 +295,9 @@ export default function Onboarding() {
         }
 
         .glass-bento {
-          background: rgba(255, 255, 255, 0.85);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
         }
 
         input:focus, select:focus, textarea:focus {
@@ -294,7 +307,7 @@ export default function Onboarding() {
         }
 
         .step-transition {
-          animation: slideUp 0.3s cubic-bezier(.22,1,.36,1) both;
+          animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         @keyframes slideUp {
           from { opacity: 0; transform: translateY(20px); }
@@ -325,12 +338,25 @@ export default function Onboarding() {
         }}>
           UNIHOOD
         </div>
-        <div style={{
-          background: BLK, color: PRIMARY_CONTAINER,
-          padding: "4px 10px", borderRadius: 4,
-          fontSize: "11px", fontWeight: 800, letterSpacing: "0.06em"
-        }}>
-          {STEPS[step - 1].label}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            background: BLK, color: PRIMARY_CONTAINER,
+            padding: "4px 10px", borderRadius: 4,
+            fontSize: "11px", fontWeight: 800, letterSpacing: "0.06em"
+          }}>
+            {STEPS[step - 1].label}
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            style={{
+              padding: "5px 12px", borderRadius: 6, border: "2px solid #1b1b1b",
+              background: "transparent", color: "#666", fontWeight: 800,
+              fontSize: "11px", cursor: "pointer", fontFamily: "Montserrat"
+            }}
+          >
+            SIGN OUT
+          </button>
         </div>
       </nav>
 

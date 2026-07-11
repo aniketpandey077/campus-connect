@@ -639,6 +639,16 @@ export default function EditProfile() {
             {saving ? "Saving Changes..." : "Save Changes"}
           </button>
 
+          <button onClick={() => router.push("/profile")} disabled={saving} className="neo-btn" style={{
+            width: "100%", padding: 14, borderRadius: 8, border: "3px solid #1b1b1b",
+            background: "#ffffff", color: "#1b1b1b", fontWeight: 950,
+            fontSize: 14, cursor: "pointer", fontFamily: "inherit",
+            boxShadow: "4px 4px 0px 0px #1b1b1b", marginTop: 16,
+            textTransform: "uppercase"
+          }}>
+            Cancel & Go Back
+          </button>
+
           <button onClick={handleDeleteAccount} disabled={saving} className="neo-btn" style={{
             width: "100%", padding: 14, borderRadius: 8, border: "3px solid #1b1b1b",
             background: "#ffb2bf", color: "#b90e4f", fontWeight: 950,
