@@ -10,7 +10,7 @@ import { signOut } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
 import NavBar from "../components/NavBar";
 import { useRequireAuth } from "../lib/useAuth";
-import { fileToFirestorePhoto } from "../lib/imageUtils";
+import { fileToFirestorePhoto, fileToBlurredPlaceholder } from "../lib/imageUtils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function Tag({ children, bg = "#fff", color = "#1b1b1b" }) {
@@ -122,9 +122,10 @@ export default function Profile() {
 
     try {
       const photoUrl = await fileToFirestorePhoto(file);
-      await updateDoc(doc(db, "profiles", myPhone), { photoUrl });
+      const blurredPhotoUrl = await fileToBlurredPlaceholder(file);
+      await updateDoc(doc(db, "profiles", myPhone), { photoUrl, blurredPhotoUrl });
 
-      setProfile(prev => ({ ...prev, photoUrl }));
+      setProfile(prev => ({ ...prev, photoUrl, blurredPhotoUrl }));
       setUploadMsg("🎉 Photo updated!");
     } catch (err) {
       console.error("Photo upload error:", err);

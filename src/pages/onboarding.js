@@ -7,7 +7,7 @@ import { useRouter } from "next/router";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useRequireAuth } from "../lib/useAuth";
-import { fileToFirestorePhoto } from "../lib/imageUtils";
+import { fileToFirestorePhoto, fileToBlurredPlaceholder } from "../lib/imageUtils";
 
 // ─── Design tokens from Stitch Template ─────────────────────────────────────────
 const PRIMARY = "#4b6700";
@@ -182,6 +182,7 @@ export default function Onboarding() {
 
       setUploadProgress("Processing profile photo…");
       const photoUrl = await fileToFirestorePhoto(profilePhotoFile);
+      const blurredPhotoUrl = await fileToBlurredPlaceholder(profilePhotoFile);
 
       let idCardUrl = "";
       if (idCardFile) {
@@ -198,7 +199,7 @@ export default function Onboarding() {
         name: name.trim(), branch, year, stay,
         campusVibe: vibe, interests, squad,
         defaultSpot: spot, weekendVibe: prompt,
-        photoUrl, verificationStatus: "pending",
+        photoUrl, blurredPhotoUrl, verificationStatus: "pending",
         createdAt: serverTimestamp(), profileComplete: true,
       });
 
