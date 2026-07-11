@@ -63,6 +63,26 @@ export default function NavBar({ active }) {
           box-shadow: 0px 0px 0px 0px #1b1b1b !important;
         }
       `}</style>
+      {/* Floating search pill — accessible from every page */}
+      <button
+        onClick={() => router.push("/search")}
+        className="nav-btn"
+        style={{
+          position: "fixed", bottom: 84, right: 20, zIndex: 101,
+          background: "#1b1b1b", color: "#bdff00",
+          border: "2.5px solid #1b1b1b",
+          borderRadius: 24, padding: "8px 16px",
+          fontSize: 13, fontWeight: 900,
+          cursor: "pointer",
+          fontFamily: "'Montserrat', sans-serif",
+          boxShadow: "3px 3px 0px 0px #555",
+          display: "flex", alignItems: "center", gap: 6,
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+        }}
+      >
+        🔍 <span style={{ fontSize: 11 }}>Search</span>
+      </button>
       <nav style={{
         position: "fixed", bottom: 16,
         left: "50%", transform: "translateX(-50%)",
