@@ -10,6 +10,14 @@ const nextConfig = {
       { source: "/sign-up/:path*", destination: "/login", permanent: false },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: "/__/auth/:path*",
+        destination: "https://otp-verify-db36c.firebaseapp.com/__/auth/:path*",
+      },
+    ];
+  },
   async headers() {
     return [
       {
