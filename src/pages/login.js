@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { signInWithRedirect, getRedirectResult, GoogleAuthProvider } from "firebase/auth";
+import { signInWithCredential, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { useAuth } from "../lib/useAuth";
 
@@ -18,45 +18,56 @@ export default function Login() {
     if (!loading && user) router.replace("/");
   }, [loading, user, router]);
 
-  useEffect(() => {
-    if (auth) {
-      console.log("UniHood Auth Domain initialized:", auth.config?.authDomain);
-    }
-  }, []);
-
-  // Detect if user returned from Google redirect but login failed
+  // Load and initialize Google Identity Services (GIS)
   useEffect(() => {
     if (!auth) return;
-    getRedirectResult(auth).then((result) => {
-      if (result) {
-        sessionStorage.removeItem("unihood_signing_in");
-      } else if (sessionStorage.getItem("unihood_signing_in")) {
-        setError("Sign-in was not completed. Please try again.");
-        sessionStorage.removeItem("unihood_signing_in");
+
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
+          client_id: "516141805560-cp4gj3udv2rkvu04uki9v7qdd6a4ceb4.apps.googleusercontent.com",
+          callback: handleCredentialResponse,
+        });
+
+        // Render the official Google Button inside the container
+        window.google.accounts.id.renderButton(
+          document.getElementById("google-signin-btn-container"),
+          {
+            theme: "outline",
+            size: "large",
+            width: "340",
+            text: "continue_with",
+            shape: "pill",
+          }
+        );
       }
-    }).catch((e) => {
-      console.error("Redirect result error:", e);
-      setError(`Sign-in failed: [${e.code || "unknown_error"}] ${e.message}`);
-      sessionStorage.removeItem("unihood_signing_in");
-    });
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      // Clean up the script tag on unmount
+      const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
   }, []);
 
-  const handleGoogleSignIn = async () => {
-    if (!auth) {
-      setError("Firebase is not initialized. Please verify your environment configuration.");
-      return;
-    }
+  const handleCredentialResponse = async (response) => {
     setSigningIn(true);
     setError("");
     try {
-      const provider = new GoogleAuthProvider();
-      sessionStorage.setItem("unihood_signing_in", "true");
-      await signInWithRedirect(auth, provider);
+      const credential = GoogleAuthProvider.credential(response.credential);
+      await signInWithCredential(auth, credential);
+      router.replace("/");
     } catch (e) {
-      console.error("Google sign-in failed:", e);
+      console.error("Firebase sign in with credential failed:", e);
       setError(`Sign-in failed: [${e.code || "unknown_error"}] ${e.message}`);
       setSigningIn(false);
-      sessionStorage.removeItem("unihood_signing_in");
     }
   };
 
@@ -403,75 +414,29 @@ export default function Login() {
             </div>
 
             {/* Google sign-in */}
-            <div className="fade-up delay-2">
-              <button
-                id="google-signin-btn"
-                className="google-btn"
-                onClick={handleGoogleSignIn}
-                disabled={signingIn}
-              >
-                <svg width="20" height="20" viewBox="0 0 48 48" style={{ position: "relative", zIndex: 1 }}>
-                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.56 2.95-2.24 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                </svg>
-                <span style={{ position: "relative", zIndex: 1 }}>
-                  {signingIn ? "Signing in…" : "Continue with Google"}
-                </span>
-                {signingIn && (
+            <div className="fade-up delay-2" style={{ display: "flex", justifyContent: "center", width: "100%", minHeight: 46 }}>
+              {signingIn ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#0052ff", fontWeight: 600 }}>
                   <div style={{
-                    width: 16, height: 16, borderRadius: "50%",
-                    border: "2px solid #0052ff30", borderTopColor: "#0052ff",
+                    width: 20, height: 20, borderRadius: "50%",
+                    border: "2.5px solid #0052ff30", borderTopColor: "#0052ff",
                     animation: "spin 0.7s linear infinite",
-                    position: "relative", zIndex: 1,
                   }} />
-                )}
-              </button>
+                  Signing in…
+                </div>
+              ) : (
+                <div id="google-signin-btn-container" style={{ width: "100%", display: "flex", justifyContent: "center" }}></div>
+              )}
             </div>
 
-            {/* Error + Troubleshooting */}
+            {/* Error */}
             {error && (
               <div className="fade-up" style={{
-                marginTop: 14, padding: "16px 18px", borderRadius: 12,
-                background: "#fffbeb", border: "2px solid #f59e0b",
-                color: "#78350f", fontSize: 13, fontWeight: 500,
-                lineHeight: 1.7,
+                marginTop: 14, padding: "12px 16px", borderRadius: 10,
+                background: "#fff0f0", border: "1.5px solid #ffcdd2",
+                color: "#c62828", fontSize: 13, fontWeight: 600,
               }}>
-                <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 8, color: "#92400e" }}>
-                  ⚠️ Sign-in not working?
-                </div>
-                <div style={{ marginBottom: 10, fontSize: 12.5, color: "#78350f" }}>
-                  Your browser or ad-blocker might be blocking sign-in cookies. Try these fixes:
-                </div>
-                <div style={{ fontSize: 12, color: "#92400e", lineHeight: 1.8 }}>
-                  <div style={{ marginBottom: 6 }}>
-                    <strong>Chrome / Edge:</strong> Click the 🔒 icon in the address bar → Site Settings → Allow Cookies.
-                  </div>
-                  <div style={{ marginBottom: 6 }}>
-                    <strong>Safari (iPhone/Mac):</strong> Settings → Safari → Turn OFF "Prevent Cross-Site Tracking".
-                  </div>
-                  <div style={{ marginBottom: 6 }}>
-                    <strong>Brave:</strong> Click the 🛡️ Shields icon in the address bar → Turn Shields DOWN for this site.
-                  </div>
-                  <div style={{ marginBottom: 6 }}>
-                    <strong>Ad-Blocker:</strong> Temporarily pause uBlock / AdBlock on this page and retry.
-                  </div>
-                  <div style={{ marginBottom: 6 }}>
-                    <strong>Incognito Mode:</strong> Try using a normal (non-incognito) browser window.
-                  </div>
-                </div>
-                <button
-                  onClick={() => { setError(""); handleGoogleSignIn(); }}
-                  style={{
-                    marginTop: 10, padding: "8px 20px", borderRadius: 8,
-                    background: "#f59e0b", color: "#fff", border: "none",
-                    fontWeight: 700, fontSize: 13, cursor: "pointer",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  🔄 Retry Sign-In
-                </button>
+                ⚠️ {error}
               </div>
             )}
 
