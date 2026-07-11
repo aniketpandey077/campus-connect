@@ -1,6 +1,6 @@
 {
-  "name": "Campus Connect",
-  "short_name": "CampusConnect",
+  "name": "UniHud",
+  "short_name": "UniHud",
   "description": "Find friends and hangout groups on your college campus",
   "start_url": "/",
   "display": "standalone",
