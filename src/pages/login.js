@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { signInWithRedirect, GoogleAuthProvider } from "firebase/auth";
+import { signInWithRedirect, getRedirectResult, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { useAuth } from "../lib/useAuth";
 
@@ -18,16 +18,34 @@ export default function Login() {
     if (!loading && user) router.replace("/");
   }, [loading, user, router]);
 
+  // Detect if user returned from Google redirect but login failed (cookies blocked)
+  useEffect(() => {
+    if (!auth) return;
+    getRedirectResult(auth).then((result) => {
+      // If result is null and we have no user, the redirect came back but cookies were blocked
+      if (!result && !auth.currentUser && sessionStorage.getItem("unihood_signing_in")) {
+        setError("Sign-in failed — your browser may be blocking cookies.");
+        sessionStorage.removeItem("unihood_signing_in");
+      }
+    }).catch((e) => {
+      console.error("Redirect result error:", e);
+      setError("Sign-in failed — your browser may be blocking cookies.");
+      sessionStorage.removeItem("unihood_signing_in");
+    });
+  }, []);
+
   const handleGoogleSignIn = async () => {
     setSigningIn(true);
     setError("");
     try {
       const provider = new GoogleAuthProvider();
+      sessionStorage.setItem("unihood_signing_in", "true");
       await signInWithRedirect(auth, provider);
     } catch (e) {
       console.error("Google sign-in failed:", e);
-      setError("Sign-in failed. Please try again.");
+      setError("Sign-in failed — your browser may be blocking cookies.");
       setSigningIn(false);
+      sessionStorage.removeItem("unihood_signing_in");
     }
   };
 
@@ -401,14 +419,48 @@ export default function Login() {
               </button>
             </div>
 
-            {/* Error */}
+            {/* Error + Troubleshooting */}
             {error && (
               <div className="fade-up" style={{
-                marginTop: 14, padding: "12px 16px", borderRadius: 10,
-                background: "#fff0f0", border: "1.5px solid #ffcdd2",
-                color: "#c62828", fontSize: 13, fontWeight: 600,
+                marginTop: 14, padding: "16px 18px", borderRadius: 12,
+                background: "#fffbeb", border: "2px solid #f59e0b",
+                color: "#78350f", fontSize: 13, fontWeight: 500,
+                lineHeight: 1.7,
               }}>
-                ⚠️ {error}
+                <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 8, color: "#92400e" }}>
+                  ⚠️ Sign-in not working?
+                </div>
+                <div style={{ marginBottom: 10, fontSize: 12.5, color: "#78350f" }}>
+                  Your browser or ad-blocker might be blocking sign-in cookies. Try these fixes:
+                </div>
+                <div style={{ fontSize: 12, color: "#92400e", lineHeight: 1.8 }}>
+                  <div style={{ marginBottom: 6 }}>
+                    <strong>Chrome / Edge:</strong> Click the 🔒 icon in the address bar → Site Settings → Allow Cookies.
+                  </div>
+                  <div style={{ marginBottom: 6 }}>
+                    <strong>Safari (iPhone/Mac):</strong> Settings → Safari → Turn OFF "Prevent Cross-Site Tracking".
+                  </div>
+                  <div style={{ marginBottom: 6 }}>
+                    <strong>Brave:</strong> Click the 🛡️ Shields icon in the address bar → Turn Shields DOWN for this site.
+                  </div>
+                  <div style={{ marginBottom: 6 }}>
+                    <strong>Ad-Blocker:</strong> Temporarily pause uBlock / AdBlock on this page and retry.
+                  </div>
+                  <div style={{ marginBottom: 6 }}>
+                    <strong>Incognito Mode:</strong> Try using a normal (non-incognito) browser window.
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setError(""); handleGoogleSignIn(); }}
+                  style={{
+                    marginTop: 10, padding: "8px 20px", borderRadius: 8,
+                    background: "#f59e0b", color: "#fff", border: "none",
+                    fontWeight: 700, fontSize: 13, cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  🔄 Retry Sign-In
+                </button>
               </div>
             )}
 
