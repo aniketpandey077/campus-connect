@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { signInWithRedirect, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { useAuth } from "../lib/useAuth";
 
@@ -23,8 +23,7 @@ export default function Login() {
     setError("");
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      router.replace("/");
+      await signInWithRedirect(auth, provider);
     } catch (e) {
       console.error("Google sign-in failed:", e);
       setError("Sign-in failed. Please try again.");
