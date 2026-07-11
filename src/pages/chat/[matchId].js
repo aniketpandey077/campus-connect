@@ -237,9 +237,21 @@ export default function Chat() {
         }
         const otherId = data.user1Id === myPhone ? data.user2Id : data.user1Id;
         const profSnap = await getDoc(doc(db, "profiles", otherId));
-        if (profSnap.exists()) setOtherProfile({ id: otherId, ...profSnap.data() });
+        if (profSnap.exists()) {
+          const otherData = profSnap.data();
+          if (data.revealStatus !== "revealed") {
+            delete otherData.photoUrl; // Security: delete photoUrl until mutual reveal
+          }
+          setOtherProfile({ id: otherId, ...otherData });
+        }
         const myProfSnap = await getDoc(doc(db, "profiles", myPhone));
-        if (myProfSnap.exists()) setMyProfile({ id: myPhone, ...myProfSnap.data() });
+        if (myProfSnap.exists()) {
+          const myData = myProfSnap.data();
+          if (data.revealStatus !== "revealed") {
+            delete myData.photoUrl; // Security: delete photoUrl until mutual reveal
+          }
+          setMyProfile({ id: myPhone, ...myData });
+        }
         setLoading(false);
       } catch (e) {
         console.error("loadMatch:", e);
@@ -247,6 +259,23 @@ export default function Chat() {
       }
     })();
   }, [router.isReady, matchId, myPhone]);
+
+  // Refetch profiles to obtain photoUrl once mutual reveal occurs
+  useEffect(() => {
+    if (matchData?.revealStatus === "revealed" && myPhone) {
+      const otherId = matchData.user1Id === myPhone ? matchData.user2Id : matchData.user1Id;
+      if (otherProfile && !otherProfile.photoUrl) {
+        getDoc(doc(db, "profiles", otherId)).then(snap => {
+          if (snap.exists()) setOtherProfile({ id: otherId, ...snap.data() });
+        });
+      }
+      if (myProfile && !myProfile.photoUrl) {
+        getDoc(doc(db, "profiles", myPhone)).then(snap => {
+          if (snap.exists()) setMyProfile({ id: myPhone, ...snap.data() });
+        });
+      }
+    }
+  }, [matchData?.revealStatus, myPhone, otherProfile?.photoUrl, myProfile?.photoUrl]);
 
   // ── Real-time match doc (reveal state, etc.) ──
   useEffect(() => {

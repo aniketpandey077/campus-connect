@@ -20,21 +20,50 @@ export default function Admin() {
   const [processingId, setProcessingId] = useState(null);
 
   // ── PIN Authentication ──
-  const handlePinSubmit = (e) => {
+  const handlePinSubmit = async (e) => {
     e.preventDefault();
-    if (pin === "campusadmin123") {
-      setAuthorized(true);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("cc_admin_authed", "true");
+    try {
+      const res = await fetch("/api/admin/verify-pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAuthorized(true);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("cc_admin_pin", pin);
+        }
+      } else {
+        alert(data.error ? `${data.error}! ❌` : "Incorrect admin passcode! ❌");
       }
-    } else {
-      alert("Incorrect admin passcode! ❌");
+    } catch (err) {
+      alert("Verification failed. Please try again.");
     }
   };
 
   useEffect(() => {
-    if (typeof window !== "undefined" && localStorage.getItem("cc_admin_authed") === "true") {
-      setAuthorized(true);
+    if (typeof window !== "undefined") {
+      const savedPin = sessionStorage.getItem("cc_admin_pin");
+      if (savedPin) {
+        fetch("/api/admin/verify-pin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pin: savedPin }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              setPin(savedPin);
+              setAuthorized(true);
+            } else {
+              sessionStorage.removeItem("cc_admin_pin");
+            }
+          })
+          .catch(() => {
+            sessionStorage.removeItem("cc_admin_pin");
+          });
+      }
     }
   }, []);
 
@@ -92,7 +121,7 @@ export default function Admin() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("cc_admin_authed");
+    sessionStorage.removeItem("cc_admin_pin");
     setAuthorized(false);
     setPin("");
   };
@@ -114,7 +143,7 @@ export default function Admin() {
           <div style={{ fontSize: 48, marginBottom: 12 }}>🛡️</div>
           <h2 style={{ margin: "0 0 6px", fontSize: 20, fontWeight: 900, color: "#111" }}>Admin Portal</h2>
           <p style={{ margin: "0 0 20px", fontSize: 13, color: "#888" }}>
-            Enter passkey to review college student ID verifications.
+            Enter passkey to review college student ID verifications (Real LPU IDs only, no fake UMS screenshots!).
           </p>
           <input
             type="password"

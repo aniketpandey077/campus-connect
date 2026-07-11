@@ -5,8 +5,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "../../lib/firebase";
+import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { db, auth } from "../../lib/firebase";
 import { useRequireAuth } from "../../lib/useAuth";
 
 const OPT = {
@@ -54,15 +54,14 @@ const OPT = {
     { l: "3rd Year", e: "🌳" }, { l: "4th Year", e: "🎓" },
   ],
   stay: [
-    { l: "Hostel", e: "🏠" }, { l: "Day Scholar", e: "🏡" },
+    { l: "Hostel (Gate-Pass outpass struggler)", e: "🏠" }, { l: "Day Scholar (Phagwara PG resident)", e: "🏡" },
   ],
   vibe: [
-    { l: "Night owl", e: "🦉" }, { l: "Canteen regular", e: "🍽️" },
-    { l: "Library hermit", e: "📚" }, { l: "Fest addict", e: "🎉" },
-    { l: "Startup dreamer", e: "🚀" }, { l: "Sports junkie", e: "⚽" },
-    { l: "Bunk champion", e: "😴" }, { l: "Meme lord", e: "😂" },
-    { l: "Gym rat", e: "💪" }, { l: "Coding grinder", e: "👨‍💻" },
-    { l: "Social butterfly", e: "🦋" }, { l: "Chill philosopher", e: "🌊" },
+    { l: "75% Attendance Savior (UMS Grinder)", e: "📈" }, { l: "Uni Mall Food Court Mayor", e: "🍔" },
+    { l: "Unipolis Event Organizer (DSA runner)", e: "📣" }, { l: "Security Guard on Cycle Evader", e: "🚴‍♂️" },
+    { l: "Bunking Champion (UMS Victim)", e: "😴" }, { l: "Coding Grinder in Block 36", e: "💻" },
+    { l: "MBA Suit-walker in Block 13", e: "💼" }, { l: "LPUNET Login Loop Survivor", e: "🌐" },
+    { l: "Main Gate Chai Tapri Regular", e: "☕" },
   ],
   interests: [
     { l: "Music", e: "🎵" }, { l: "Gaming", e: "🎮" }, { l: "Sports", e: "⚽" },
@@ -75,29 +74,25 @@ const OPT = {
     { l: "Astrology", e: "🔮" }, { l: "Chess", e: "♟️" }, { l: "Sketching", e: "✏️" },
   ],
   squad: [
-    { l: "Study group", e: "📖" }, { l: "Canteen crew", e: "☕" },
-    { l: "Fest buddies", e: "🎉" }, { l: "Late-night talks", e: "🌙" },
-    { l: "Gaming gang", e: "🕹️" }, { l: "Gym partners", e: "🏋️" },
-    { l: "Project partners", e: "💡" }, { l: "Campus explorers", e: "🗺️" },
-    { l: "Off-campus escape", e: "🛵" }, { l: "Just vibe", e: "😌" },
-    { l: "Hostel hangout", e: "🏠" }, { l: "Road trip crew", e: "🚗" },
+    { l: "UMS attendance proxy exchange partner", e: "📖" }, { l: "Uni Mall food sharing crew", e: "🍔" },
+    { l: "DSA event attendance proxy seeker", e: "🤝" }, { l: "Late-night gate pass discussion", e: "🌙" },
+    { l: "Gate 1 autos sharing squad", e: "🛵" },
   ],
   spot: [
-    { l: "Canteen", e: "🍽️" }, { l: "Library", e: "📚" },
-    { l: "Sports ground", e: "⚽" }, { l: "Hostel terrace", e: "🌃" },
-    { l: "Auditorium steps", e: "🎭" }, { l: "Campus garden", e: "🌿" },
-    { l: "Computer labs", e: "💻" }, { l: "Off-campus café", e: "☕" },
-    { l: "Parking lot (midnight)", e: "🌙" }, { l: "Workshop area", e: "🔧" },
+    { l: "Uni Mall (Food Court)", e: "🍔" }, { l: "Unipolis steps", e: "🎭" },
+    { l: "Block 34 Canteen (Chai break)", e: "☕" }, { l: "Block 36 Computer Labs (Grinding)", e: "💻" },
+    { l: "Block 13 DSA Office (Clearance line)", e: "🛡️" }, { l: "Main Gate (Gate-Pass Argument area)", e: "🚪" },
+    { l: "Hostel Room (Dodging Warden)", e: "🏠" }, { l: "Jalandhar Bypass / Haveli Excursion", e: "🚗" },
   ],
   prompt: [
-    { l: "Netflix all night 🛋️", e: "🛋️" },
-    { l: "Spontaneous road trip 🛵", e: "🛵" },
-    { l: "Gaming marathon 🎮", e: "🎮" },
-    { l: "Café hopping ☕", e: "☕" },
-    { l: "Hostel party 🎉", e: "🎉" },
-    { l: "Solo recharge 🌙", e: "🌙" },
-    { l: "Fest volunteering 🙌", e: "🙌" },
-    { l: "Midnight Maggi run 🍜", e: "🍜" },
+    { l: "Begging Warden for Gate Pass", e: "📝" },
+    { l: "Excursion to Jalandhar/Phagwara", e: "🛵" },
+    { l: "Struggling to connect to LPUNET", e: "🌐" },
+    { l: "Chilling at Unipolis concert", e: "🎵" },
+    { l: "UMS Attendance calculation session", e: "📊" },
+    { l: "Uni Mall window shopping", e: "🛍️" },
+    { l: "Mess food avoidance survival run", e: "🍜" },
+    { l: "Maggi at local tapri near Main Gate", e: "🍜" },
   ],
 };
 
@@ -270,6 +265,37 @@ export default function EditProfile() {
       router.push("/profile");
     } catch (e) {
       alert("Failed to save changes. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const doubleConfirm = confirm(
+      "WARNING: Are you sure you want to delete your account? This will permanently remove your profile, verification, and all data from Campus Connect. This action cannot be undone."
+    );
+    if (!doubleConfirm) return;
+
+    setSaving(true);
+    try {
+      // 1. Delete user profile from Firestore
+      await deleteDoc(doc(db, "profiles", phone));
+
+      // 2. Delete verification document from Firestore
+      await deleteDoc(doc(db, "verifications", phone));
+
+      // 3. Delete user account from Firebase Authentication
+      if (auth.currentUser) {
+        await auth.currentUser.delete();
+      }
+
+      alert("Your account has been successfully deleted.");
+      router.push("/login");
+    } catch (e) {
+      console.error("Account deletion failed:", e);
+      alert(
+        "Failed to delete account. For security reasons, you may need to log out, log back in, and try again immediately."
+      );
     } finally {
       setSaving(false);
     }
@@ -611,6 +637,16 @@ export default function EditProfile() {
             textTransform: "uppercase"
           }}>
             {saving ? "Saving Changes..." : "Save Changes"}
+          </button>
+
+          <button onClick={handleDeleteAccount} disabled={saving} className="neo-btn" style={{
+            width: "100%", padding: 14, borderRadius: 8, border: "3px solid #1b1b1b",
+            background: "#ffb2bf", color: "#b90e4f", fontWeight: 950,
+            fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+            boxShadow: "4px 4px 0px 0px #1b1b1b", marginTop: 16,
+            textTransform: "uppercase", marginBottom: 40
+          }}>
+            {saving ? "Processing..." : "Delete Account"}
           </button>
         </div>
       </div>

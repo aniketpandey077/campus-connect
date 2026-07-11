@@ -239,7 +239,9 @@ export default function Matches() {
       const updates = {};
       snaps.forEach((snap, i) => {
         if (snap.exists()) {
-          updates[needed[i]] = { id: needed[i], ...snap.data() };
+          const profileData = snap.data();
+          delete profileData.photoUrl; // Security: do not expose private photoUrl in matches list
+          updates[needed[i]] = { id: needed[i], ...profileData };
         }
       });
       setLikersProfiles(prev => ({ ...prev, ...updates }));
@@ -320,7 +322,11 @@ export default function Matches() {
     Promise.all(needed.map(id => getDoc(doc(db, "profiles", id)))).then(snaps => {
       const updates = {};
       snaps.forEach((snap, i) => {
-        if (snap.exists()) updates[needed[i]] = snap.data();
+        if (snap.exists()) {
+          const profileData = snap.data();
+          delete profileData.photoUrl; // Security: do not expose private photoUrl in matches list
+          updates[needed[i]] = profileData;
+        }
       });
       setProfiles(prev => ({ ...prev, ...updates }));
     });

@@ -1,4 +1,4 @@
-import { rateLimit } from "../../lib/rateLimit";
+import { rateLimit } from "../../../lib/rateLimit";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -11,15 +11,15 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: "Too many requests. Please try again later." });
   }
 
-  const { phone, otp } = req.body;
-  if (!phone || !otp) {
-    return res.status(400).json({ error: "Phone and OTP are required" });
+  const { pin } = req.body;
+  if (!pin) {
+    return res.status(400).json({ error: "PIN is required" });
   }
 
-  const expectedOtp = process.env.MOCK_OTP || "123456";
-  if (otp === expectedOtp) {
-    return res.status(200).json({ success: true, phone, mock: true });
+  const expectedPin = process.env.ADMIN_PIN || "campusadmin123";
+  if (pin === expectedPin) {
+    return res.status(200).json({ success: true });
   } else {
-    return res.status(400).json({ error: "Invalid OTP." });
+    return res.status(401).json({ success: false, error: "Incorrect passcode" });
   }
 }

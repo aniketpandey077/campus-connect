@@ -1,3 +1,8 @@
+# Campus Connect
+
+> [!WARNING]
+> **Security Advisory:** Several development configurations, such as the admin passcode (`campusadmin123`) and mock OTP keys (`123456`), were previously hardcoded in the codebase and may remain in the Git history. Ensure you rotate any credentials used in this project immediately in production environments. Do not reuse these passwords or passcodes.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
 
 ## Getting Started

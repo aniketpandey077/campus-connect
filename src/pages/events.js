@@ -440,6 +440,10 @@ export default function Events() {
             setCreators(prev => ({ ...prev, ...updates }));
           });
         }
+      },
+      error => {
+        console.error("Error loading events:", error);
+        setLoading(false);
       }
     );
     return unsub;

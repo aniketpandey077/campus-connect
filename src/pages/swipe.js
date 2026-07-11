@@ -470,12 +470,14 @@ export default function Swipe() {
       myProfileRef.current = me;
       setMyVerificationStatus(me.verificationStatus || "pending");
 
-      // 2. All completed profiles except self
+      // 2. All completed profiles except self (sanitized to remove photoUrl from memory)
       const allSnap = await getDocs(collection(db, "profiles"));
       let others = [];
       allSnap.forEach(d => {
         if (d.id !== phone && d.data().profileComplete) {
-          others.push({ id: d.id, ...d.data() });
+          const profileData = d.data();
+          delete profileData.photoUrl; // Security: do not leak photoUrl prior to match/reveal
+          others.push({ id: d.id, ...profileData });
         }
       });
 
@@ -804,18 +806,18 @@ export default function Swipe() {
               alignItems: "center", justifyContent: "center",
               gap: 14, padding: 32, textAlign: "center",
             }}>
-              <div style={{ fontSize: 60 }}>🎉</div>
+              <div style={{ fontSize: 60 }}>🚴‍♂️</div>
               <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: "#0D0D0D" }}>
-                You're all caught up!
+                UMS Savior, you're caught up!
               </h2>
               <p style={{ margin: 0, fontSize: 14, color: "#888", maxWidth: 260, lineHeight: 1.6 }}>
-                No new profiles right now. Come back after more students join Campus Connect.
+                No new profiles right now. Go maintain your attendance above 75% on UMS or head to Uni Mall for a quick snack!
               </p>
               <button
                 onClick={() => loadData(myPhoneRef.current)}
-                style={{ ...solidBtn("#6366F1"), marginTop: 8 }}
+                style={{ ...solidBtn("#bdff00"), marginTop: 8 }}
               >
-                Refresh
+                Refresh UMS Feed
               </button>
             </div>
           ) : (

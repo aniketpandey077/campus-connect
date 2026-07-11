@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if the user is an admin
+    function isAdmin() {
+      return request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    // Helper function to check if the user is authenticated
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    // Admins Collection
+    match /admins/{userId} {
+      allow read: if isAuthed() && request.auth.uid == userId;
+      allow write: if false; // Admins must be provisioned manually in Firebase Console for safety
+    }
+
+    // Profiles Collection
+    match /profiles/{userId} {
+      allow read: if isAuthed();
+      allow write: if isAuthed() && request.auth.uid == userId;
+    }
+
+    // Verifications Collection
+    match /verifications/{userId} {
+      allow read, write: if isAdmin();
+      allow create, update: if isAuthed() && request.auth.uid == userId;
+    }
+
+    // Swipes Collection
+    match /swipes/{swipeId} {
+      allow create: if isAuthed() && request.resource.data.swiperId == request.auth.uid;
+      allow read: if isAuthed() && resource.data.swiperId == request.auth.uid;
+    }
+
+    // Matches Collection
+    match /matches/{matchId} {
+      allow read: if isAdmin() || (isAuthed() && (resource.data.user1Id == request.auth.uid || resource.data.user2Id == request.auth.uid));
+      allow update: if isAuthed() && (resource.data.user1Id == request.auth.uid || resource.data.user2Id == request.auth.uid);
+      allow create: if isAuthed() && (request.resource.data.user1Id == request.auth.uid || request.resource.data.user2Id == request.auth.uid);
+    }
+
+    // Chats & Messages
+    match /chats/{matchId}/messages/{messageId} {
+      allow read: if isAdmin() || (isAuthed() && (
+        get(/databases/$(database)/documents/matches/$(matchId)).data.user1Id == request.auth.uid || 
+        get(/databases/$(database)/documents/matches/$(matchId)).data.user2Id == request.auth.uid
+      ));
+      allow create: if isAuthed() && (
+        get(/databases/$(database)/documents/matches/$(matchId)).data.user1Id == request.auth.uid || 
+        get(/databases/$(database)/documents/matches/$(matchId)).data.user2Id == request.auth.uid
+      );
+    }
+
+    // Events Collection
+    match /events/{eventId} {
+      allow read: if isAuthed();
+      allow create: if isAuthed() && request.resource.data.creatorId == request.auth.uid;
+      allow update: if isAuthed() && request.resource.data.creatorId == resource.data.creatorId;
+    }
+
+    // Reports Collection
+    match /reports/{reportId} {
+      allow create: if isAuthed() && request.resource.data.reporterId == request.auth.uid;
+      allow read, write: if isAdmin();
+    }
+  }
+}

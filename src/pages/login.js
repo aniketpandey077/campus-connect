@@ -283,7 +283,7 @@ export default function Login() {
                 margin: "12px 0 0", fontSize: "13px", fontWeight: 800,
                 color: "#1b1b1b", lineHeight: "1.4"
               }}>
-                THE UNFILTERED SOCIAL NETWORK BUILT EXCLUSIVELY FOR UNIVERSITY STUDENTS. FIND YOUR PEOPLE, OWN YOUR CAMPUS.
+                THE EXCLUSIVE LPU SOCIAL NETWORK. DODGE THE SECURITY GUARDS ON CYCLES, KEEP YOUR UMS ATTENDANCE ABOVE 75%, AND FIND YOUR CAMPUS CREW.
               </p>
             </div>
 
@@ -370,7 +370,7 @@ export default function Login() {
                 Welcome back 👋
               </h2>
               <p style={{ marginTop: 8, fontSize: 15, color: "#737688", lineHeight: 1.5, fontWeight: 400 }}>
-                Sign in with your Google account to get started.
+                Sign in with your Google account to start swiping. UMS attendance checks not required to log in! 😉
               </p>
             </div>
 
@@ -414,11 +414,11 @@ export default function Login() {
             )}
 
             {/* Divider */}
-            <div className="divider fade-up delay-3">Your campus. Your rules.</div>
+            <div className="divider fade-up delay-3">LPU campus. Your rules.</div>
 
             {/* Feature chips */}
             <div className="feature-row fade-up delay-4">
-              {["🔒 Private", "🎓 Students Only", "💬 Real Matches", "🆓 Free"].map(f => (
+              {["🔒 No Security Guards", "🎓 Block 35 Approved", "💬 Canteen Tea Talk", "🆓 Faster than Wi-Fi"].map(f => (
                 <span key={f} className="feature-chip">{f}</span>
               ))}
             </div>
