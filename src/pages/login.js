@@ -22,11 +22,7 @@ export default function Login() {
   useEffect(() => {
     if (!auth) return;
 
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
+    const initializeAndRender = () => {
       if (window.google?.accounts?.id) {
         window.google.accounts.id.initialize({
           client_id: "516141805560-cp4gj3udv2rkvu04uki9v7qdd6a4ceb4.apps.googleusercontent.com",
@@ -46,6 +42,19 @@ export default function Login() {
         );
       }
     };
+
+    // If the Google SDK is already loaded in window, initialize and render immediately
+    if (window.google?.accounts?.id) {
+      initializeAndRender();
+      return;
+    }
+
+    // Otherwise, append the script tag dynamically
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = initializeAndRender;
     document.body.appendChild(script);
 
     return () => {
