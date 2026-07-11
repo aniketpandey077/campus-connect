@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { signInWithRedirect, getRedirectResult, GoogleAuthProvider } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { useAuth } from "../lib/useAuth";
 
@@ -18,25 +18,6 @@ export default function Login() {
     if (!loading && user) router.replace("/");
   }, [loading, user, router]);
 
-  // Detect if user returned from Google redirect but login failed
-  useEffect(() => {
-    if (!auth) {
-      setError("Firebase is not initialized. Please verify your NEXT_PUBLIC_FIREBASE_API_KEY environment variable is configured.");
-      return;
-    }
-    getRedirectResult(auth).then((result) => {
-      // If result is null and we have no user, the redirect came back but cookies were blocked
-      if (!result && !auth.currentUser && sessionStorage.getItem("unihood_signing_in")) {
-        setError("Sign-in failed — your browser may be blocking cookies or the session could not be established.");
-        sessionStorage.removeItem("unihood_signing_in");
-      }
-    }).catch((e) => {
-      console.error("Redirect result error:", e);
-      setError(`Sign-in failed: [${e.code || "unknown_error"}] ${e.message}`);
-      sessionStorage.removeItem("unihood_signing_in");
-    });
-  }, []);
-
   const handleGoogleSignIn = async () => {
     if (!auth) {
       setError("Firebase is not initialized. Please verify your environment configuration.");
@@ -46,13 +27,12 @@ export default function Login() {
     setError("");
     try {
       const provider = new GoogleAuthProvider();
-      sessionStorage.setItem("unihood_signing_in", "true");
-      await signInWithRedirect(auth, provider);
+      await signInWithPopup(auth, provider);
+      router.replace("/");
     } catch (e) {
       console.error("Google sign-in failed:", e);
       setError(`Sign-in failed: [${e.code || "unknown_error"}] ${e.message}`);
       setSigningIn(false);
-      sessionStorage.removeItem("unihood_signing_in");
     }
   };
 
