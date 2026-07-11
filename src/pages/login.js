@@ -113,19 +113,112 @@ export default function Login() {
         .login-root {
           min-height: 100vh;
           display: flex;
-          background: #fcf9f8;
+          background: transparent;
+          position: relative;
+          z-index: 2;
         }
+
+        /* Full Screen Background Orbit System */
+        .fullscreen-orbit-bg {
+          position: fixed;
+          inset: 0;
+          overflow: hidden;
+          pointer-events: none;
+          z-index: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: radial-gradient(circle at 50% 50%, #ffffff 0%, #f5f4f0 100%);
+        }
+
+        .bg-orbit-1 {
+          position: absolute;
+          width: 540px;
+          height: 540px;
+          border: 2px dashed rgba(27, 27, 27, 0.06);
+          border-radius: 50%;
+          animation: orbit-spin-cw 45s linear infinite;
+        }
+
+        .bg-orbit-2 {
+          position: absolute;
+          width: 960px;
+          height: 960px;
+          border: 2px dashed rgba(27, 27, 27, 0.05);
+          border-radius: 50%;
+          animation: orbit-spin-ccw 75s linear infinite;
+        }
+
+        .bg-orbit-3 {
+          position: absolute;
+          width: 1400px;
+          height: 1400px;
+          border: 2px dashed rgba(27, 27, 27, 0.04);
+          border-radius: 50%;
+          animation: orbit-spin-cw 110s linear infinite;
+        }
+
+        .bg-orbit-node {
+          position: absolute;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 12px;
+          background: rgba(255, 255, 255, 0.95);
+          border: 2.5px solid #1b1b1b;
+          border-radius: 99px;
+          box-shadow: 4px 4px 0px 0px #1b1b1b;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 11px;
+          font-weight: 900;
+          color: #1b1b1b;
+          white-space: nowrap;
+          pointer-events: auto; /* hoverable */
+          transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, box-shadow 0.2s;
+        }
+
+        .bg-orbit-node:hover {
+          background: #bdff00;
+          transform: scale(1.12) !important;
+          box-shadow: 6px 6px 0px 0px #1b1b1b;
+          z-index: 100;
+        }
+
+        .avatar-bubble {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          border: 1.5px solid #1b1b1b;
+          background: #f0edec;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+        }
+
+        /* Inner Ring Nodes */
+        .bg-node-a { top: -14px; left: 256px; animation: orbit-counter-spin 45s linear infinite; }
+        .bg-node-b { bottom: -14px; left: 256px; animation: orbit-counter-spin 45s linear infinite; }
+
+        /* Middle Ring Nodes */
+        .bg-node-c { top: 466px; left: -14px; animation: orbit-clockwise-spin 75s linear infinite; }
+        .bg-node-d { top: 466px; right: -14px; animation: orbit-clockwise-spin 75s linear infinite; }
+
+        /* Outer Ring Nodes */
+        .bg-node-e { top: -14px; left: 686px; animation: orbit-counter-spin 110s linear infinite; }
+        .bg-node-f { bottom: -14px; left: 686px; animation: orbit-counter-spin 110s linear infinite; }
 
         /* ── Left panel (Bento Splash Previews) ── */
         .hero-panel {
           display: none;
           position: relative;
           overflow-y: auto;
-          background-color: #f3f3f3;
+          background-color: transparent;
           background-image: radial-gradient(#bcbcbc 1.5px, transparent 1.5px);
           background-size: 30px 30px;
           font-family: 'Montserrat', sans-serif;
           border-right: 3px solid #1b1b1b;
+          z-index: 5;
         }
         @media(min-width: 900px) {
           .hero-panel { display: flex; flex: 1; flex-direction: column; justify-content: center; padding: 40px; }
@@ -347,8 +440,10 @@ export default function Login() {
           justify-content: center;
           align-items: center;
           padding: 40px 24px;
-          background: #fcf9f8;
+          background: transparent;
           width: 100%;
+          position: relative;
+          z-index: 5;
         }
         @media(min-width: 900px) {
           .form-panel { width: 480px; flex-shrink: 0; padding: 60px 56px; }
@@ -449,6 +544,37 @@ export default function Login() {
       `}</style>
 
       <div className="login-root">
+
+        {/* Full-Screen Background Orbit Animation */}
+        <div className="fullscreen-orbit-bg">
+          {/* Inner ring */}
+          <div className="bg-orbit-1">
+            <div className="bg-orbit-node bg-node-a">
+              <span className="avatar-bubble">👩‍💻</span> Ananya · CSE
+            </div>
+            <div className="bg-orbit-node bg-node-b">
+              <span className="avatar-bubble">👨‍💼</span> Rahul · MBA
+            </div>
+          </div>
+          {/* Middle ring */}
+          <div className="bg-orbit-2">
+            <div className="bg-orbit-node bg-node-c">
+              <span className="avatar-bubble">🎮</span> Karan · BCA
+            </div>
+            <div className="bg-orbit-node bg-node-d">
+              <span className="avatar-bubble">🧬</span> Aditi · Biotech
+            </div>
+          </div>
+          {/* Outer ring */}
+          <div className="bg-orbit-3">
+            <div className="bg-orbit-node bg-node-e">
+              <span className="avatar-bubble">🎨</span> Divya · B.Des
+            </div>
+            <div className="bg-orbit-node bg-node-f">
+              <span className="avatar-bubble">⚖️</span> Sneha · Law
+            </div>
+          </div>
+        </div>
 
         {/* ── Left Hero Panel (Bento Splash Previews) ── */}
         <div className="hero-panel">
