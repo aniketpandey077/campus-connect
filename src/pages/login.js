@@ -148,6 +148,11 @@ export default function Login() {
           overflow: hidden;
           background: #fff;
           color: #1b1b1b;
+          transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+        }
+        .preview-tile:hover {
+          transform: translate(-4px, -4px);
+          box-shadow: 8px 8px 0px 0px #1b1b1b;
         }
 
         .preview-tile-main {
@@ -155,6 +160,10 @@ export default function Login() {
           background: #bdff00;
           padding: 24px;
           box-shadow: 6px 6px 0px 0px #1b1b1b;
+        }
+        .preview-tile-main:hover {
+          transform: translate(-6px, -6px);
+          box-shadow: 12px 12px 0px 0px #1b1b1b;
         }
 
         .preview-tile-pulse {
@@ -170,6 +179,139 @@ export default function Login() {
         .preview-tile-card {
           grid-column: span 6;
           background: #ffffff;
+        }
+
+        /* Revolving Friends Orbit Card */
+        .preview-tile-orbit {
+          grid-column: span 6;
+          background: #0f111a !important; /* Sleek dark theme */
+          color: #fff;
+          padding: 16px;
+          height: 250px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          position: relative;
+        }
+
+        .orbit-system {
+          position: relative;
+          width: 100%;
+          height: 160px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-top: 5px;
+        }
+
+        .orbit-core {
+          position: absolute;
+          width: 44px;
+          height: 44px;
+          background: #bdff00;
+          border: 3px solid #1b1b1b;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 5;
+          box-shadow: 0 0 20px rgba(189, 255, 0, 0.4);
+          animation: core-glow 2s infinite ease-in-out;
+        }
+
+        @keyframes core-glow {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(189, 255, 0, 0.4); }
+          50% { transform: scale(1.08); box-shadow: 0 0 30px rgba(189, 255, 0, 0.8); }
+        }
+
+        .orbit-track-inner {
+          position: absolute;
+          width: 90px;
+          height: 90px;
+          border: 2px dashed rgba(255, 255, 255, 0.15);
+          border-radius: 50%;
+          animation: orbit-spin-cw 14s linear infinite;
+        }
+
+        .orbit-track-outer {
+          position: absolute;
+          width: 146px;
+          height: 146px;
+          border: 2px dashed rgba(255, 255, 255, 0.15);
+          border-radius: 50%;
+          animation: orbit-spin-ccw 22s linear infinite;
+        }
+
+        @keyframes orbit-spin-cw {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        @keyframes orbit-spin-ccw {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(-360deg); }
+        }
+
+        .orbit-avatar {
+          position: absolute;
+          width: 28px;
+          height: 28px;
+          background: #fff;
+          border: 2px solid #1b1b1b;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 13px;
+          box-shadow: 2px 2px 0px 0px #1b1b1b;
+          cursor: pointer;
+          transition: transform 0.2s, background 0.2s;
+        }
+
+        .orbit-avatar:hover {
+          background: #bdff00;
+          transform: scale(1.25) !important;
+          z-index: 10;
+        }
+
+        .orbit-avatar::after {
+          content: attr(data-tooltip);
+          position: absolute;
+          bottom: 34px;
+          left: 50%;
+          transform: translateX(-50%) scale(0);
+          background: #1b1b1b;
+          color: #fff;
+          padding: 4px 8px;
+          border-radius: 6px;
+          font-size: 9px;
+          font-weight: 800;
+          white-space: nowrap;
+          border: 1.5px solid #bdff00;
+          pointer-events: none;
+          transition: transform 0.15s ease;
+          opacity: 0.95;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .orbit-avatar:hover::after {
+          transform: translateX(-50%) scale(1);
+        }
+
+        .node-a { top: -14px; left: 31px; animation: orbit-counter-spin 14s linear infinite; }
+        .node-b { bottom: -14px; left: 31px; animation: orbit-counter-spin 14s linear infinite; }
+
+        .node-c { top: 59px; left: -14px; animation: orbit-clockwise-spin 22s linear infinite; }
+        .node-d { top: 59px; right: -14px; animation: orbit-clockwise-spin 22s linear infinite; }
+        .node-e { top: -14px; left: 59px; animation: orbit-clockwise-spin 22s linear infinite; }
+
+        @keyframes orbit-counter-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(-360deg); }
+        }
+
+        @keyframes orbit-clockwise-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
 
         /* Pulse wave animation */
@@ -359,6 +501,35 @@ export default function Login() {
               </div>
               <p style={{ margin: "12px 0 0", fontSize: "10px", fontWeight: 900, lineHeight: "1.3" }}>
                 100% REAL STUDENTS. .EDU EMAIL REQUIRED.
+              </p>
+            </div>
+
+            {/* Campus Orbit Card (Visual FX) */}
+            <div className="preview-tile preview-tile-orbit">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "11px", fontWeight: 900, color: "#bdff00", letterSpacing: "0.05em" }}>CAMPUS ORBIT</span>
+                <span style={{ fontSize: "12px" }}>🪐</span>
+              </div>
+              
+              <div className="orbit-system">
+                <div className="orbit-core">🔥</div>
+                
+                {/* Inner track (clockwise rotation) */}
+                <div className="orbit-track-inner">
+                  <div className="orbit-avatar node-a" data-tooltip="Ananya (CSE) 💻">👩‍💻</div>
+                  <div className="orbit-avatar node-b" data-tooltip="Rahul (MBA) 💼">👨‍💼</div>
+                </div>
+                
+                {/* Outer track (counter-clockwise rotation) */}
+                <div className="orbit-track-outer">
+                  <div className="orbit-avatar node-c" data-tooltip="Karan (BCA) 🎮">👨‍💻</div>
+                  <div className="orbit-avatar node-d" data-tooltip="Aditi (Biotech) 🧬">👩‍🔬</div>
+                  <div className="orbit-avatar node-e" data-tooltip="Divya (B.Des) 🎨">👩‍🎨</div>
+                </div>
+              </div>
+              
+              <p style={{ margin: 0, fontSize: "10px", fontWeight: 800, color: "#8a8d9b", textAlign: "center" }}>
+                HOVER OVER AVATARS TO CONNECT ⚡
               </p>
             </div>
 
