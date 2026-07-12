@@ -9,6 +9,7 @@ import { db, auth } from "../lib/firebase";
 import { signOut } from "firebase/auth";
 import { useRequireAuth } from "../lib/useAuth";
 import { fileToFirestorePhoto, fileToBlurredPlaceholder } from "../lib/imageUtils";
+import { INDIA_STATES_CITIES } from "../lib/indiaStatesCities";
 
 // ─── Design tokens from Stitch Template ─────────────────────────────────────────
 const PRIMARY = "#4b6700";
@@ -719,7 +720,10 @@ export default function Onboarding() {
                     type="text"
                     list="indian-states"
                     value={userState}
-                    onChange={(e) => setUserState(e.target.value)}
+                    onChange={(e) => {
+                      setUserState(e.target.value);
+                      setCity("");
+                    }}
                     placeholder="E.g. Punjab"
                     style={{
                       padding: "14px", border: "3px solid #1b1b1b",
@@ -730,7 +734,7 @@ export default function Onboarding() {
                     }}
                   />
                   <datalist id="indian-states">
-                    {["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Jammu and Kashmir", "Ladakh", "Puducherry"].map(st => (
+                    {Object.keys(INDIA_STATES_CITIES).map(st => (
                       <option key={st} value={st} />
                     ))}
                   </datalist>
@@ -745,7 +749,7 @@ export default function Onboarding() {
                     list="indian-cities"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    placeholder="E.g. Jalandhar"
+                    placeholder={userState ? `Cities in ${userState}...` : "Select a state first..."}
                     style={{
                       padding: "14px", border: "3px solid #1b1b1b",
                       borderRadius: "8px", fontSize: "13px", fontWeight: 800,
@@ -755,7 +759,7 @@ export default function Onboarding() {
                     }}
                   />
                   <datalist id="indian-cities">
-                    {["Jalandhar", "Phagwara", "Ludhiana", "Amritsar", "Patiala", "Bathinda", "Chandigarh", "Mohali", "Panchkula", "Delhi", "Mumbai", "Pune", "Nagpur", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Ahmedabad", "Surat", "Jaipur", "Jodhpur", "Udaipur", "Kota", "Lucknow", "Kanpur", "Varanasi", "Noida", "Ghaziabad", "Gurugram", "Faridabad", "Patna", "Ranchi", "Bhopal", "Indore", "Raipur", "Dehradun", "Shimla", "Guwahati", "Bhubaneswar"].map(ct => (
+                    {(INDIA_STATES_CITIES[userState] || []).map(ct => (
                       <option key={ct} value={ct} />
                     ))}
                   </datalist>

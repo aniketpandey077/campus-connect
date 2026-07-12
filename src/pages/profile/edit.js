@@ -8,6 +8,7 @@ import { useRouter } from "next/router";
 import { doc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../../lib/firebase";
 import { useRequireAuth } from "../../lib/useAuth";
+import { INDIA_STATES_CITIES } from "../../lib/indiaStatesCities";
 
 const OPT = {
   branch: [
@@ -601,7 +602,10 @@ export default function EditProfile() {
               type="text"
               list="indian-states"
               value={userState}
-              onChange={(e) => setUserState(e.target.value)}
+              onChange={(e) => {
+                setUserState(e.target.value);
+                setCity("");
+              }}
               placeholder="Select or enter state..."
               style={{
                 width: "100%", padding: "12px 16px", borderRadius: 8,
@@ -612,7 +616,7 @@ export default function EditProfile() {
               }}
             />
             <datalist id="indian-states">
-              {["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Jammu and Kashmir", "Ladakh", "Puducherry"].map(st => (
+              {Object.keys(INDIA_STATES_CITIES).map(st => (
                 <option key={st} value={st} />
               ))}
             </datalist>
@@ -629,7 +633,7 @@ export default function EditProfile() {
               list="indian-cities"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              placeholder="Select or enter city..."
+              placeholder={userState ? `Cities in ${userState}...` : "Select a state first..."}
               style={{
                 width: "100%", padding: "12px 16px", borderRadius: 8,
                 border: "2px solid #1b1b1b", fontSize: 14, outline: "none",
@@ -639,7 +643,7 @@ export default function EditProfile() {
               }}
             />
             <datalist id="indian-cities">
-              {["Jalandhar", "Phagwara", "Ludhiana", "Amritsar", "Patiala", "Bathinda", "Chandigarh", "Mohali", "Panchkula", "Delhi", "Mumbai", "Pune", "Nagpur", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Ahmedabad", "Surat", "Jaipur", "Jodhpur", "Udaipur", "Kota", "Lucknow", "Kanpur", "Varanasi", "Noida", "Ghaziabad", "Gurugram", "Faridabad", "Patna", "Ranchi", "Bhopal", "Indore", "Raipur", "Dehradun", "Shimla", "Guwahati", "Bhubaneswar"].map(ct => (
+              {(INDIA_STATES_CITIES[userState] || []).map(ct => (
                 <option key={ct} value={ct} />
               ))}
             </datalist>

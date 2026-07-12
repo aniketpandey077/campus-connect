@@ -14,6 +14,7 @@ import {
 import { db } from "../lib/firebase";
 import NavBar from "../components/NavBar";
 import { useRequireAuth } from "../lib/useAuth";
+import { INDIA_STATES_CITIES } from "../lib/indiaStatesCities";
 
 
 
@@ -1130,7 +1131,10 @@ export default function Swipe() {
                   type="text"
                   list="modal-states"
                   value={modalState}
-                  onChange={(e) => setModalState(e.target.value)}
+                  onChange={(e) => {
+                    setModalState(e.target.value);
+                    setModalCity("");
+                  }}
                   placeholder="Select or enter state..."
                   style={{
                     padding: "10px 12px", border: "2px solid #1b1b1b",
@@ -1140,7 +1144,7 @@ export default function Swipe() {
                   }}
                 />
                 <datalist id="modal-states">
-                  {["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Jammu and Kashmir", "Ladakh", "Puducherry"].map(st => (
+                  {Object.keys(INDIA_STATES_CITIES).map(st => (
                     <option key={st} value={st} />
                   ))}
                 </datalist>
@@ -1153,7 +1157,7 @@ export default function Swipe() {
                   list="modal-cities"
                   value={modalCity}
                   onChange={(e) => setModalCity(e.target.value)}
-                  placeholder="Select or enter city..."
+                  placeholder={modalState ? `Cities in ${modalState}...` : "Select a state first..."}
                   style={{
                     padding: "10px 12px", border: "2px solid #1b1b1b",
                     borderRadius: "6px", fontSize: "13px", fontWeight: 900,
@@ -1162,7 +1166,7 @@ export default function Swipe() {
                   }}
                 />
                 <datalist id="modal-cities">
-                  {["Jalandhar", "Phagwara", "Ludhiana", "Amritsar", "Patiala", "Bathinda", "Chandigarh", "Mohali", "Panchkula", "Delhi", "Mumbai", "Pune", "Nagpur", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Ahmedabad", "Surat", "Jaipur", "Jodhpur", "Udaipur", "Kota", "Lucknow", "Kanpur", "Varanasi", "Noida", "Ghaziabad", "Gurugram", "Faridabad", "Patna", "Ranchi", "Bhopal", "Indore", "Raipur", "Dehradun", "Shimla", "Guwahati", "Bhubaneswar"].map(ct => (
+                  {(INDIA_STATES_CITIES[modalState] || []).map(ct => (
                     <option key={ct} value={ct} />
                   ))}
                 </datalist>
