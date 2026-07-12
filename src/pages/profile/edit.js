@@ -211,14 +211,12 @@ export default function EditProfile() {
         setLongitude(lon);
 
         try {
-          const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+          const res = await fetch(`/api/reverse-geocode?lat=${lat}&lon=${lon}`);
           if (!res.ok) throw new Error("Location service error");
           const data = await res.json();
-          if (data) {
-            const resolvedState = data.principalSubdivision || "";
-            const resolvedCity = data.city || data.locality || "";
-            setUserState(resolvedState);
-            setCity(resolvedCity);
+          if (data && (data.state || data.city)) {
+            setUserState(data.state || "");
+            setCity(data.city || "");
           } else {
             alert("Could not resolve city/state from GPS. Please enter manually.");
           }

@@ -502,14 +502,12 @@ export default function Swipe() {
         setModalLon(lon);
 
         try {
-          const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+          const res = await fetch(`/api/reverse-geocode?lat=${lat}&lon=${lon}`);
           if (!res.ok) throw new Error("Location service error");
           const data = await res.json();
-          if (data) {
-            const resolvedState = data.principalSubdivision || "";
-            const resolvedCity = data.city || data.locality || "";
-            setModalState(resolvedState);
-            setModalCity(resolvedCity);
+          if (data && (data.state || data.city)) {
+            setModalState(data.state || "");
+            setModalCity(data.city || "");
           } else {
             setModalError("Could not resolve city/state from GPS.");
           }
