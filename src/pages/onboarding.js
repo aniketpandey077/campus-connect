@@ -716,53 +716,58 @@ export default function Onboarding() {
                   <label style={{ fontSize: "11px", fontWeight: 950, textTransform: "uppercase", color: "#1b1b1b" }}>
                     Select State
                   </label>
-                  <input
-                    type="text"
-                    list="indian-states"
+                  <select
                     value={userState}
                     onChange={(e) => {
                       setUserState(e.target.value);
                       setCity("");
                     }}
-                    placeholder="E.g. Punjab"
                     style={{
-                      padding: "14px", border: "3px solid #1b1b1b",
+                      width: "100%", padding: "14px", border: "3px solid #1b1b1b",
                       borderRadius: "8px", fontSize: "13px", fontWeight: 800,
                       outline: "none", fontFamily: "inherit",
                       background: "#fff", boxShadow: "2px 2px 0px 0px #1b1b1b",
-                      color: "#1b1b1b"
+                      color: "#1b1b1b", cursor: "pointer",
+                      appearance: "none",
+                      backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b1b1b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 16px center",
+                      backgroundSize: "16px"
                     }}
-                  />
-                  <datalist id="indian-states">
+                  >
+                    <option value="" disabled>Select State...</option>
                     {Object.keys(INDIA_STATES_CITIES).map(st => (
-                      <option key={st} value={st} />
+                      <option key={st} value={st}>{st}</option>
                     ))}
-                  </datalist>
+                  </select>
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <label style={{ fontSize: "11px", fontWeight: 950, textTransform: "uppercase", color: "#1b1b1b" }}>
                     Select City
                   </label>
-                  <input
-                    type="text"
-                    list="indian-cities"
+                  <select
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    placeholder={userState ? `Cities in ${userState}...` : "Select a state first..."}
+                    disabled={!userState}
                     style={{
-                      padding: "14px", border: "3px solid #1b1b1b",
+                      width: "100%", padding: "14px", border: "3px solid #1b1b1b",
                       borderRadius: "8px", fontSize: "13px", fontWeight: 800,
                       outline: "none", fontFamily: "inherit",
-                      background: "#fff", boxShadow: "2px 2px 0px 0px #1b1b1b",
-                      color: "#1b1b1b"
+                      background: userState ? "#fff" : "#f3f3f3", boxShadow: "2px 2px 0px 0px #1b1b1b",
+                      color: "#1b1b1b", cursor: userState ? "pointer" : "not-allowed",
+                      appearance: "none",
+                      backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b1b1b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "right 16px center",
+                      backgroundSize: "16px"
                     }}
-                  />
-                  <datalist id="indian-cities">
+                  >
+                    <option value="" disabled>Select City...</option>
                     {(INDIA_STATES_CITIES[userState] || []).map(ct => (
-                      <option key={ct} value={ct} />
+                      <option key={ct} value={ct}>{ct}</option>
                     ))}
-                  </datalist>
+                  </select>
                 </div>
               </div>
             )}

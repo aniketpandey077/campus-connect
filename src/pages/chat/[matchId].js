@@ -64,7 +64,7 @@ function Avatar({ profile, size = 38, revealed = false }) {
           objectFit: "cover", border: "2px solid #1b1b1b",
           flexShrink: 0,
           boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
-          filter: "blur(0.8px) contrast(1.05)",
+          filter: "blur(12px) contrast(1.05)",
         }}
       />
     );
@@ -263,7 +263,7 @@ function ProfileModal({ profile, revealed, onClose }) {
             <img 
               src={profile.blurredPhotoUrl} 
               alt={profile.name} 
-              style={{ width: "100%", height: "100%", objectFit: "cover", filter: "blur(1.2px) contrast(1.05)" }} 
+              style={{ width: "100%", height: "100%", objectFit: "cover", filter: "blur(20px) contrast(1.05)", transform: "scale(1.15)" }} 
             />
           ) : (
             <div style={{ fontSize: 72 }}>{profile.avatar || "😊"}</div>

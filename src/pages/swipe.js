@@ -119,8 +119,8 @@ function ProfileCard({ profile, swipeHint }) {
           backgroundImage: `url(${profile.blurredPhotoUrl})`,
           backgroundSize: "cover",
           backgroundPosition: "center top",
-          filter: "blur(1.2px) brightness(0.92)",
-          transform: "scale(1.04)",
+          filter: "blur(20px) brightness(0.92)",
+          transform: "scale(1.15)",
           zIndex: 0,
         }} />
       ) : (
@@ -872,6 +872,22 @@ export default function Swipe() {
             </span>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {/* Search Button */}
+            <button
+              onClick={() => router.push("/search")}
+              className="action-btn"
+              style={{
+                padding: "5px 12px", borderRadius: 8,
+                border: "2px solid #1b1b1b",
+                background: "#ffffff",
+                color: "#1b1b1b", fontWeight: 900, fontSize: 11,
+                cursor: "pointer", fontFamily: "inherit",
+                boxShadow: "2px 2px 0px 0px #1b1b1b",
+                textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5,
+              }}
+            >
+              🔍 Search
+            </button>
             {/* Filter Button */}
             <button
               onClick={() => setFilterOpen(true)}
@@ -991,7 +1007,7 @@ export default function Swipe() {
                 onSwipe={(dir) => handleSwipe(dir, profile, i)}
                 preventSwipe={["up", "down"]}
                 swipeRequirementType="position"
-                swipeThreshold={80}
+                swipeThreshold={35}
                 onSwipeRequirementFulfilled={(dir) => {
                   if (i === currentIndexRef.current) {
                     setSwipeHint(dir === "right" ? "like" : "pass");
@@ -1127,49 +1143,54 @@ export default function Swipe() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <label style={{ fontSize: "10px", fontWeight: 950, textTransform: "uppercase", color: "#1b1b1b" }}>State</label>
-                <input
-                  type="text"
-                  list="modal-states"
+                <select
                   value={modalState}
                   onChange={(e) => {
                     setModalState(e.target.value);
                     setModalCity("");
                   }}
-                  placeholder="Select or enter state..."
                   style={{
-                    padding: "10px 12px", border: "2px solid #1b1b1b",
+                    width: "100%", padding: "10px 12px", border: "2px solid #1b1b1b",
                     borderRadius: "6px", fontSize: "13px", fontWeight: 900,
                     outline: "none", fontFamily: "inherit", background: "#fff",
-                    color: "#1b1b1b"
+                    color: "#1b1b1b", cursor: "pointer",
+                    appearance: "none",
+                    backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b1b1b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 12px center",
+                    backgroundSize: "14px"
                   }}
-                />
-                <datalist id="modal-states">
+                >
+                  <option value="" disabled>Select State...</option>
                   {Object.keys(INDIA_STATES_CITIES).map(st => (
-                    <option key={st} value={st} />
+                    <option key={st} value={st}>{st}</option>
                   ))}
-                </datalist>
+                </select>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <label style={{ fontSize: "10px", fontWeight: 950, textTransform: "uppercase", color: "#1b1b1b" }}>City</label>
-                <input
-                  type="text"
-                  list="modal-cities"
+                <select
                   value={modalCity}
                   onChange={(e) => setModalCity(e.target.value)}
-                  placeholder={modalState ? `Cities in ${modalState}...` : "Select a state first..."}
+                  disabled={!modalState}
                   style={{
-                    padding: "10px 12px", border: "2px solid #1b1b1b",
+                    width: "100%", padding: "10px 12px", border: "2px solid #1b1b1b",
                     borderRadius: "6px", fontSize: "13px", fontWeight: 900,
-                    outline: "none", fontFamily: "inherit", background: "#fff",
-                    color: "#1b1b1b"
+                    outline: "none", fontFamily: "inherit", background: modalState ? "#fff" : "#f3f3f3",
+                    color: "#1b1b1b", cursor: modalState ? "pointer" : "not-allowed",
+                    appearance: "none",
+                    backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b1b1b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 12px center",
+                    backgroundSize: "14px"
                   }}
-                />
-                <datalist id="modal-cities">
+                >
+                  <option value="" disabled>Select City...</option>
                   {(INDIA_STATES_CITIES[modalState] || []).map(ct => (
-                    <option key={ct} value={ct} />
+                    <option key={ct} value={ct}>{ct}</option>
                   ))}
-                </datalist>
+                </select>
               </div>
 
               <button
