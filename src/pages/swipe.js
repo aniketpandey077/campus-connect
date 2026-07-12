@@ -615,6 +615,8 @@ export default function Swipe() {
       myProfileRef.current = me;
       setMyVerificationStatus(me.verificationStatus || "pending");
 
+      console.log("Checking location status for profile:", phone, "-> City:", me.city, "-> State:", me.state, "-> Will Show Modal:", (!me.city || !me.state));
+
       if (!me.city || !me.state) {
         setShowLocModal(true);
       }
