@@ -25,6 +25,12 @@ export default function Admin() {
   const [outOfSyncUsers, setOutOfSyncUsers] = useState([]);
   const [loadingSync, setLoadingSync] = useState(false);
 
+  // Profile-oriented Chat Moderation States
+  const [allProfiles, setAllProfiles] = useState([]);
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [selectedUserMatches, setSelectedUserMatches] = useState([]);
+  const [profileSearchQuery, setProfileSearchQuery] = useState("");
+
   // ── PIN Authentication ──
   const handlePinSubmit = async (e) => {
     e.preventDefault();
@@ -104,40 +110,90 @@ export default function Admin() {
     return () => unsub();
   }, [authorized]);
 
-  // ── Load matches for Chat Moderation ──
+  // ── Load all profiles for Chat Moderation tab ──
   useEffect(() => {
     if (!authorized || activeTab !== "chats") return;
 
     setLoading(true);
-    const q = collection(db, "matches");
-    const unsub = onSnapshot(q, async (snap) => {
+    const q = collection(db, "profiles");
+    const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setMatches(list);
-
-      // Batch fetch missing profiles for matched users
-      const profileUpdates = {};
-      await Promise.all(
-        list.flatMap(m => [m.user1Id, m.user2Id]).map(async (uid) => {
-          if (uid && !profiles[uid] && !profileUpdates[uid]) {
-            const pSnap = await getDoc(doc(db, "profiles", uid));
-            if (pSnap.exists()) {
-              profileUpdates[uid] = pSnap.data();
-            }
-          }
-        })
-      );
-
-      if (Object.keys(profileUpdates).length > 0) {
-        setProfiles(prev => ({ ...prev, ...profileUpdates }));
-      }
+      list.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+      setAllProfiles(list);
+      
+      const seeded = {};
+      list.forEach(p => {
+        seeded[p.id] = p;
+      });
+      setProfiles(prev => ({ ...prev, ...seeded }));
       setLoading(false);
     }, (err) => {
-      console.error("Failed to fetch matches:", err);
+      console.error("Failed to load profiles:", err);
       setLoading(false);
     });
 
     return () => unsub();
   }, [authorized, activeTab]);
+
+  // ── Load matches dynamically for selected user ──
+  useEffect(() => {
+    if (!authorized || !selectedProfile) {
+      setSelectedUserMatches([]);
+      return;
+    }
+
+    const uid = selectedProfile.id;
+    setLoading(true);
+
+    let list1 = [];
+    let list2 = [];
+
+    const updateMatchesState = async () => {
+      const merged = [];
+      const seen = new Set();
+      [...list1, ...list2].forEach(m => {
+        if (!seen.has(m.id)) {
+          seen.add(m.id);
+          merged.push(m);
+        }
+      });
+
+      setSelectedUserMatches(merged);
+
+      const profileUpdates = {};
+      await Promise.all(
+        merged.flatMap(m => [m.user1Id, m.user2Id]).map(async (otherId) => {
+          if (otherId && !profiles[otherId] && !profileUpdates[otherId]) {
+            const pSnap = await getDoc(doc(db, "profiles", otherId));
+            if (pSnap.exists()) {
+              profileUpdates[otherId] = pSnap.data();
+            }
+          }
+        })
+      );
+      if (Object.keys(profileUpdates).length > 0) {
+        setProfiles(prev => ({ ...prev, ...profileUpdates }));
+      }
+      setLoading(false);
+    };
+
+    const q1 = query(collection(db, "matches"), where("user1Id", "==", uid));
+    const unsub1 = onSnapshot(q1, (snap) => {
+      list1 = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      updateMatchesState();
+    });
+
+    const q2 = query(collection(db, "matches"), where("user2Id", "==", uid));
+    const unsub2 = onSnapshot(q2, (snap) => {
+      list2 = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      updateMatchesState();
+    });
+
+    return () => {
+      unsub1();
+      unsub2();
+    };
+  }, [authorized, selectedProfile]);
 
   // ── Load Messages for Inspecting Match ──
   useEffect(() => {
@@ -540,97 +596,188 @@ export default function Admin() {
             </>
           )}
 
-          {activeTab === "chats" && (
-            <>
-              <h2 style={{ margin: "0 0 16px", fontSize: 22, fontWeight: 900, color: "#111" }}>
-                Active Matches ({matches.length})
-              </h2>
+          {activeTab === "chats" && (() => {
+            const filtered = allProfiles.filter(p => {
+              const q = profileSearchQuery.toLowerCase().trim();
+              if (!q) return true;
+              return (p.name || "").toLowerCase().includes(q) || 
+                     (p.username || "").toLowerCase().includes(q) || 
+                     (p.phone || "").toLowerCase().includes(q);
+            });
 
-              {loading ? (
-                <div style={{ textAlign: "center", padding: 60 }}>
-                  <div style={{ fontSize: 40, animation: "spin 1s linear infinite" }}>🔄</div>
-                </div>
-              ) : matches.length === 0 ? (
-                <div style={{
-                  background: "#fff", borderRadius: 20, padding: "60px 20px",
-                  textAlign: "center", boxShadow: "0 2px 16px rgba(0,0,0,0.04)"
-                }}>
-                  <div style={{ fontSize: 48, marginBottom: 10 }}>💬</div>
-                  <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 900, color: "#222" }}>No active matches</h3>
-                  <p style={{ margin: 0, fontSize: 13, color: "#888" }}>Once students match, they will appear here.</p>
-                </div>
-              ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
-                  {matches.map((m) => {
-                    const u1 = profiles[m.user1Id] || {};
-                    const u2 = profiles[m.user2Id] || {};
-                    return (
-                      <div
-                        key={m.id}
-                        className="dashboard-item"
-                        style={{
-                          background: "#fff", borderRadius: 20, padding: 20,
-                          boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-                          display: "flex", flexDirection: "column", gap: 14
-                        }}
-                      >
-                        {/* Users matched */}
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#f0edec", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-                              {u1.avatar || "👤"}
-                            </div>
-                            <div style={{ minWidth: 0 }}>
-                              <p style={{ margin: 0, fontWeight: 800, fontSize: 13, color: "#111" }}>{u1.name || "Loading..."}</p>
-                              <p style={{ margin: 0, fontSize: 10, color: "#888" }}>User 1</p>
-                            </div>
-                          </div>
-                          <span style={{ fontSize: 16 }}>🤝</span>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexDirection: "row-reverse", textAlign: "right" }}>
-                            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#f0edec", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-                              {u2.avatar || "👤"}
-                            </div>
-                            <div style={{ minWidth: 0 }}>
-                              <p style={{ margin: 0, fontWeight: 800, fontSize: 13, color: "#111" }}>{u2.name || "Loading..."}</p>
-                              <p style={{ margin: 0, fontSize: 10, color: "#888" }}>User 2</p>
-                            </div>
-                          </div>
-                        </div>
+            return (
+              <>
+                <h2 style={{ margin: "0 0 16px", fontSize: 22, fontWeight: 900, color: "#1b1b1b" }}>
+                  Chat Moderation Panel
+                </h2>
 
-                        {/* Match details */}
-                        <div style={{ background: "#FAFAF8", padding: 12, borderRadius: 12, border: "1px solid #EDECE8", fontSize: 12, color: "#555" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                            <span>Status:</span>
-                            <span style={{ fontWeight: 800, color: m.status === "revealed" ? "#10B981" : "#F59E0B" }}>
-                              {m.status?.toUpperCase() || "PENDING"}
-                            </span>
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span>Match ID:</span>
-                            <span style={{ fontFamily: "monospace", fontSize: 10 }}>{m.id.slice(0, 12)}...</span>
-                          </div>
-                        </div>
+                {selectedProfile ? (
+                  <div>
+                    {/* Back Button */}
+                    <button
+                      onClick={() => setSelectedProfile(null)}
+                      style={{
+                        padding: "8px 16px", borderRadius: 10, border: "2.5px solid #1b1b1b",
+                        background: "#fff", color: "#1b1b1b", fontWeight: 900, fontSize: 12,
+                        cursor: "pointer", fontFamily: "inherit", boxShadow: "2px 2px 0px 0px #1b1b1b",
+                        marginBottom: 20
+                      }}
+                    >
+                      ⬅️ Back to All Users
+                    </button>
 
-                        {/* Actions */}
-                        <button
-                          onClick={() => setInspectingMatch(m)}
-                          style={{
-                            width: "100%", padding: 11, borderRadius: 10,
-                            border: "none", background: "#6C5CE7",
-                            color: "#fff", fontWeight: 800, fontSize: 13,
-                            cursor: "pointer", fontFamily: "inherit",
-                            boxShadow: "0 2px 8px rgba(108,92,231,0.25)"
-                          }}
-                        >
-                          👁️ Inspect Chat Log
-                        </button>
+                    {/* Selected User Header Card */}
+                    <div style={{
+                      background: "#fdfdfb", border: "2.5px solid #1b1b1b", borderRadius: 16,
+                      boxShadow: "3px 3px 0px 0px #1b1b1b", padding: 20, display: "flex",
+                      alignItems: "center", gap: 16, marginBottom: 24
+                    }}>
+                      <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#bdff00", border: "2px solid #1b1b1b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>
+                        {selectedProfile.avatar || "👤"}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </>
-          )}
+                      <div>
+                        <h3 style={{ margin: 0, fontWeight: 950, fontSize: 18, color: "#1b1b1b", textTransform: "uppercase" }}>
+                          {selectedProfile.name}
+                        </h3>
+                        <p style={{ margin: "2px 0 0", fontWeight: 800, fontSize: 12, color: "#7531d3" }}>
+                          @{selectedProfile.username} ({selectedProfile.phone})
+                        </p>
+                        <p style={{ margin: "2px 0 0", fontWeight: 700, fontSize: 11, color: "#666" }}>
+                          Active chats of this user are shown below.
+                        </p>
+                      </div>
+                    </div>
+
+                    <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>
+                      Active Chats ({selectedUserMatches.length})
+                    </h3>
+
+                    {loading ? (
+                      <div style={{ textAlign: "center", padding: 40 }}>
+                        <div style={{ fontSize: 40, animation: "spin 1s linear infinite" }}>🔄</div>
+                      </div>
+                    ) : selectedUserMatches.length === 0 ? (
+                      <div style={{ background: "#fff", border: "2.5px solid #1b1b1b", borderRadius: 16, padding: "40px 20px", textAlign: "center", boxShadow: "3px 3px 0px 0px #1b1b1b" }}>
+                        <div style={{ fontSize: 32, marginBottom: 8 }}>💬</div>
+                        <h4 style={{ margin: 0, fontWeight: 900, color: "#1b1b1b" }}>No active chats for this user</h4>
+                      </div>
+                    ) : (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
+                        {selectedUserMatches.map((m) => {
+                          const isUser1 = m.user1Id === selectedProfile.id;
+                          const otherId = isUser1 ? m.user2Id : m.user1Id;
+                          const otherUser = profiles[otherId] || {};
+                          return (
+                            <div
+                              key={m.id}
+                              style={{
+                                background: "#fff", border: "2.5px solid #1b1b1b", borderRadius: 16,
+                                boxShadow: "3px 3px 0px 0px #1b1b1b", padding: 20,
+                                display: "flex", flexDirection: "column", gap: 14
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#ffb2bf", border: "2px solid #1b1b1b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
+                                  {otherUser.avatar || "👤"}
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                  <p style={{ margin: 0, fontWeight: 900, fontSize: 13, color: "#1b1b1b" }}>
+                                    Chatting with {otherUser.name || "Loading..."}
+                                  </p>
+                                  <p style={{ margin: 0, fontSize: 11, color: "#7531d3", fontWeight: 800 }}>
+                                    @{otherUser.username}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div style={{ background: "#FAFAF8", padding: 12, borderRadius: 12, border: "2px solid #1b1b1b", fontSize: 12, color: "#1b1b1b", fontWeight: 700 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                                  <span>Status:</span>
+                                  <span style={{ fontWeight: 900, color: m.status === "revealed" ? "#10B981" : "#F59E0B" }}>
+                                    {m.status?.toUpperCase() || "PENDING"}
+                                  </span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                  <span>Match ID:</span>
+                                  <span style={{ fontFamily: "monospace", fontSize: 10 }}>{m.id.slice(0, 12)}...</span>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={() => setInspectingMatch(m)}
+                                style={{
+                                  width: "100%", padding: 11, borderRadius: 10,
+                                  border: "2px solid #1b1b1b", background: "#bdff00",
+                                  color: "#1b1b1b", fontWeight: 950, fontSize: 13,
+                                  cursor: "pointer", fontFamily: "inherit",
+                                  boxShadow: "2px 2px 0px 0px #1b1b1b"
+                                }}
+                              >
+                                👁️ Inspect Chat Log
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    {/* Search Bar */}
+                    <input
+                      type="text"
+                      placeholder="🔍 Search user by name or phone..."
+                      value={profileSearchQuery}
+                      onChange={(e) => setProfileSearchQuery(e.target.value)}
+                      style={{
+                        width: "100%", padding: "12px 16px", borderRadius: 12,
+                        border: "2.5px solid #1b1b1b", fontSize: 14, outline: "none",
+                        fontFamily: "inherit", color: "#1b1b1b", background: "#ffffff",
+                        boxShadow: "3px 3px 0px 0px #1b1b1b", marginBottom: 20,
+                        fontWeight: 800
+                      }}
+                    />
+
+                    {loading ? (
+                      <div style={{ textAlign: "center", padding: 60 }}>
+                        <div style={{ fontSize: 40, animation: "spin 1s linear infinite" }}>🔄</div>
+                      </div>
+                    ) : filtered.length === 0 ? (
+                      <div style={{ background: "#fff", border: "2.5px solid #1b1b1b", borderRadius: 16, padding: "60px 20px", textAlign: "center", boxShadow: "3px 3px 0px 0px #1b1b1b" }}>
+                        <div style={{ fontSize: 48, marginBottom: 10 }}>👥</div>
+                        <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 900, color: "#1b1b1b" }}>No users found</h3>
+                        <p style={{ margin: 0, fontSize: 13, color: "#666", fontWeight: 700 }}>Try adjusting your search query.</p>
+                      </div>
+                    ) : (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+                        {filtered.map(p => (
+                          <div
+                            key={p.id}
+                            onClick={() => setSelectedProfile(p)}
+                            style={{
+                              background: "#fff", border: "2.5px solid #1b1b1b", borderRadius: 14,
+                              boxShadow: "3px 3px 0px 0px #1b1b1b", padding: 16, cursor: "pointer",
+                              display: "flex", alignItems: "center", gap: 12, transition: "transform 0.1s"
+                            }}
+                            className="dashboard-item"
+                          >
+                            <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#bdff00", border: "2px solid #1b1b1b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>
+                              {p.avatar || "👤"}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <h4 style={{ margin: 0, fontWeight: 900, fontSize: 14, color: "#1b1b1b", textTransform: "uppercase" }}>{p.name}</h4>
+                              <p style={{ margin: "2px 0 0", fontSize: 11, fontWeight: 800, color: "#7531d3" }}>@{p.username || p.phone}</p>
+                              <p style={{ margin: "2px 0 0", fontSize: 10, fontWeight: 700, color: "#666" }}>{p.city || "Unknown City"}, {p.state || "Unknown State"}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            );
+          })()}
 
           {activeTab === "sync" && (
             <>
