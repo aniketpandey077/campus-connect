@@ -277,7 +277,7 @@ function ProfileModal({ profile, revealed, onClose }) {
             padding: "3px 8px", fontSize: 9, fontWeight: 950, color: "#1b1b1b",
             boxShadow: "1px 1px 0px 0px #1b1b1b",
           }}>
-            {profile.verificationStatus === "approved" ? "VERIFIED 🛡️" : "PENDING ⏳"}
+            {profile.verificationStatus === "approved" ? "VERIFIED 🛡️" : "VERIFICATION PENDING ⏳"}
           </div>
         </div>
 

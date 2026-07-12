@@ -253,7 +253,7 @@ export default function SearchPage() {
                       padding: "3px 9px", fontSize: 9, fontWeight: 950, color: "#1b1b1b",
                       boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
                     }}>
-                      {res.verificationStatus === "approved" ? "VERIFIED 🛡️" : "PENDING ⏳"}
+                      {res.verificationStatus === "approved" ? "VERIFIED 🛡️" : "VERIFICATION PENDING ⏳"}
                     </div>
                     {/* PHOTO BLURRED notice */}
                     <div style={{

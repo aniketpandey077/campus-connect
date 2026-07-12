@@ -335,7 +335,7 @@ function ProfileCard({ profile, swipeHint }) {
             letterSpacing: "0.06em",
             boxShadow: "1px 1px 0px 0px #1b1b1b",
           }}>
-            {profile.verificationStatus === "approved" ? "VERIFIED 🛡️" : "PENDING ⏳"}
+            {profile.verificationStatus === "approved" ? "VERIFIED 🛡️" : "VERIFICATION PENDING ⏳"}
           </div>
         </div>
 
