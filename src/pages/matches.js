@@ -276,14 +276,31 @@ export default function Matches() {
     const needed = likesReceived.filter(id => !likersProfiles[id]);
     if (needed.length === 0) return;
 
-    Promise.all(needed.map(id => getDoc(doc(db, "profiles", id)))).then(snaps => {
-      const updates = {};
-      snaps.forEach((snap, i) => {
+    Promise.all(needed.map(async (id) => {
+      try {
+        const snap = await getDoc(doc(db, "profiles", id));
         if (snap.exists()) {
           const profileData = snap.data();
           delete profileData.photoUrl; // Security: do not expose private photoUrl in matches list
-          updates[needed[i]] = { id: needed[i], ...profileData };
+          return { id, ...profileData };
         }
+        // Fallback: search by phone number (in case ID is a legacy phone number)
+        const q = query(collection(db, "profiles"), where("phone", "==", id));
+        const qSnap = await getDocs(q);
+        if (!qSnap.empty) {
+          const profileData = qSnap.docs[0].data();
+          delete profileData.photoUrl;
+          return { id, ...profileData, id: qSnap.docs[0].id };
+        }
+        return { id, name: "Campus User", avatar: "👤", branch: ["Unknown"], year: ["N/A"] };
+      } catch (err) {
+        console.error(`Failed to load profile for liker ${id}:`, err);
+        return { id, name: "Campus User", avatar: "👤", branch: ["Unknown"], year: ["N/A"] };
+      }
+    })).then(resultsList => {
+      const updates = {};
+      resultsList.forEach(p => {
+        updates[p.id] = p;
       });
       setLikersProfiles(prev => ({ ...prev, ...updates }));
     });
@@ -360,18 +377,37 @@ export default function Matches() {
       .filter(id => id && !profiles[id]);
     if (needed.length === 0) return;
 
-    Promise.all(needed.map(id => getDoc(doc(db, "profiles", id)))).then(snaps => {
-      const updates = {};
-      snaps.forEach((snap, i) => {
+    Promise.all(needed.map(async (id) => {
+      try {
+        const snap = await getDoc(doc(db, "profiles", id));
         if (snap.exists()) {
           const profileData = snap.data();
-          const targetId = needed[i];
-          const matchDoc = matchDocs.find(m => m.user1Id === targetId || m.user2Id === targetId);
+          const matchDoc = matchDocs.find(m => m.user1Id === id || m.user2Id === id);
           if (!matchDoc || matchDoc.revealStatus !== "revealed") {
             delete profileData.photoUrl; // Security: hide raw photo until revealed
           }
-          updates[targetId] = profileData;
+          return { id, ...profileData };
         }
+        // Fallback: search by phone number (in case ID is a legacy phone number)
+        const q = query(collection(db, "profiles"), where("phone", "==", id));
+        const qSnap = await getDocs(q);
+        if (!qSnap.empty) {
+          const profileData = qSnap.docs[0].data();
+          const matchDoc = matchDocs.find(m => m.user1Id === id || m.user2Id === id);
+          if (!matchDoc || matchDoc.revealStatus !== "revealed") {
+            delete profileData.photoUrl;
+          }
+          return { id, ...profileData, id: qSnap.docs[0].id };
+        }
+        return { id, name: "Campus User", avatar: "👤", branch: ["Unknown"], year: ["N/A"] };
+      } catch (err) {
+        console.error(`Failed to load profile for match ${id}:`, err);
+        return { id, name: "Campus User", avatar: "👤", branch: ["Unknown"], year: ["N/A"] };
+      }
+    })).then(resultsList => {
+      const updates = {};
+      resultsList.forEach(p => {
+        updates[p.id] = p;
       });
       setProfiles(prev => ({ ...prev, ...updates }));
     });
