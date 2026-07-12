@@ -20,6 +20,7 @@ const BG = "#f3f3f3";
 
 const STEPS = [
   { id: "name",      label: "IDENTITY" },
+  { id: "location",  label: "LOCATION" },
   { id: "branch",    label: "COURSE" },
   { id: "year",      label: "YEAR" },
   { id: "stay",      label: "STAY" },
@@ -158,7 +159,55 @@ export default function Onboarding() {
   // States
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
+  const [userState, setUserState] = useState("");
+  const [city, setCity] = useState("");
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+  const [locLoading, setLocLoading] = useState(false);
   const [avatar, setAvatar] = useState("😎");
+
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser");
+      return;
+    }
+    setLocLoading(true);
+    setError("");
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        setLatitude(lat);
+        setLongitude(lon);
+
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`);
+          if (!res.ok) throw new Error("Location service error");
+          const data = await res.json();
+          if (data && data.address) {
+            const resolvedState = data.address.state || "";
+            const resolvedCity = data.address.city || data.address.town || data.address.village || data.address.county || data.address.suburb || "";
+            setUserState(resolvedState);
+            setCity(resolvedCity);
+          } else {
+            setError("Could not resolve city/state from GPS. Please enter manually.");
+          }
+        } catch (err) {
+          console.error("Reverse geocoding failed:", err);
+          setError("Location lookup failed. Please enter state and city manually.");
+        } finally {
+          setLocLoading(false);
+        }
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
+        setError("GPS access denied or unavailable. Please type state and city manually.");
+        setLocLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
   const [branch, setBranch] = useState([]);
   const [year, setYear] = useState([]);
   const [stay, setStay] = useState([]);
@@ -185,7 +234,7 @@ export default function Onboarding() {
 
   // Pre-fill studentName with their onboarding name if empty when reaching the verification step
   useEffect(() => {
-    if (step === 10 && !studentName && name) {
+    if (step === 11 && !studentName && name) {
       setStudentName(name);
     }
   }, [step, name, studentName]);
@@ -205,15 +254,19 @@ export default function Onboarding() {
       if (username.trim().length < 3) return "Username must be at least 3 characters";
       if (!/^[a-z0-9_]+$/.test(username.trim())) return "Username can only contain small letters, numbers, and underscores";
     }
-    if (step === 2 && branch.length === 0) return "Pick at least one branch";
-    if (step === 3 && year.length === 0) return "Select your year";
-    if (step === 4 && stay.length === 0) return "Hostel or Day Scholar?";
-    if (step === 5 && vibe.length === 0) return "Pick at least one vibe";
-    if (step === 6 && interests.length < 3) return `Pick ${3 - interests.length} more interest${3 - interests.length > 1 ? "s" : ""}`;
-    if (step === 7 && squad.length === 0) return "Select at least one squad type";
-    if (step === 8 && spot.length === 0) return "Pick your go-to spot(s)";
-    if (step === 9 && prompt.length === 0) return "Pick at least one Saturday plan";
-    if (step === 10) {
+    if (step === 2) {
+      if (!userState.trim()) return "Please select or enter your state";
+      if (!city.trim()) return "Please select or enter your city";
+    }
+    if (step === 3 && branch.length === 0) return "Pick at least one branch";
+    if (step === 4 && year.length === 0) return "Select your year";
+    if (step === 5 && stay.length === 0) return "Hostel or Day Scholar?";
+    if (step === 6 && vibe.length === 0) return "Pick at least one vibe";
+    if (step === 7 && interests.length < 3) return `Pick ${3 - interests.length} more interest${3 - interests.length > 1 ? "s" : ""}`;
+    if (step === 8 && squad.length === 0) return "Select at least one squad type";
+    if (step === 9 && spot.length === 0) return "Pick your go-to spot(s)";
+    if (step === 10 && prompt.length === 0) return "Pick at least one Saturday plan";
+    if (step === 11) {
       if (!profilePhotoFile) return "Upload your profile photo first";
       if (verificationMethod === "id_card" && !idCardFile) {
         return "Please upload your ID card image or choose the ID & Name method";
@@ -292,6 +345,8 @@ export default function Onboarding() {
         id: userId, phone, avatar,
         username: username.trim().toLowerCase(),
         name: name.trim(), branch, year, stay,
+        state: userState.trim(), city: city.trim(),
+        latitude: latitude || null, longitude: longitude || null,
         campusVibe: vibe, interests, squad,
         defaultSpot: spot, weekendVibe: prompt,
         photoUrl, blurredPhotoUrl, verificationStatus: "pending",
@@ -618,8 +673,96 @@ export default function Onboarding() {
               </div>
             )}
 
-            {/* Steps 2-9: General selection steps */}
+            {/* Step 2: Location Step */}
             {step === 2 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <h2 style={{ fontSize: "20px", fontWeight: 950, textTransform: "uppercase", color: "#1b1b1b", margin: 0 }}>
+                  📍 Where are you from?
+                </h2>
+                <p style={{ fontSize: "11px", fontWeight: 800, color: "#555", margin: 0, textTransform: "uppercase" }}>
+                  Used to connect you with other students from your hometown or nearby cities!
+                </p>
+
+                {/* GPS Detector button */}
+                <button
+                  type="button"
+                  onClick={detectLocation}
+                  disabled={locLoading}
+                  style={{
+                    width: "100%", padding: "14px", border: "3px solid #1b1b1b",
+                    background: "#ecdcff", color: "#1b1b1b", fontWeight: 950,
+                    fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
+                    boxShadow: "3px 3px 0px 0px #1b1b1b", textTransform: "uppercase",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
+                  }}
+                >
+                  {locLoading ? "Detecting location..." : "📍 Use My Current Location"}
+                </button>
+
+                {/* OpenStreetMap Preview */}
+                {latitude && longitude && (
+                  <div style={{ border: "3px solid #1b1b1b", borderRadius: "10px", overflow: "hidden", boxShadow: "3px 3px 0px 0px #1b1b1b", height: "180px", width: "100%" }}>
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${longitude - 0.02}%2C${latitude - 0.02}%2C${longitude + 0.02}%2C${latitude + 0.02}&layer=mapnik&marker=${latitude}%2C${longitude}`}
+                    />
+                  </div>
+                )}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "11px", fontWeight: 950, textTransform: "uppercase", color: "#1b1b1b" }}>
+                    Select State
+                  </label>
+                  <input
+                    type="text"
+                    list="indian-states"
+                    value={userState}
+                    onChange={(e) => setUserState(e.target.value)}
+                    placeholder="E.g. Punjab"
+                    style={{
+                      padding: "14px", border: "3px solid #1b1b1b",
+                      borderRadius: "8px", fontSize: "13px", fontWeight: 800,
+                      outline: "none", fontFamily: "inherit",
+                      background: "#fff", boxShadow: "2px 2px 0px 0px #1b1b1b"
+                    }}
+                  />
+                  <datalist id="indian-states">
+                    {["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Jammu and Kashmir", "Ladakh", "Puducherry"].map(st => (
+                      <option key={st} value={st} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "11px", fontWeight: 950, textTransform: "uppercase", color: "#1b1b1b" }}>
+                    Select City
+                  </label>
+                  <input
+                    type="text"
+                    list="indian-cities"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="E.g. Jalandhar"
+                    style={{
+                      padding: "14px", border: "3px solid #1b1b1b",
+                      borderRadius: "8px", fontSize: "13px", fontWeight: 800,
+                      outline: "none", fontFamily: "inherit",
+                      background: "#fff", boxShadow: "2px 2px 0px 0px #1b1b1b"
+                    }}
+                  />
+                  <datalist id="indian-cities">
+                    {["Jalandhar", "Phagwara", "Ludhiana", "Amritsar", "Patiala", "Bathinda", "Chandigarh", "Mohali", "Panchkula", "Delhi", "Mumbai", "Pune", "Nagpur", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Ahmedabad", "Surat", "Jaipur", "Jodhpur", "Udaipur", "Kota", "Lucknow", "Kanpur", "Varanasi", "Noida", "Ghaziabad", "Gurugram", "Faridabad", "Patna", "Ranchi", "Bhopal", "Indore", "Raipur", "Dehradun", "Shimla", "Guwahati", "Bhubaneswar"].map(ct => (
+                      <option key={ct} value={ct} />
+                    ))}
+                  </datalist>
+                </div>
+              </div>
+            )}
+
+            {/* Steps 3-10: General selection steps */}
+            {step === 3 && (
               <SelectionStep
                 label="COURSE / BRANCH"
                 options={OPT.branch}
@@ -629,7 +772,7 @@ export default function Onboarding() {
               />
             )}
 
-            {step === 3 && (
+            {step === 4 && (
               <SelectionStep
                 label="CURRENT GRADUATION YEAR"
                 options={OPT.year}
@@ -639,7 +782,7 @@ export default function Onboarding() {
               />
             )}
 
-            {step === 4 && (
+            {step === 5 && (
               <SelectionStep
                 label="WHERE YOU STAY"
                 options={OPT.stay}
@@ -648,7 +791,7 @@ export default function Onboarding() {
               />
             )}
 
-            {step === 5 && (
+            {step === 6 && (
               <SelectionStep
                 label="CAMPUS ALTER-EGO VIBES"
                 options={OPT.vibe}
@@ -658,7 +801,7 @@ export default function Onboarding() {
               />
             )}
 
-            {step === 6 && (
+            {step === 7 && (
               <SelectionStep
                 label="YOUR DEEPEST INTERESTS (SELECT >= 3)"
                 options={OPT.interests}
@@ -668,7 +811,7 @@ export default function Onboarding() {
               />
             )}
 
-            {step === 7 && (
+            {step === 8 && (
               <SelectionStep
                 label="SQUAD OBJECTIVES"
                 options={OPT.squad}
@@ -677,7 +820,7 @@ export default function Onboarding() {
               />
             )}
 
-            {step === 8 && (
+            {step === 9 && (
               <SelectionStep
                 label="CAMPUS HANGOUT SPOTS"
                 options={OPT.spot}
@@ -686,7 +829,7 @@ export default function Onboarding() {
               />
             )}
 
-            {step === 9 && (
+            {step === 10 && (
               <SelectionStep
                 label="MY IDEAL SATURDAY"
                 options={OPT.prompt}
@@ -695,8 +838,8 @@ export default function Onboarding() {
               />
             )}
 
-            {/* Step 10: Private ID Verification */}
-            {step === 10 && (
+            {/* Step 11: Private ID Verification */}
+            {step === 11 && (
               <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                 
                 {/* Fallback Profile Photo Uploader if missed in Step 1 */}

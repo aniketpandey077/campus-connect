@@ -188,8 +188,54 @@ export default function EditProfile() {
   // Form states
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
+  const [userState, setUserState] = useState("");
+  const [city, setCity] = useState("");
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+  const [locLoading, setLocLoading] = useState(false);
   const [avatar, setAvatar] = useState("😎");
   const [alwaysOpen, setAlwaysOpen] = useState(false);
+
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+    setLocLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        setLatitude(lat);
+        setLongitude(lon);
+
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`);
+          if (!res.ok) throw new Error("Location service error");
+          const data = await res.json();
+          if (data && data.address) {
+            const resolvedState = data.address.state || "";
+            const resolvedCity = data.address.city || data.address.town || data.address.village || data.address.county || data.address.suburb || "";
+            setUserState(resolvedState);
+            setCity(resolvedCity);
+          } else {
+            alert("Could not resolve city/state from GPS. Please enter manually.");
+          }
+        } catch (err) {
+          console.error("Reverse geocoding failed:", err);
+          alert("Location lookup failed. Please enter state and city manually.");
+        } finally {
+          setLocLoading(false);
+        }
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
+        alert("GPS access denied or unavailable. Please type state and city manually.");
+        setLocLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
   const [branch, setBranch] = useState([]);
   const [year, setYear] = useState([]);
   const [stay, setStay] = useState([]);
@@ -215,6 +261,10 @@ export default function EditProfile() {
       const data = snap.data();
       setName(data.name || "");
       setUsername(data.username || "");
+      setUserState(data.state || "");
+      setCity(data.city || "");
+      setLatitude(data.latitude || null);
+      setLongitude(data.longitude || null);
       setAvatar(data.avatar || "😎");
       setAlwaysOpen(data.alwaysOpen || false);
       setBranch(data.branch || []);
@@ -291,6 +341,8 @@ export default function EditProfile() {
     if (!/^[a-z0-9_]+$/.test(username.trim())) { alert("Username can only contain small letters, numbers, and underscores."); return; }
     if (branch.length === 0) { alert("Please select your branch."); return; }
     if (year.length === 0) { alert("Please select your year."); return; }
+    if (!userState.trim()) { alert("Please select or enter your state."); return; }
+    if (!city.trim()) { alert("Please select or enter your city."); return; }
     if (interests.length < 3) { alert("Please select at least 3 interests."); return; }
 
     setSaving(true);
@@ -319,6 +371,10 @@ export default function EditProfile() {
         branch,
         year,
         stay,
+        state: userState.trim(),
+        city: city.trim(),
+        latitude: latitude || null,
+        longitude: longitude || null,
         campusVibe: vibe,
         interests,
         squad,
@@ -491,6 +547,102 @@ export default function EditProfile() {
             <span style={{ fontSize: 10, fontWeight: 800, color: "#888", display: "block", marginTop: 6 }}>
               Handles are shown as @{username || "your_handle"} (small letters, numbers, underscores only)
             </span>
+          </div>
+
+          {/* Section: Location */}
+          <div style={{
+            background: "#fff", border: "3px solid #1b1b1b", borderRadius: 12, padding: 20,
+            marginBottom: 20, boxShadow: "4px 4px 0px 0px #1b1b1b"
+          }}>
+            <h3 style={{
+              margin: "0 0 12px", fontSize: 11, fontWeight: 950,
+              color: "#1b1b1b", textTransform: "uppercase", letterSpacing: "0.08em",
+              borderBottom: "2px solid #1b1b1b", paddingBottom: 6
+            }}>
+              📍 Where are you from?
+            </h3>
+            
+            <button
+              type="button"
+              onClick={detectLocation}
+              disabled={locLoading}
+              style={{
+                width: "100%", padding: "12px", border: "2px solid #1b1b1b",
+                background: "#ecdcff", color: "#1b1b1b", fontWeight: 950,
+                fontSize: "12px", cursor: "pointer", fontFamily: "inherit",
+                boxShadow: "2px 2px 0px 0px #1b1b1b", textTransform: "uppercase",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                marginBottom: "16px"
+              }}
+            >
+              {locLoading ? "Detecting location..." : "📍 Use My Current Location"}
+            </button>
+
+            {/* Map Preview */}
+            {latitude && longitude && (
+              <div style={{ border: "2px solid #1b1b1b", borderRadius: "8px", overflow: "hidden", boxShadow: "2px 2px 0px 0px #1b1b1b", height: "150px", width: "100%", marginBottom: "16px" }}>
+                <iframe
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${longitude - 0.02}%2C${latitude - 0.02}%2C${longitude + 0.02}%2C${latitude + 0.02}&layer=mapnik&marker=${latitude}%2C${longitude}`}
+                />
+              </div>
+            )}
+
+            <h3 style={{
+              margin: "0 0 12px", fontSize: 11, fontWeight: 950,
+              color: "#1b1b1b", textTransform: "uppercase", letterSpacing: "0.08em",
+              borderBottom: "2px solid #1b1b1b", paddingBottom: 6
+            }}>
+              Your State
+            </h3>
+            <input
+              type="text"
+              list="indian-states"
+              value={userState}
+              onChange={(e) => setUserState(e.target.value)}
+              placeholder="Select or enter state..."
+              style={{
+                width: "100%", padding: "12px 16px", borderRadius: 8,
+                border: "2px solid #1b1b1b", fontSize: 14, outline: "none",
+                fontFamily: "inherit", color: "#1b1b1b", background: "#ffffff",
+                boxShadow: "2px 2px 0px 0px #1b1b1b", marginTop: 4,
+                fontWeight: 700
+              }}
+            />
+            <datalist id="indian-states">
+              {["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Jammu and Kashmir", "Ladakh", "Puducherry"].map(st => (
+                <option key={st} value={st} />
+              ))}
+            </datalist>
+
+            <h3 style={{
+              margin: "16px 0 12px", fontSize: 11, fontWeight: 950,
+              color: "#1b1b1b", textTransform: "uppercase", letterSpacing: "0.08em",
+              borderBottom: "2px solid #1b1b1b", paddingBottom: 6
+            }}>
+              Your City
+            </h3>
+            <input
+              type="text"
+              list="indian-cities"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Select or enter city..."
+              style={{
+                width: "100%", padding: "12px 16px", borderRadius: 8,
+                border: "2px solid #1b1b1b", fontSize: 14, outline: "none",
+                fontFamily: "inherit", color: "#1b1b1b", background: "#ffffff",
+                boxShadow: "2px 2px 0px 0px #1b1b1b", marginTop: 4,
+                fontWeight: 700
+              }}
+            />
+            <datalist id="indian-cities">
+              {["Jalandhar", "Phagwara", "Ludhiana", "Amritsar", "Patiala", "Bathinda", "Chandigarh", "Mohali", "Panchkula", "Delhi", "Mumbai", "Pune", "Nagpur", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Ahmedabad", "Surat", "Jaipur", "Jodhpur", "Udaipur", "Kota", "Lucknow", "Kanpur", "Varanasi", "Noida", "Ghaziabad", "Gurugram", "Faridabad", "Patna", "Ranchi", "Bhopal", "Indore", "Raipur", "Dehradun", "Shimla", "Guwahati", "Bhubaneswar"].map(ct => (
+                <option key={ct} value={ct} />
+              ))}
+            </datalist>
           </div>
 
           {/* Section: Avatar */}

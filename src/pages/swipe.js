@@ -55,6 +55,18 @@ function computeScore(me, them) {
   // +1 per shared campus vibe
   const myV = me.campusVibe || [], theirV = them.campusVibe || [];
   score += myV.filter(x => theirV.includes(x)).length;
+
+  // Location scoring algorithm
+  const myCity = (me.city || "").trim().toLowerCase();
+  const theirCity = (them.city || "").trim().toLowerCase();
+  const myState = (me.state || "").trim().toLowerCase();
+  const theirState = (them.state || "").trim().toLowerCase();
+
+  if (myCity && myCity === theirCity && myState && myState === theirState) {
+    score += 100; // Nearest: same city & state
+  } else if (myState && myState === theirState) {
+    score += 50;  // Near: same state, different city
+  }
   return score;
 }
 
@@ -182,6 +194,7 @@ function ProfileCard({ profile, swipeHint }) {
             }}>
               {(profile.branch || []).slice(0, 2).join(" + ")}
               {profile.year?.[0] ? ` · ${profile.year[0]}` : ""}
+              {profile.city ? ` · 📍 ${profile.city}` : ""}
             </p>
           </div>
         </div>
@@ -261,6 +274,13 @@ function ProfileCard({ profile, swipeHint }) {
               <p style={{ margin: "0 0 2px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Ideal Saturday</p>
               <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#222" }}>{(profile.weekendVibe || []).join("  ·  ")}</p>
             </div>
+          )}
+
+          {/* Location */}
+          {profile.city && (
+            <p style={{ margin: 0, fontSize: 11, color: "#555", fontWeight: 750, textTransform: "uppercase" }}>
+              🏠 From: {profile.city}{profile.state ? `, ${profile.state}` : ""}
+            </p>
           )}
 
           {/* Spot */}
@@ -472,7 +492,8 @@ export default function Swipe() {
 
   // Filter state
   const [filterOpen, setFilterOpen] = useState(false);
-  const [activeFilters, setActiveFilters] = useState({ branch: [], squad: [], interests: [], year: [], stay: [] });
+  const [availableCities, setAvailableCities] = useState([]);
+  const [activeFilters, setActiveFilters] = useState({ branch: [], squad: [], interests: [], year: [], stay: [], city: [] });
   const activeFilterCount = Object.values(activeFilters).flat().length;
 
   useEffect(() => {
@@ -524,6 +545,10 @@ export default function Swipe() {
         }
       });
 
+      // Extract available cities for filtering (except current user)
+      const cities = Array.from(new Set(others.map(p => p.city).filter(Boolean)));
+      setAvailableCities(cities);
+
       // 3. Profiles I've already swiped on
       const swipesSnap = await getDocs(
         query(collection(db, "swipes"), where("swiperId", "==", phone))
@@ -554,6 +579,10 @@ export default function Swipe() {
       // Stay filter
       if (activeFilters.stay.length > 0) {
         others = others.filter(p => activeFilters.stay.some(s => (p.stay || []).includes(s)));
+      }
+      // City filter
+      if (activeFilters.city && activeFilters.city.length > 0) {
+        others = others.filter(p => p.city && activeFilters.city.some(c => p.city.trim().toLowerCase() === c.trim().toLowerCase()));
       }
 
       // 5. Filter + score + sort ascending (best match = last = on top of stack)
@@ -797,6 +826,7 @@ export default function Swipe() {
         {filterOpen && (
           <FilterDrawer
             active={activeFilters}
+            availableCities={availableCities}
             onApply={(f) => { setActiveFilters(f); setFilterOpen(false); }}
             onClose={() => setFilterOpen(false)}
           />
@@ -969,7 +999,7 @@ const FILTER_LABELS = {
   stay: "🏠 Stay Type",
 };
 
-function FilterDrawer({ active, onApply, onClose }) {
+function FilterDrawer({ active, availableCities = [], onApply, onClose }) {
   const [local, setLocal] = useState(active);
 
   const toggle = (key, val) => {
@@ -981,7 +1011,7 @@ function FilterDrawer({ active, onApply, onClose }) {
     }));
   };
 
-  const clearAll = () => setLocal({ branch: [], squad: [], interests: [], year: [], stay: [] });
+  const clearAll = () => setLocal({ branch: [], squad: [], interests: [], year: [], stay: [], city: [] });
 
   return (
     <div style={{
@@ -1055,6 +1085,36 @@ function FilterDrawer({ active, onApply, onClose }) {
             </div>
           </div>
         ))}
+        {/* City Filter */}
+        {availableCities.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 950, color: "#1b1b1b",
+              textTransform: "uppercase", letterSpacing: "0.06em",
+              borderBottom: "2px solid #1b1b1b", paddingBottom: 6,
+            }}>📍 City / Hometown</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {availableCities.map(opt => {
+                const sel = (local.city || []).includes(opt);
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => toggle("city", opt)}
+                    style={{
+                      padding: "7px 13px", borderRadius: 8,
+                      border: "2px solid #1b1b1b",
+                      background: sel ? "#ecdcff" : "#ffffff",
+                      color: "#1b1b1b",
+                      boxShadow: sel ? "2px 2px 0px 0px #1b1b1b" : "none",
+                      fontWeight: 900, fontSize: 11, cursor: "pointer",
+                      fontFamily: "inherit",
+                      textTransform: "uppercase",
+                    }}
+                  >{opt}</button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Apply */}
         <button

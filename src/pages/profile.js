@@ -353,6 +353,14 @@ export default function Profile() {
                 💻 {(profile.branch || []).join(" + ").toUpperCase()}
                 {(profile.year || []).length ? ` · ${profile.year[0].toUpperCase()}` : ""}
               </p>
+              {profile.city && (
+                <p style={{
+                  margin: "6px 0 0", fontFamily: "Montserrat", fontSize: "13px", fontWeight: 900,
+                  color: "#1b1b1b"
+                }}>
+                  📍 {profile.city.toUpperCase()}{profile.state ? `, ${profile.state.toUpperCase()}` : ""}
+                </p>
+              )}
             </div>
 
             {/* Decorative Star badge */}
@@ -403,6 +411,26 @@ export default function Profile() {
             gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
             gap: "20px"
           }}>
+            {profile.city && (
+              <BentoCard title="My Hometown" icon="📍" bg="#fef3c7">
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+                  <Tag bg="#ffffff">
+                    {profile.city.toUpperCase()}{profile.state ? `, ${profile.state.toUpperCase()}` : ""}
+                  </Tag>
+                  {profile.latitude && profile.longitude && (
+                    <div style={{ border: "2px solid #1b1b1b", borderRadius: "8px", overflow: "hidden", boxShadow: "2px 2px 0px 0px #1b1b1b", height: "140px", width: "100%", marginTop: "6px" }}>
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${profile.longitude - 0.02}%2C${profile.latitude - 0.02}%2C${profile.longitude + 0.02}%2C${profile.latitude + 0.02}&layer=mapnik&marker=${profile.latitude}%2C${profile.longitude}`}
+                      />
+                    </div>
+                  )}
+                </div>
+              </BentoCard>
+            )}
+            
             {(profile.stay || []).length > 0 && (
               <BentoCard title="Where I Stay" icon="🏠">
                 {(profile.stay || []).map(s => {

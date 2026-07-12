@@ -33,7 +33,9 @@ export default function SearchPage() {
         if (data.profileComplete) {
           const uname = (data.username || "").toLowerCase();
           const dname = (data.name || "").toLowerCase();
-          if (uname.includes(handle) || dname.includes(handle)) {
+          const ucity = (data.city || "").toLowerCase();
+          const ustate = (data.state || "").toLowerCase();
+          if (uname.includes(handle) || dname.includes(handle) || ucity.includes(handle) || ustate.includes(handle)) {
             list.push({ id: doc.id, ...data, photoUrl: undefined }); // strip private photo
           }
         }
@@ -311,6 +313,13 @@ export default function SearchPage() {
                           boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
                         }}>🏠 {s}</span>
                       ))}
+                      {res.city && (
+                        <span style={{
+                          padding: "4px 10px", border: "2px solid #1b1b1b", borderRadius: 6,
+                          fontSize: 11, fontWeight: 800, background: "#ffd9de",
+                          boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+                        }}>📍 {res.city.toUpperCase()}</span>
+                      )}
                     </div>
 
                     {/* Interests */}
