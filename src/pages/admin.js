@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import {
   collection, query, where, onSnapshot,
-  doc, updateDoc, getDoc, orderBy
+  doc, updateDoc, getDoc, orderBy, writeBatch
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
@@ -22,6 +22,8 @@ export default function Admin() {
   const [profiles, setProfiles] = useState({}); // UID -> profile details
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
+  const [outOfSyncUsers, setOutOfSyncUsers] = useState([]);
+  const [loadingSync, setLoadingSync] = useState(false);
 
   // ── PIN Authentication ──
   const handlePinSubmit = async (e) => {
@@ -158,23 +160,103 @@ export default function Admin() {
     return () => unsub();
   }, [inspectingMatch]);
 
+  // ── Sync Profiles Logic ──
+  useEffect(() => {
+    if (!authorized) return;
+
+    const q = query(
+      collection(db, "verifications"),
+      where("status", "in", ["approved", "rejected"])
+    );
+    const unsub = onSnapshot(q, async (snap) => {
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const outOfSync = [];
+
+      await Promise.all(
+        list.map(async (v) => {
+          const pSnap = await getDoc(doc(db, "profiles", v.id));
+          if (pSnap.exists()) {
+            const profileData = pSnap.data();
+            if (profileData.verificationStatus !== v.status) {
+              outOfSync.push({
+                id: v.id,
+                verificationStatus: v.status,
+                profile: profileData
+              });
+            }
+          } else {
+            outOfSync.push({
+              id: v.id,
+              verificationStatus: v.status,
+              profile: { name: "Unknown User (No Profile Document)", phone: v.id }
+            });
+          }
+        })
+      );
+
+      setOutOfSyncUsers(outOfSync);
+    }, (err) => {
+      console.error("Failed to load verifications for sync:", err);
+    });
+
+    return () => unsub();
+  }, [authorized]);
+
+  const handleSyncStatus = async (userId, status) => {
+    setProcessingId(userId);
+    try {
+      await updateDoc(doc(db, "profiles", userId), {
+        verificationStatus: status,
+      });
+      alert("Profile status successfully synchronized! 🎉");
+    } catch (e) {
+      console.error(e);
+      alert(`Failed to sync status: ${e.message || e}`);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleSyncAll = async () => {
+    if (outOfSyncUsers.length === 0) return;
+    setLoadingSync(true);
+    try {
+      const batch = writeBatch(db);
+      outOfSyncUsers.forEach(u => {
+        const ref = doc(db, "profiles", u.id);
+        batch.update(ref, { verificationStatus: u.verificationStatus });
+      });
+      await batch.commit();
+      alert("All profiles synchronized successfully! 🎉");
+    } catch (e) {
+      console.error(e);
+      alert(`Failed to sync profiles: ${e.message || e}`);
+    } finally {
+      setLoadingSync(false);
+    }
+  };
+
   // ── Actions ──
-  const handleVerify = async (phone, approve) => {
-    setProcessingId(phone);
+  const handleVerify = async (userId, approve) => {
+    setProcessingId(userId);
     const newStatus = approve ? "approved" : "rejected";
     try {
+      const batch = writeBatch(db);
+
       // 1. Update verification document
-      await updateDoc(doc(db, "verifications", phone), {
-        status: newStatus,
-      });
+      const verificationRef = doc(db, "verifications", userId);
+      batch.update(verificationRef, { status: newStatus });
+
       // 2. Update user's profile document
-      await updateDoc(doc(db, "profiles", phone), {
-        verificationStatus: newStatus,
-      });
+      const profileRef = doc(db, "profiles", userId);
+      batch.update(profileRef, { verificationStatus: newStatus });
+
+      await batch.commit();
+
       alert(`User ${approve ? "Approved ✅" : "Rejected ❌"}`);
     } catch (e) {
       console.error(e);
-      alert("Failed to update status.");
+      alert(`Failed to update status: ${e.message || e}`);
     } finally {
       setProcessingId(null);
     }
@@ -314,11 +396,23 @@ export default function Admin() {
             >
               Chat Audits ({matches.length})
             </button>
+            <button
+              onClick={() => setActiveTab("sync")}
+              style={{
+                padding: "10px 20px", borderRadius: 10, border: "none",
+                background: activeTab === "sync" ? "#FF4757" : "transparent",
+                color: activeTab === "sync" ? "#fff" : "#666",
+                fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit",
+                transition: "all 0.2s"
+              }}
+            >
+              Sync Profiles {outOfSyncUsers.length > 0 && `(${outOfSyncUsers.length}) ⚠️`}
+            </button>
           </div>
         </div>
 
         <div style={{ maxWidth: 1000, margin: "0 auto", padding: "24px 20px" }}>
-          {activeTab === "verifications" ? (
+          {activeTab === "verifications" && (
             <>
               <h2 style={{ margin: "0 0 16px", fontSize: 22, fontWeight: 900, color: "#111" }}>
                 Pending Submissions ({verifications.length})
@@ -429,7 +523,9 @@ export default function Admin() {
                 </div>
               )}
             </>
-          ) : (
+          )}
+
+          {activeTab === "chats" && (
             <>
               <h2 style={{ margin: "0 0 16px", fontSize: 22, fontWeight: 900, color: "#111" }}>
                 Active Matches ({matches.length})
@@ -512,6 +608,108 @@ export default function Admin() {
                           }}
                         >
                           👁️ Inspect Chat Log
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === "sync" && (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: "#111" }}>
+                  Out-of-Sync Profiles ({outOfSyncUsers.length})
+                </h2>
+                {outOfSyncUsers.length > 0 && (
+                  <button
+                    onClick={handleSyncAll}
+                    disabled={loadingSync}
+                    style={{
+                      padding: "10px 20px", borderRadius: 12, border: "none",
+                      background: "#FF4757", color: "#fff", fontWeight: 800,
+                      fontSize: 13, cursor: loadingSync ? "not-allowed" : "pointer",
+                      fontFamily: "inherit", boxShadow: "0 4px 14px rgba(255,71,87,0.3)"
+                    }}
+                  >
+                    {loadingSync ? "Syncing..." : "Sync All Profiles ⚡"}
+                  </button>
+                )}
+              </div>
+
+              {outOfSyncUsers.length === 0 ? (
+                <div style={{
+                  background: "#fff", borderRadius: 20, padding: "60px 20px",
+                  textAlign: "center", boxShadow: "0 2px 16px rgba(0,0,0,0.04)"
+                }}>
+                  <div style={{ fontSize: 48, marginBottom: 10 }}>🎉</div>
+                  <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 900, color: "#222" }}>All profiles are in sync!</h3>
+                  <p style={{ margin: 0, fontSize: 13, color: "#888" }}>No student profiles are out of sync.</p>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
+                  {outOfSyncUsers.map((u) => {
+                    const isProcessing = processingId === u.id;
+                    return (
+                      <div
+                        key={u.id}
+                        className="dashboard-item"
+                        style={{
+                          background: "#fff", borderRadius: 20, padding: 20,
+                          boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+                          display: "flex", flexDirection: "column", gap: 14
+                        }}
+                      >
+                        {/* Student Info */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{
+                            width: 44, height: 44, borderRadius: "50%",
+                            background: "linear-gradient(135deg, #FF4757, #6C5CE7)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 22, color: "#fff", flexShrink: 0
+                          }}>
+                            {u.profile.avatar || "👤"}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ margin: 0, fontWeight: 800, fontSize: 14, color: "#111" }}>
+                              {u.profile.name || "Loading name..."}
+                            </p>
+                            <p style={{ margin: "2px 0 0", fontSize: 11, color: "#888", fontWeight: 600 }}>
+                              {u.profile.phone || "No phone"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Status Mismatch Card */}
+                        <div style={{
+                          padding: "12px 16px", borderRadius: 12,
+                          background: "#FFF9E6", border: "1px solid #FFE0B2",
+                          fontSize: 13, color: "#B78103", display: "flex",
+                          flexDirection: "column", gap: 4
+                        }}>
+                          <div>
+                            <strong>Verification Doc:</strong> {u.verificationStatus.toUpperCase()}
+                          </div>
+                          <div>
+                            <strong>Profile Doc:</strong> {(u.profile.verificationStatus || "pending").toUpperCase()}
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <button
+                          onClick={() => handleSyncStatus(u.id, u.verificationStatus)}
+                          disabled={isProcessing}
+                          style={{
+                            width: "100%", padding: 11, borderRadius: 10,
+                            border: "none", background: "#10B981",
+                            color: "#fff", fontWeight: 800, fontSize: 13,
+                            cursor: isProcessing ? "not-allowed" : "pointer", fontFamily: "inherit",
+                            boxShadow: "0 2px 8px rgba(16,185,129,0.25)", marginTop: "auto"
+                          }}
+                        >
+                          {isProcessing ? "Syncing..." : `Sync Status to ${u.verificationStatus}`}
                         </button>
                       </div>
                     );

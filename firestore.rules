@@ -21,7 +21,7 @@ service cloud.firestore {
     // Profiles Collection
     match /profiles/{userId} {
       allow read: if isAuthed();
-      allow write: if isAuthed() && request.auth.uid == userId;
+      allow write: if isAuthed() && (request.auth.uid == userId || isAdmin());
     }
 
     // Verifications Collection
