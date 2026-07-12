@@ -467,14 +467,29 @@ export default function Admin() {
                           </div>
                         </div>
 
-                        {/* ID Card Image Card */}
+                        {/* ID Card Image Card or Student ID Details */}
                         <div style={{
                           width: "100%", height: 180, borderRadius: 12,
                           background: "#FAFAF8", border: "1px solid #E0DED8",
-                          overflow: "hidden", display: "flex", alignItems: "center",
-                          justifyContent: "center"
+                          overflow: "hidden", display: "flex", flexDirection: "column",
+                          alignItems: "center", justifyContent: "center", padding: 12,
+                          boxSizing: "border-box"
                         }}>
-                          {v.idCardUrl ? (
+                          {v.verificationMethod === "student_id" || (v.studentId && !v.idCardUrl) ? (
+                            <div style={{ width: "100%", fontSize: 13, display: "flex", flexDirection: "column", gap: 8 }}>
+                              <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", padding: "6px 10px", borderRadius: 8, color: "#16a34a", fontSize: 11, fontWeight: 800, textTransform: "uppercase", textAlign: "center" }}>
+                                🆔 STUDENT ID VERIFICATION
+                              </div>
+                              <div style={{ textAlign: "left", width: "100%" }}>
+                                <span style={{ color: "#666", fontSize: 11, fontWeight: 700 }}>STUDENT NAME:</span>
+                                <div style={{ fontWeight: 800, color: "#111" }}>{v.studentName || user.name || "N/A"}</div>
+                              </div>
+                              <div style={{ textAlign: "left", width: "100%" }}>
+                                <span style={{ color: "#666", fontSize: 11, fontWeight: 700 }}>STUDENT ID / REG NO:</span>
+                                <div style={{ fontWeight: 800, color: "#111", fontFamily: "monospace" }}>{v.studentId || "N/A"}</div>
+                              </div>
+                            </div>
+                          ) : v.idCardUrl ? (
                             <img
                               src={v.idCardUrl}
                               alt="Student ID card"
@@ -485,7 +500,7 @@ export default function Admin() {
                               }}
                             />
                           ) : (
-                            <span style={{ fontSize: 12, color: "#AAA" }}>No ID uploaded</span>
+                            <span style={{ fontSize: 12, color: "#AAA" }}>No ID uploaded / No Details</span>
                           )}
                         </div>
 

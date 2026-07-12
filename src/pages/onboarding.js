@@ -2,7 +2,7 @@
 // Campus Connect — multi-step profile creation.
 // Design: Neo-Brutalist Bento from Stitch (Montserrat, dot background, bold shadows).
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../lib/firebase";
@@ -174,6 +174,18 @@ export default function Onboarding() {
 
   const profilePickerRef = useRef(null);
   const idPickerRef = useRef(null);
+  const idCameraRef = useRef(null);
+
+  const [verificationMethod, setVerificationMethod] = useState("id_card"); // "id_card" | "student_id"
+  const [studentName, setStudentName] = useState("");
+  const [studentId, setStudentId] = useState("");
+
+  // Pre-fill studentName with their onboarding name if empty when reaching the verification step
+  useEffect(() => {
+    if (step === 10 && !studentName && name) {
+      setStudentName(name);
+    }
+  }, [step, name, studentName]);
 
   const handleFileChange = (setFile, setPreview) => (e) => {
     const file = e.target.files?.[0];
@@ -198,7 +210,16 @@ export default function Onboarding() {
     if (step === 7 && squad.length === 0) return "Select at least one squad type";
     if (step === 8 && spot.length === 0) return "Pick your go-to spot(s)";
     if (step === 9 && prompt.length === 0) return "Pick at least one Saturday plan";
-    if (step === 10 && !profilePhotoFile) return "Upload your profile photo first";
+    if (step === 10) {
+      if (!profilePhotoFile) return "Upload your profile photo first";
+      if (verificationMethod === "id_card" && !idCardFile) {
+        return "Please upload your ID card image or choose the ID & Name method";
+      }
+      if (verificationMethod === "student_id") {
+        if (!studentName.trim()) return "Please enter your student name";
+        if (!studentId.trim()) return "Please enter your student registration ID/roll number";
+      }
+    }
     return "";
   };
 
@@ -244,13 +265,24 @@ export default function Onboarding() {
       const blurredPhotoUrl = await fileToBlurredPlaceholder(profilePhotoFile);
 
       let idCardUrl = "";
-      if (idCardFile) {
-        setUploadProgress("Processing college ID…");
-        idCardUrl = await fileToFirestorePhoto(idCardFile);
-        await setDoc(doc(db, "verifications", userId), {
-          idCardUrl, status: "pending", submittedAt: serverTimestamp(),
-        });
+      const verificationData = {
+        status: "pending",
+        submittedAt: serverTimestamp(),
+        verificationMethod,
+      };
+
+      if (verificationMethod === "id_card") {
+        if (idCardFile) {
+          setUploadProgress("Processing college ID…");
+          idCardUrl = await fileToFirestorePhoto(idCardFile);
+          verificationData.idCardUrl = idCardUrl;
+        }
+      } else {
+        verificationData.studentId = studentId.trim();
+        verificationData.studentName = studentName.trim();
       }
+
+      await setDoc(doc(db, "verifications", userId), verificationData);
 
       setUploadProgress("Saving profile…");
       await setDoc(doc(db, "profiles", userId), {
@@ -700,55 +732,246 @@ export default function Onboarding() {
                   </div>
                 )}
 
-                <div style={{ marginBottom: "8px" }}>
-                  <h3 style={{ fontSize: "16px", fontWeight: 800, textTransform: "uppercase" }}>
-                    Student Verification
-                  </h3>
-                  <p style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
-                    Upload your ID to request access verification. Admins review it privately.
+                {/* Verification Badge Convincing Banner */}
+                <div className="neo-shadow-small" style={{
+                  border: "3px solid #1b1b1b",
+                  background: "#bdff00",
+                  padding: "20px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                  boxShadow: "4px 4px 0px 0px #1b1b1b"
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: "28px", color: BLK, fontWeight: 900 }}>verified_user</span>
+                    <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.01em" }}>
+                      GET A VERIFIED BADGE 🛡️
+                    </h3>
+                  </div>
+                  <p style={{ margin: 0, fontSize: "12px", fontWeight: 700, lineHeight: "1.5", color: "#1b1b1b" }}>
+                    Verify your profile to unlock the ultimate campus experience. Verified students get a shiny badge on their card, show up first in search, and get up to <span style={{ textDecoration: "underline", fontWeight: 900 }}>3x more matches!</span>
                   </p>
                 </div>
 
-                <div className="neo-shadow-small" style={{
-                  border: "3px solid #1b1b1b", background: "#fff",
-                  padding: "24px", display: "flex", flexDirection: "column",
-                  alignItems: "center", justifyContent: "center", position: "relative",
-                  cursor: "pointer"
-                }} onClick={() => idPickerRef.current?.click()}>
-                  <input
-                    ref={idPickerRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    onChange={handleFileChange(setIdCardFile, setIdCardPreview)}
-                  />
-                  <div style={{
-                    width: "100%", height: "140px",
-                    border: "3px dashed #1b1b1b", background: idCardPreview ? "transparent" : "#fcf8ff",
-                    display: "flex", flexDirection: "column", alignItems: "center",
-                    justifyContent: "center", overflow: "hidden"
-                  }}>
-                    {idCardPreview ? (
-                      <img src={idCardPreview} alt="ID Card Preview" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                    ) : (
-                      <>
-                        <span className="material-symbols-outlined" style={{ fontSize: "48px", color: BLK }}>badge</span>
-                        <p style={{ fontSize: "11px", fontWeight: 850, marginTop: "6px", textTransform: "uppercase" }}>
-                          TAP TO UPLOAD COLLEGE ID
-                        </p>
-                      </>
-                    )}
+                {/* Option Selector: Choose verification method */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#555", textTransform: "uppercase" }}>
+                    Choose Verification Method:
+                  </span>
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    <button
+                      type="button"
+                      onClick={() => setVerificationMethod("id_card")}
+                      className="neo-button-hover"
+                      style={{
+                        flex: 1,
+                        background: verificationMethod === "id_card" ? "#bdff00" : "#fff",
+                        color: BLK,
+                        border: "3px solid #1b1b1b",
+                        padding: "12px",
+                        fontWeight: 900,
+                        fontSize: "12px",
+                        textTransform: "uppercase",
+                        boxShadow: verificationMethod === "id_card" ? "3px 3px 0px 0px #1b1b1b" : "1px 1px 0px 0px #1b1b1b",
+                        cursor: "pointer",
+                        transition: "all 0.1s"
+                      }}
+                    >
+                      🪪 Upload ID Card
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVerificationMethod("student_id")}
+                      className="neo-button-hover"
+                      style={{
+                        flex: 1,
+                        background: verificationMethod === "student_id" ? "#bdff00" : "#fff",
+                        color: BLK,
+                        border: "3px solid #1b1b1b",
+                        padding: "12px",
+                        fontWeight: 900,
+                        fontSize: "12px",
+                        textTransform: "uppercase",
+                        boxShadow: verificationMethod === "student_id" ? "3px 3px 0px 0px #1b1b1b" : "1px 1px 0px 0px #1b1b1b",
+                        cursor: "pointer",
+                        transition: "all 0.1s"
+                      }}
+                    >
+                      ✏️ Use ID & Name
+                    </button>
                   </div>
-                  {idCardFile && (
-                    <div style={{
-                      position: "absolute", top: "8px", right: "8px",
-                      background: PRIMARY_CONTAINER, color: BLK, border: "2px solid #1b1b1b",
-                      padding: "2px 8px", fontSize: "10px", fontWeight: 900
-                    }}>
-                      ✓ SELECTED
-                    </div>
-                  )}
                 </div>
+
+                {/* Render selected verification method fields */}
+                {verificationMethod === "id_card" ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    <div style={{ marginBottom: "2px" }}>
+                      <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 900, textTransform: "uppercase" }}>
+                        Method 1: Upload College ID Card
+                      </h4>
+                      <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#666" }}>
+                        Take a clear picture of your physical ID card or upload it from your gallery.
+                      </p>
+                    </div>
+
+                    <div className="neo-shadow-small" style={{
+                      border: "3px solid #1b1b1b", background: "#fff",
+                      padding: "20px", display: "flex", flexDirection: "column",
+                      alignItems: "center", justifyContent: "center", gap: "16px"
+                    }}>
+                      {/* Hidden file inputs */}
+                      <input
+                        ref={idPickerRef}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        onChange={handleFileChange(setIdCardFile, setIdCardPreview)}
+                      />
+                      <input
+                        ref={idCameraRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        style={{ display: "none" }}
+                        onChange={handleFileChange(setIdCardFile, setIdCardPreview)}
+                      />
+
+                      <div style={{
+                        width: "100%", height: "150px",
+                        border: "3px dashed #1b1b1b", background: idCardPreview ? "transparent" : "#fcf8ff",
+                        display: "flex", flexDirection: "column", alignItems: "center",
+                        justifyContent: "center", overflow: "hidden"
+                      }}>
+                        {idCardPreview ? (
+                          <img src={idCardPreview} alt="ID Card Preview" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                        ) : (
+                          <>
+                            <span className="material-symbols-outlined" style={{ fontSize: "40px", color: BLK }}>badge</span>
+                            <p style={{ fontSize: "10px", fontWeight: 900, marginTop: "6px", textTransform: "uppercase", color: "#666" }}>
+                              No ID Image Selected
+                            </p>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Photo Capture/Gallery Action Buttons */}
+                      <div style={{ display: "flex", gap: "10px", width: "100%" }}>
+                        <button
+                          type="button"
+                          onClick={() => idCameraRef.current?.click()}
+                          className="neo-button-hover"
+                          style={{
+                            flex: 1,
+                            background: "#fff",
+                            border: "3px solid #1b1b1b",
+                            padding: "10px",
+                            fontWeight: 900,
+                            fontSize: "11px",
+                            textTransform: "uppercase",
+                            boxShadow: "2px 2px 0px 0px #1b1b1b",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px"
+                          }}
+                        >
+                          📷 Open Camera
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => idPickerRef.current?.click()}
+                          className="neo-button-hover"
+                          style={{
+                            flex: 1,
+                            background: "#fff",
+                            border: "3px solid #1b1b1b",
+                            padding: "10px",
+                            fontWeight: 900,
+                            fontSize: "11px",
+                            textTransform: "uppercase",
+                            boxShadow: "2px 2px 0px 0px #1b1b1b",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px"
+                          }}
+                        >
+                          🖼️ Open Gallery
+                        </button>
+                      </div>
+
+                      {idCardFile && (
+                        <div style={{
+                          background: "#bdff00", color: BLK, border: "2px solid #1b1b1b",
+                          padding: "4px 10px", fontSize: "10px", fontWeight: 900, textTransform: "uppercase"
+                        }}>
+                          ✓ Image Selected
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    <div style={{ marginBottom: "2px" }}>
+                      <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 900, textTransform: "uppercase" }}>
+                        Method 2: Use Student ID & Name
+                      </h4>
+                      <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#666" }}>
+                        Enter your registration/roll number and full student name as printed on your ID.
+                      </p>
+                    </div>
+
+                    <div className="neo-shadow-small" style={{
+                      border: "3px solid #1b1b1b", background: "#fff",
+                      padding: "20px", display: "flex", flexDirection: "column",
+                      gap: "14px"
+                    }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <label style={{ fontSize: "11px", fontWeight: 900, color: BLK, textTransform: "uppercase" }}>
+                          Full Name (As on ID Card)
+                        </label>
+                        <input
+                          type="text"
+                          value={studentName}
+                          onChange={(e) => setStudentName(e.target.value)}
+                          placeholder="e.g., Aniket Pandey"
+                          style={{
+                            padding: "12px",
+                            border: "3px solid #1b1b1b",
+                            fontSize: "13px",
+                            fontWeight: 800,
+                            fontFamily: "inherit",
+                            background: "#fff",
+                            outline: "none"
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <label style={{ fontSize: "11px", fontWeight: 900, color: BLK, textTransform: "uppercase" }}>
+                          Student Registration ID / Roll No
+                        </label>
+                        <input
+                          type="text"
+                          value={studentId}
+                          onChange={(e) => setStudentId(e.target.value)}
+                          placeholder="e.g., 12114562 or CSE-2023-04"
+                          style={{
+                            padding: "12px",
+                            border: "3px solid #1b1b1b",
+                            fontSize: "13px",
+                            fontWeight: 800,
+                            fontFamily: "inherit",
+                            background: "#fff",
+                            outline: "none"
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div style={{
                   background: "#fff", border: "3px solid #1b1b1b",
