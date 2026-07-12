@@ -501,12 +501,12 @@ export default function Swipe() {
         setModalLon(lon);
 
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`);
+          const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
           if (!res.ok) throw new Error("Location service error");
           const data = await res.json();
-          if (data && data.address) {
-            const resolvedState = data.address.state || "";
-            const resolvedCity = data.address.city || data.address.town || data.address.village || data.address.county || data.address.suburb || "";
+          if (data) {
+            const resolvedState = data.principalSubdivision || "";
+            const resolvedCity = data.city || data.locality || "";
             setModalState(resolvedState);
             setModalCity(resolvedCity);
           } else {
@@ -1132,8 +1132,9 @@ export default function Swipe() {
                   placeholder="Select or enter state..."
                   style={{
                     padding: "10px 12px", border: "2px solid #1b1b1b",
-                    borderRadius: "6px", fontSize: "13px", fontWeight: 800,
-                    outline: "none", fontFamily: "inherit", background: "#fff"
+                    borderRadius: "6px", fontSize: "13px", fontWeight: 900,
+                    outline: "none", fontFamily: "inherit", background: "#fff",
+                    color: "#1b1b1b"
                   }}
                 />
                 <datalist id="modal-states">
@@ -1153,8 +1154,9 @@ export default function Swipe() {
                   placeholder="Select or enter city..."
                   style={{
                     padding: "10px 12px", border: "2px solid #1b1b1b",
-                    borderRadius: "6px", fontSize: "13px", fontWeight: 800,
-                    outline: "none", fontFamily: "inherit", background: "#fff"
+                    borderRadius: "6px", fontSize: "13px", fontWeight: 900,
+                    outline: "none", fontFamily: "inherit", background: "#fff",
+                    color: "#1b1b1b"
                   }}
                 />
                 <datalist id="modal-cities">

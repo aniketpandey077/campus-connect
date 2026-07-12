@@ -181,12 +181,12 @@ export default function Onboarding() {
         setLongitude(lon);
 
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`);
+          const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
           if (!res.ok) throw new Error("Location service error");
           const data = await res.json();
-          if (data && data.address) {
-            const resolvedState = data.address.state || "";
-            const resolvedCity = data.address.city || data.address.town || data.address.village || data.address.county || data.address.suburb || "";
+          if (data) {
+            const resolvedState = data.principalSubdivision || "";
+            const resolvedCity = data.city || data.locality || "";
             setUserState(resolvedState);
             setCity(resolvedCity);
           } else {
@@ -725,7 +725,8 @@ export default function Onboarding() {
                       padding: "14px", border: "3px solid #1b1b1b",
                       borderRadius: "8px", fontSize: "13px", fontWeight: 800,
                       outline: "none", fontFamily: "inherit",
-                      background: "#fff", boxShadow: "2px 2px 0px 0px #1b1b1b"
+                      background: "#fff", boxShadow: "2px 2px 0px 0px #1b1b1b",
+                      color: "#1b1b1b"
                     }}
                   />
                   <datalist id="indian-states">
@@ -749,7 +750,8 @@ export default function Onboarding() {
                       padding: "14px", border: "3px solid #1b1b1b",
                       borderRadius: "8px", fontSize: "13px", fontWeight: 800,
                       outline: "none", fontFamily: "inherit",
-                      background: "#fff", boxShadow: "2px 2px 0px 0px #1b1b1b"
+                      background: "#fff", boxShadow: "2px 2px 0px 0px #1b1b1b",
+                      color: "#1b1b1b"
                     }}
                   />
                   <datalist id="indian-cities">

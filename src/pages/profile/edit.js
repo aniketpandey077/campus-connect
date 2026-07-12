@@ -210,12 +210,12 @@ export default function EditProfile() {
         setLongitude(lon);
 
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`);
+          const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
           if (!res.ok) throw new Error("Location service error");
           const data = await res.json();
-          if (data && data.address) {
-            const resolvedState = data.address.state || "";
-            const resolvedCity = data.address.city || data.address.town || data.address.village || data.address.county || data.address.suburb || "";
+          if (data) {
+            const resolvedState = data.principalSubdivision || "";
+            const resolvedCity = data.city || data.locality || "";
             setUserState(resolvedState);
             setCity(resolvedCity);
           } else {
