@@ -377,6 +377,37 @@ export default function Matches() {
     });
   }, [matchDocs, myPhone]);
 
+  // 🎉 Self-healing: auto-create missing match documents for mutual likes
+  useEffect(() => {
+    if (!myPhone || incomingLikes.length === 0 || mySwipes.length === 0) return;
+
+    const myLikes = mySwipes.filter(s => s.direction === "like").map(s => s.swipedId);
+    const theirLikes = incomingLikes.map(s => s.swiperId);
+    const mutualIds = theirLikes.filter(id => id && myLikes.includes(id));
+
+    mutualIds.forEach(async (likerId) => {
+      // Check if match doc already exists
+      const matchExists = matchDocs.some(m => 
+        (m.user1Id === myPhone && m.user2Id === likerId) || 
+        (m.user1Id === likerId && m.user2Id === myPhone)
+      );
+
+      if (!matchExists) {
+        console.log(`Self-healing: Creating missing match document for mutual like between ${myPhone} and ${likerId}`);
+        try {
+          await addDoc(collection(db, "matches"), {
+            user1Id: myPhone,
+            user2Id: likerId,
+            matchedAt: serverTimestamp(),
+            revealStatus: "hidden",
+          });
+        } catch (err) {
+          console.error("Failed to self-heal match:", err);
+        }
+      }
+    });
+  }, [incomingLikes, mySwipes, matchDocs, myPhone]);
+
   // ── Username Search ──
   const handleUsernameSearch = async (e) => {
     e.preventDefault();
