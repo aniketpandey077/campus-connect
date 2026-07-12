@@ -84,7 +84,7 @@ function MatchRow({ match, profile, myPhone, onClick }) {
             width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
             objectFit: "cover", border: "2px solid #1b1b1b",
             boxShadow: "2px 2px 0px 0px #1b1b1b",
-            filter: "blur(12px) contrast(1.05)",
+            filter: "blur(4px) contrast(1.05)",
           }}
         />
       ) : (
@@ -162,7 +162,7 @@ function LikerCard({ profile, onLike, onPass }) {
             width: 44, height: 44, borderRadius: "50%",
             objectFit: "cover", border: "2px solid #1b1b1b",
             boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
-            filter: "blur(12px) contrast(1.05)",
+            filter: "blur(4px) contrast(1.05)",
           }}
         />
       ) : (
@@ -576,7 +576,7 @@ export default function Matches() {
                   }}
                 >
                   {res.blurredPhotoUrl ? (
-                    <img src={res.blurredPhotoUrl} alt="" style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover", border: "2px solid #1b1b1b", filter: "blur(12px) contrast(1.05)", flexShrink: 0 }} />
+                    <img src={res.blurredPhotoUrl} alt="" style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover", border: "2px solid #1b1b1b", filter: "blur(4px) contrast(1.05)", flexShrink: 0 }} />
                   ) : (
                     <div style={{ width: 46, height: 46, borderRadius: "50%", background: "#bdff00", border: "2px solid #1b1b1b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>{res.avatar || "😊"}</div>
                   )}

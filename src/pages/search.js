@@ -235,8 +235,8 @@ export default function SearchPage() {
                         alt=""
                         style={{
                           width: "100%", height: "100%", objectFit: "cover",
-                          filter: "blur(20px) brightness(0.85)",
-                          transform: "scale(1.15)",
+                          filter: "blur(6px) brightness(0.85)",
+                          transform: "scale(1.08)",
                         }}
                       />
                     ) : (
