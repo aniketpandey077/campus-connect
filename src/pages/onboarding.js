@@ -92,6 +92,18 @@ const OPT = {
     { l: "Main Gate Chai Tapri Regular", e: "☕" },
     { l: "UMC Survivor (Scholarship intact!)", e: "🚨" },
     { l: "Minor UMC / Indiscipline Warning recipient", e: "⚠️" },
+    { l: "Backbencher (Last Row Philosopher)", e: "🤫" },
+    { l: "Night Owl (Late-Night Maggi Crew)", e: "🦉" },
+    { l: "Exam Night One-Shot Legend", e: "🏆" },
+    { l: "Silent Observer (Introvert Mode)", e: "🍃" },
+    { l: "Society Gossip (Tea Spiller)", e: "🍵" },
+    { l: "Freelance Hustler (Tech/Design)", e: "💸" },
+    { l: "Gym Bro / Fitness Regular", e: "🏋️" },
+    { l: "Campus Photographer / Reel Maker", e: "📸" },
+    { l: "Bunking at Robopark / CC", e: "🤖" },
+    { l: "Always Late to Block 36 Lab", e: "🏃" },
+    { l: "Hostel Room DJ / Music Head", e: "🎵" },
+    { l: "Always Asking for Outpass", e: "📝" },
   ],
   interests: [
     { l: "Music", e: "🎵" }, { l: "Gaming", e: "🎮" }, { l: "Sports", e: "⚽" },
@@ -909,31 +921,36 @@ function SelectionStep({ label, options, value, onChange, single = false, placeh
 
       {/* Custom item input */}
       {placeholder && (
-        <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-          <input
-            type="text"
-            value={customText}
-            onChange={(e) => setCustomText(e.target.value)}
-            onKeyDown={handleCustomAddSubmit}
-            placeholder={placeholder}
-            style={{
-              flex: 1, padding: "10px 12px", border: "3px solid #1b1b1b",
-              fontSize: "13px", fontWeight: 700, fontFamily: "inherit"
-            }}
-          />
-          <button
-            type="button"
-            onClick={handleCustomAddSubmit}
-            className="neo-button-hover"
-            style={{
-              padding: "0 18px", background: PRIMARY_CONTAINER, color: BLK,
-              border: "3px solid #1b1b1b", fontWeight: 900, cursor: "pointer",
-              fontSize: "12px", textTransform: "uppercase",
-              boxShadow: "3px 3px 0px 0px #1b1b1b"
-            }}
-          >
-            Add
-          </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "12px" }}>
+          <span style={{ fontSize: "11px", fontWeight: 800, color: "#555" }}>
+            ✍️ Don't see yours? Write your own custom option below:
+          </span>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <input
+              type="text"
+              value={customText}
+              onChange={(e) => setCustomText(e.target.value)}
+              onKeyDown={handleCustomAddSubmit}
+              placeholder={placeholder}
+              style={{
+                flex: 1, padding: "10px 12px", border: "3px solid #1b1b1b",
+                fontSize: "13px", fontWeight: 700, fontFamily: "inherit"
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleCustomAddSubmit}
+              className="neo-button-hover"
+              style={{
+                padding: "0 18px", background: PRIMARY_CONTAINER, color: BLK,
+                border: "3px solid #1b1b1b", fontWeight: 900, cursor: "pointer",
+                fontSize: "12px", textTransform: "uppercase",
+                boxShadow: "3px 3px 0px 0px #1b1b1b"
+              }}
+            >
+              Add
+            </button>
+          </div>
         </div>
       )}
     </div>

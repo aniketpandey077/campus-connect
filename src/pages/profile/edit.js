@@ -81,6 +81,18 @@ const OPT = {
     { l: "Main Gate Chai Tapri Regular", e: "☕" },
     { l: "UMC Survivor (Scholarship intact!)", e: "🚨" },
     { l: "Minor UMC / Indiscipline Warning recipient", e: "⚠️" },
+    { l: "Backbencher (Last Row Philosopher)", e: "🤫" },
+    { l: "Night Owl (Late-Night Maggi Crew)", e: "🦉" },
+    { l: "Exam Night One-Shot Legend", e: "🏆" },
+    { l: "Silent Observer (Introvert Mode)", e: "🍃" },
+    { l: "Society Gossip (Tea Spiller)", e: "🍵" },
+    { l: "Freelance Hustler (Tech/Design)", e: "💸" },
+    { l: "Gym Bro / Fitness Regular", e: "🏋️" },
+    { l: "Campus Photographer / Reel Maker", e: "📸" },
+    { l: "Bunking at Robopark / CC", e: "🤖" },
+    { l: "Always Late to Block 36 Lab", e: "🏃" },
+    { l: "Hostel Room DJ / Music Head", e: "🎵" },
+    { l: "Always Asking for Outpass", e: "📝" },
   ],
   interests: [
     { l: "Music", e: "🎵" }, { l: "Gaming", e: "🎮" }, { l: "Sports", e: "⚽" },
@@ -235,32 +247,37 @@ export default function EditProfile() {
 
   const renderCustomInput = (key, setList, list, color = "#FF4757") => {
     return (
-      <div style={{ display: "flex", gap: 10, width: "100%", marginTop: 12 }}>
-        <input
-          type="text"
-          value={customText[key] || ""}
-          onChange={(e) => setCustomText(prev => ({ ...prev, [key]: e.target.value }))}
-          placeholder="Write your own..."
-          style={{
-            flex: 1, padding: "8px 12px", borderRadius: 8,
-            border: "2px solid #1b1b1b", fontSize: 13, outline: "none",
-            fontFamily: "inherit", color: "#1b1b1b", background: "#ffffff",
-            boxShadow: "2px 2px 0px 0px #1b1b1b",
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => handleAddCustom(key, setList, list)}
-          className="neo-btn"
-          style={{
-            padding: "8px 16px", borderRadius: 8, border: "2px solid #1b1b1b",
-            background: "#bdff00", color: "#1b1b1b", fontWeight: 900,
-            fontSize: 12, cursor: "pointer", fontFamily: "inherit",
-            boxShadow: "2px 2px 0px 0px #1b1b1b", textTransform: "uppercase"
-          }}
-        >
-          Add
-        </button>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%", marginTop: 12 }}>
+        <span style={{ fontSize: "11px", fontWeight: 800, color: "#555" }}>
+          ✍️ Don't see yours? Write your own custom option:
+        </span>
+        <div style={{ display: "flex", gap: 10, width: "100%" }}>
+          <input
+            type="text"
+            value={customText[key] || ""}
+            onChange={(e) => setCustomText(prev => ({ ...prev, [key]: e.target.value }))}
+            placeholder="Write your own..."
+            style={{
+              flex: 1, padding: "8px 12px", borderRadius: 8,
+              border: "2px solid #1b1b1b", fontSize: 13, outline: "none",
+              fontFamily: "inherit", color: "#1b1b1b", background: "#ffffff",
+              boxShadow: "2px 2px 0px 0px #1b1b1b",
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => handleAddCustom(key, setList, list)}
+            className="neo-btn"
+            style={{
+              padding: "8px 16px", borderRadius: 8, border: "2px solid #1b1b1b",
+              background: "#bdff00", color: "#1b1b1b", fontWeight: 900,
+              fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+              boxShadow: "2px 2px 0px 0px #1b1b1b", textTransform: "uppercase"
+            }}
+          >
+            Add
+          </button>
+        </div>
       </div>
     );
   };
