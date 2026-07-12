@@ -794,7 +794,7 @@ export default function Admin() {
                         lineHeight: 1.4,
                         boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
                       }}>
-                        {msg.text}
+                        {msg.content}
                       </div>
                       {msg.timestamp && (
                         <span style={{ fontSize: 9, color: "#AAA", marginTop: 2 }}>
