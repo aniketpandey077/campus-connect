@@ -15,7 +15,7 @@ export default function SearchPage() {
   const { user, loading: authLoading } = useRequireAuth();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [result, setResult]           = useState(null);   // null=idle, false=not found, obj=found
+  const [results, setResults]         = useState(null);   // null=idle, []=not found, array=found
   const [searching, setSearching]     = useState(false);
 
   const handleSearch = async (e) => {
@@ -23,20 +23,25 @@ export default function SearchPage() {
     const handle = searchQuery.trim().replace(/^@/, "").toLowerCase();
     if (!handle) return;
     setSearching(true);
-    setResult(null);
+    setResults(null);
     try {
-      const q = query(collection(db, "profiles"), where("username", "==", handle));
+      const q = query(collection(db, "profiles"));
       const snap = await getDocs(q);
-      if (snap.empty) {
-        setResult(false);
-      } else {
-        const data = snap.docs[0].data();
-        const id   = snap.docs[0].id;
-        setResult({ id, ...data, photoUrl: undefined }); // strip private photo
-      }
+      const list = [];
+      snap.forEach((doc) => {
+        const data = doc.data();
+        if (data.profileComplete) {
+          const uname = (data.username || "").toLowerCase();
+          const dname = (data.name || "").toLowerCase();
+          if (uname.includes(handle) || dname.includes(handle)) {
+            list.push({ id: doc.id, ...data, photoUrl: undefined }); // strip private photo
+          }
+        }
+      });
+      setResults(list);
     } catch (err) {
       console.error("Search error:", err);
-      setResult(false);
+      setResults([]);
     } finally {
       setSearching(false);
     }
@@ -146,14 +151,14 @@ export default function SearchPage() {
           </form>
 
           {/* Idle hint */}
-          {result === null && !searching && (
+          {results === null && !searching && (
             <div style={{ marginTop: 48, textAlign: "center" }}>
               <div style={{ fontSize: 64, marginBottom: 12 }}>🔎</div>
               <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: "#888", textTransform: "uppercase" }}>
                 Search any Unihood student
               </p>
               <p style={{ margin: "6px 0 0", fontSize: 11, color: "#bbb", fontWeight: 700 }}>
-                Try @username, no @ needed too
+                Try @username or name, no @ needed too
               </p>
               <div style={{ marginTop: 24, display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
                 {["akhya", "nightowl", "coderkid", "canteenking"].map(ex => (
@@ -179,13 +184,13 @@ export default function SearchPage() {
             <div style={{ marginTop: 32, textAlign: "center" }}>
               <div style={{ fontSize: 40, marginBottom: 8 }}>⏳</div>
               <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#7531d3", textTransform: "uppercase" }}>
-                Looking up @{searchQuery.replace(/^@/, "")}…
+                Searching for &quot;{searchQuery.replace(/^@/, "")}&quot;…
               </p>
             </div>
           )}
 
           {/* Not found */}
-          {result === false && (
+          {results && results.length === 0 && (
             <div style={{
               marginTop: 20,
               background: "#ffe0e0", border: "2.5px solid #1b1b1b",
@@ -196,176 +201,182 @@ export default function SearchPage() {
               <span style={{ fontSize: 32 }}>😕</span>
               <div>
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>
-                  No user found
+                  No users found
                 </p>
                 <p style={{ margin: "4px 0 0", fontSize: 11, color: "#555", fontWeight: 700 }}>
-                  @{searchQuery.replace(/^@/, "").toLowerCase()} doesn&apos;t exist yet
+                  No match found for &quot;{searchQuery}&quot;
                 </p>
               </div>
             </div>
           )}
 
-          {/* Found — profile card */}
-          {result && result !== false && (
-            <div style={{
-              marginTop: 20,
-              background: "#fff", border: "2.5px solid #1b1b1b",
-              borderRadius: 16, boxShadow: "6px 6px 0px 0px #1b1b1b",
-              overflow: "hidden",
-            }}>
-              {/* Blurred photo banner */}
-              <div style={{
-                height: 130, overflow: "hidden", position: "relative",
-                background: "#222",
-              }}>
-                {result.blurredPhotoUrl ? (
-                  <img
-                    src={result.blurredPhotoUrl}
-                    alt=""
-                    style={{
-                      width: "100%", height: "100%", objectFit: "cover",
-                      filter: "blur(1px) brightness(0.85)",
-                      transform: "scale(1.06)",
-                    }}
-                  />
-                ) : (
+          {/* Found — profiles list */}
+          {results && results.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24, marginTop: 20 }}>
+              {results.map((res) => (
+                <div
+                  key={res.id}
+                  style={{
+                    background: "#fff", border: "2.5px solid #1b1b1b",
+                    borderRadius: 16, boxShadow: "6px 6px 0px 0px #1b1b1b",
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* Blurred photo banner */}
                   <div style={{
-                    width: "100%", height: "100%",
-                    background: "linear-gradient(135deg, #7531d3, #bdff00)",
-                  }} />
-                )}
-                {/* Verification */}
-                <div style={{
-                  position: "absolute", top: 10, right: 10,
-                  background: result.verificationStatus === "approved" ? "#bdff00" : "#ffb2bf",
-                  border: "1.5px solid #1b1b1b", borderRadius: 4,
-                  padding: "3px 9px", fontSize: 9, fontWeight: 950, color: "#1b1b1b",
-                  boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
-                }}>
-                  {result.verificationStatus === "approved" ? "VERIFIED 🛡️" : "PENDING ⏳"}
-                </div>
-                {/* PHOTO BLURRED notice */}
-                <div style={{
-                  position: "absolute", top: 10, left: 10,
-                  background: "rgba(27,27,27,0.8)", borderRadius: 4,
-                  padding: "3px 8px", fontSize: 9, fontWeight: 900, color: "#fff",
-                }}>
-                  🔒 PHOTO BLURRED
-                </div>
-              </div>
-
-              <div style={{ padding: "16px 18px" }}>
-                {/* Avatar + name row */}
-                <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
-                  <div style={{
-                    width: 56, height: 56, borderRadius: "50%",
-                    background: "#bdff00", border: "3px solid #1b1b1b",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 32, flexShrink: 0, boxShadow: "3px 3px 0px 0px #1b1b1b",
-                    marginTop: -36, position: "relative",
+                    height: 130, overflow: "hidden", position: "relative",
+                    background: "#222",
                   }}>
-                    {result.avatar || "😊"}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h2 style={{
-                      margin: 0, fontSize: 19, fontWeight: 950,
-                      color: "#1b1b1b", textTransform: "uppercase", letterSpacing: -0.5,
+                    {res.blurredPhotoUrl ? (
+                      <img
+                        src={res.blurredPhotoUrl}
+                        alt=""
+                        style={{
+                          width: "100%", height: "100%", objectFit: "cover",
+                          filter: "blur(1px) brightness(0.85)",
+                          transform: "scale(1.06)",
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: "100%", height: "100%",
+                        background: "linear-gradient(135deg, #7531d3, #bdff00)",
+                      }} />
+                    )}
+                    {/* Verification */}
+                    <div style={{
+                      position: "absolute", top: 10, right: 10,
+                      background: res.verificationStatus === "approved" ? "#bdff00" : "#ffb2bf",
+                      border: "1.5px solid #1b1b1b", borderRadius: 4,
+                      padding: "3px 9px", fontSize: 9, fontWeight: 950, color: "#1b1b1b",
+                      boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
                     }}>
-                      {result.name}
-                    </h2>
-                    <p style={{ margin: "2px 0 0", fontSize: 12, color: "#7531d3", fontWeight: 900 }}>
-                      @{result.username}
+                      {res.verificationStatus === "approved" ? "VERIFIED 🛡️" : "PENDING ⏳"}
+                    </div>
+                    {/* PHOTO BLURRED notice */}
+                    <div style={{
+                      position: "absolute", top: 10, left: 10,
+                      background: "rgba(27,27,27,0.8)", borderRadius: 4,
+                      padding: "3px 8px", fontSize: 9, fontWeight: 900, color: "#fff",
+                    }}>
+                      🔒 PHOTO BLURRED
+                    </div>
+                  </div>
+
+                  <div style={{ padding: "16px 18px" }}>
+                    {/* Avatar + name row */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
+                      <div style={{
+                        width: 56, height: 56, borderRadius: "50%",
+                        background: "#bdff00", border: "3px solid #1b1b1b",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 32, flexShrink: 0, boxShadow: "3px 3px 0px 0px #1b1b1b",
+                        marginTop: -36, position: "relative",
+                      }}>
+                        {res.avatar || "😊"}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h2 style={{
+                          margin: 0, fontSize: 19, fontWeight: 950,
+                          color: "#1b1b1b", textTransform: "uppercase", letterSpacing: -0.5,
+                        }}>
+                          {res.name}
+                        </h2>
+                        <p style={{ margin: "2px 0 0", fontSize: 12, color: "#7531d3", fontWeight: 900 }}>
+                          @{res.username}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Info pills */}
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                      {(res.branch || []).map(b => (
+                        <span key={b} style={{
+                          padding: "4px 10px", border: "2px solid #1b1b1b", borderRadius: 6,
+                          fontSize: 11, fontWeight: 800, background: "#ecdcff",
+                          boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+                        }}>{b}</span>
+                      ))}
+                      {res.year?.[0] && (
+                        <span style={{
+                          padding: "4px 10px", border: "2px solid #1b1b1b", borderRadius: 6,
+                          fontSize: 11, fontWeight: 800, background: "#fef3c7",
+                          boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+                        }}>{res.year[0]}</span>
+                      )}
+                      {(res.stay || []).slice(0, 1).map(s => (
+                        <span key={s} style={{
+                          padding: "4px 10px", border: "2px solid #1b1b1b", borderRadius: 6,
+                          fontSize: 11, fontWeight: 800, background: "#dcfce7",
+                          boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+                        }}>🏠 {s}</span>
+                      ))}
+                    </div>
+
+                    {/* Interests */}
+                    {(res.interests || []).length > 0 && (
+                      <div style={{ marginBottom: 12 }}>
+                        <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Into</p>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                          {(res.interests || []).slice(0, 6).map(i => (
+                            <span key={i} style={{
+                              padding: "4px 9px", border: "1.5px solid #1b1b1b", borderRadius: 5,
+                              fontSize: 11, fontWeight: 700, background: "#fff",
+                              boxShadow: "1px 1px 0px 0px #1b1b1b",
+                            }}>{i}</span>
+                          ))}
+                          {(res.interests || []).length > 6 && (
+                            <span style={{ padding: "4px 9px", fontSize: 11, fontWeight: 700, color: "#aaa" }}>
+                              +{res.interests.length - 6}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Campus vibe */}
+                    {(res.campusVibe || []).length > 0 && (
+                      <div style={{ marginBottom: 12 }}>
+                        <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Campus Vibe</p>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                          {(res.campusVibe || []).slice(0, 3).map(v => (
+                            <span key={v} style={{
+                              padding: "4px 9px", border: "1.5px solid #1b1b1b", borderRadius: 5,
+                              fontSize: 11, fontWeight: 700, background: "#FEF3C7",
+                              boxShadow: "1px 1px 0px 0px #1b1b1b",
+                            }}>{v}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Squad / looking for */}
+                    {(res.squad || []).length > 0 && (
+                      <div style={{ marginBottom: 12 }}>
+                        <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Looking for</p>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                          {(res.squad || []).slice(0, 4).map(s => (
+                            <span key={s} style={{
+                              padding: "4px 9px", border: "1.5px solid #1b1b1b", borderRadius: 5,
+                              fontSize: 11, fontWeight: 700, background: "#EEF2FF",
+                              boxShadow: "1px 1px 0px 0px #1b1b1b",
+                            }}>{s}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Privacy notice */}
+                    <p style={{
+                      margin: "10px 0 0", fontSize: 10, color: "#bbb",
+                      fontWeight: 700, textAlign: "center",
+                      paddingTop: 10, borderTop: "1.5px solid #eee",
+                    }}>
+                      🔒 Real photo revealed only after mutual match &amp; both reveal
                     </p>
                   </div>
                 </div>
-
-                {/* Info pills */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-                  {(result.branch || []).map(b => (
-                    <span key={b} style={{
-                      padding: "4px 10px", border: "2px solid #1b1b1b", borderRadius: 6,
-                      fontSize: 11, fontWeight: 800, background: "#ecdcff",
-                      boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
-                    }}>{b}</span>
-                  ))}
-                  {result.year?.[0] && (
-                    <span style={{
-                      padding: "4px 10px", border: "2px solid #1b1b1b", borderRadius: 6,
-                      fontSize: 11, fontWeight: 800, background: "#fef3c7",
-                      boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
-                    }}>{result.year[0]}</span>
-                  )}
-                  {(result.stay || []).slice(0, 1).map(s => (
-                    <span key={s} style={{
-                      padding: "4px 10px", border: "2px solid #1b1b1b", borderRadius: 6,
-                      fontSize: 11, fontWeight: 800, background: "#dcfce7",
-                      boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
-                    }}>🏠 {s}</span>
-                  ))}
-                </div>
-
-                {/* Interests */}
-                {(result.interests || []).length > 0 && (
-                  <div style={{ marginBottom: 12 }}>
-                    <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Into</p>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                      {(result.interests || []).slice(0, 6).map(i => (
-                        <span key={i} style={{
-                          padding: "4px 9px", border: "1.5px solid #1b1b1b", borderRadius: 5,
-                          fontSize: 11, fontWeight: 700, background: "#fff",
-                          boxShadow: "1px 1px 0px 0px #1b1b1b",
-                        }}>{i}</span>
-                      ))}
-                      {(result.interests || []).length > 6 && (
-                        <span style={{ padding: "4px 9px", fontSize: 11, fontWeight: 700, color: "#aaa" }}>
-                          +{result.interests.length - 6}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Campus vibe */}
-                {(result.campusVibe || []).length > 0 && (
-                  <div style={{ marginBottom: 12 }}>
-                    <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Campus Vibe</p>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                      {(result.campusVibe || []).slice(0, 3).map(v => (
-                        <span key={v} style={{
-                          padding: "4px 9px", border: "1.5px solid #1b1b1b", borderRadius: 5,
-                          fontSize: 11, fontWeight: 700, background: "#FEF3C7",
-                          boxShadow: "1px 1px 0px 0px #1b1b1b",
-                        }}>{v}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Squad / looking for */}
-                {(result.squad || []).length > 0 && (
-                  <div style={{ marginBottom: 12 }}>
-                    <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Looking for</p>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                      {(result.squad || []).slice(0, 4).map(s => (
-                        <span key={s} style={{
-                          padding: "4px 9px", border: "1.5px solid #1b1b1b", borderRadius: 5,
-                          fontSize: 11, fontWeight: 700, background: "#EEF2FF",
-                          boxShadow: "1px 1px 0px 0px #1b1b1b",
-                        }}>{s}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Privacy notice */}
-                <p style={{
-                  margin: "10px 0 0", fontSize: 10, color: "#bbb",
-                  fontWeight: 700, textAlign: "center",
-                  paddingTop: 10, borderTop: "1.5px solid #eee",
-                }}>
-                  🔒 Real photo revealed only after mutual match &amp; both reveal
-                </p>
-              </div>
+              ))}
             </div>
           )}
         </div>

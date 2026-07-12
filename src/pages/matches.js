@@ -228,7 +228,7 @@ export default function Matches() {
 
   // Username search
   const [searchQuery, setSearchQuery]   = useState("");
-  const [searchResult, setSearchResult] = useState(null); // null = no search, false = not found, obj = found
+  const [searchResults, setSearchResults] = useState(null); // null = no search, [] = not found, array = found
   const [searching, setSearching]       = useState(false);
 
   const [incomingLikes, setIncomingLikes] = useState([]);
@@ -383,20 +383,25 @@ export default function Matches() {
     const handle = searchQuery.trim().replace(/^@/, "").toLowerCase();
     if (!handle) return;
     setSearching(true);
-    setSearchResult(null);
+    setSearchResults(null);
     try {
-      const q = query(collection(db, "profiles"), where("username", "==", handle));
+      const q = query(collection(db, "profiles"));
       const snap = await getDocs(q);
-      if (snap.empty) {
-        setSearchResult(false);
-      } else {
-        const data = snap.docs[0].data();
-        // Strip private photo
-        setSearchResult({ ...data, photoUrl: undefined });
-      }
-    } catch (e) {
-      console.error("Username search failed:", e);
-      setSearchResult(false);
+      const list = [];
+      snap.forEach((doc) => {
+        const data = doc.data();
+        if (data.profileComplete) {
+          const uname = (data.username || "").toLowerCase();
+          const dname = (data.name || "").toLowerCase();
+          if (uname.includes(handle) || dname.includes(handle)) {
+            list.push({ id: doc.id, ...data, photoUrl: undefined });
+          }
+        }
+      });
+      setSearchResults(list);
+    } catch (err) {
+      console.error("Username search failed:", err);
+      setSearchResults([]);
     } finally {
       setSearching(false);
     }
@@ -486,34 +491,41 @@ export default function Matches() {
             </button>
           </form>
           {/* Search Result */}
-          {searchResult === false && (
+          {searchResults && searchResults.length === 0 && (
             <div style={{ maxWidth: 480, margin: "10px auto 0", padding: "10px 14px", background: "#ffe0e0", border: "2px solid #1b1b1b", borderRadius: 8, fontSize: 12, fontWeight: 800 }}>
-              No user found with that username 🙁
+              No users found with that query 🙁
             </div>
           )}
-          {searchResult && searchResult !== false && (
-            <div style={{
-              maxWidth: 480, margin: "10px auto 0",
-              background: "#fff", border: "2.5px solid #1b1b1b", borderRadius: 10,
-              boxShadow: "3px 3px 0px 0px #1b1b1b",
-              padding: "12px 14px", display: "flex", alignItems: "center", gap: 12,
-            }}>
-              {searchResult.blurredPhotoUrl ? (
-                <img src={searchResult.blurredPhotoUrl} alt="" style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover", border: "2px solid #1b1b1b", filter: "blur(1px) contrast(1.05)", flexShrink: 0 }} />
-              ) : (
-                <div style={{ width: 46, height: 46, borderRadius: "50%", background: "#bdff00", border: "2px solid #1b1b1b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>{searchResult.avatar || "😊"}</div>
-              )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontWeight: 950, fontSize: 14, textTransform: "uppercase", color: "#1b1b1b" }}>{searchResult.name}</p>
-                <p style={{ margin: "2px 0 0", fontWeight: 800, fontSize: 11, color: "#7531d3" }}>@{searchResult.username}</p>
-                <p style={{ margin: "2px 0 0", fontWeight: 700, fontSize: 10, color: "#555", textTransform: "uppercase" }}>
-                  {(searchResult.branch || []).join(" + ")} · {searchResult.year?.[0]}
-                </p>
-              </div>
-              <button
-                onClick={() => setSearchResult(null)}
-                style={{ background: "#f3f3f3", border: "2px solid #1b1b1b", borderRadius: 6, padding: "4px 8px", cursor: "pointer", fontWeight: 900, fontSize: 11 }}
-              >✕</button>
+          {searchResults && searchResults.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+              {searchResults.map((res) => (
+                <div
+                  key={res.id}
+                  style={{
+                    maxWidth: 480, margin: "0 auto", width: "100%",
+                    background: "#fff", border: "2.5px solid #1b1b1b", borderRadius: 10,
+                    boxShadow: "3px 3px 0px 0px #1b1b1b",
+                    padding: "12px 14px", display: "flex", alignItems: "center", gap: 12,
+                  }}
+                >
+                  {res.blurredPhotoUrl ? (
+                    <img src={res.blurredPhotoUrl} alt="" style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover", border: "2px solid #1b1b1b", filter: "blur(1px) contrast(1.05)", flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: 46, height: 46, borderRadius: "50%", background: "#bdff00", border: "2px solid #1b1b1b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>{res.avatar || "😊"}</div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontWeight: 950, fontSize: 14, textTransform: "uppercase", color: "#1b1b1b" }}>{res.name}</p>
+                    <p style={{ margin: "2px 0 0", fontWeight: 800, fontSize: 11, color: "#7531d3" }}>@{res.username}</p>
+                    <p style={{ margin: "2px 0 0", fontWeight: 700, fontSize: 10, color: "#555", textTransform: "uppercase" }}>
+                      {(res.branch || []).join(" + ")} · {res.year?.[0]}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSearchResults(null)}
+                    style={{ background: "#f3f3f3", border: "2px solid #1b1b1b", borderRadius: 6, padding: "4px 8px", cursor: "pointer", fontWeight: 900, fontSize: 11 }}
+                  >✕</button>
+                </div>
+              ))}
             </div>
           )}
         </div>

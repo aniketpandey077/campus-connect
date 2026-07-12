@@ -83,6 +83,9 @@ const OPT = {
     { l: "GH-5", e: "👧" },
     { l: "GH-6", e: "👧" },
     { l: "GH-7", e: "👧" },
+    { l: "Girls Apartment", e: "🏢" },
+    { l: "Boys Apartment", e: "🏢" },
+    { l: "Staff Apartment", e: "🏢" },
   ],
   vibe: [
     { l: "75% Attendance Savior (UMS Grinder)", e: "📈" }, { l: "Uni Mall Food Court Mayor", e: "🍔" },

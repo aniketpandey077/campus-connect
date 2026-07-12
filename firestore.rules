@@ -33,7 +33,7 @@ service cloud.firestore {
     // Swipes Collection
     match /swipes/{swipeId} {
       allow create: if isAuthed() && request.resource.data.swiperId == request.auth.uid;
-      allow read: if isAuthed() && resource.data.swiperId == request.auth.uid;
+      allow read: if isAuthed() && (resource.data.swiperId == request.auth.uid || resource.data.swipedId == request.auth.uid);
     }
 
     // Matches Collection
