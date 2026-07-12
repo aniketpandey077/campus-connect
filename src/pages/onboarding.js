@@ -792,12 +792,22 @@ export default function Onboarding() {
             )}
 
             {step === 5 && (
-              <SelectionStep
-                label="WHERE YOU STAY"
-                options={OPT.stay}
-                value={stay}
-                onChange={setStay}
-              />
+              <>
+                <SelectionStep
+                  label="WHERE YOU STAY"
+                  options={OPT.stay}
+                  value={stay}
+                  onChange={setStay}
+                />
+                <p style={{
+                  marginTop: 14, fontSize: 11, fontWeight: 800,
+                  color: "#1b1b1b", background: "#ecdcff", border: "2px solid #1b1b1b",
+                  padding: "10px 14px", borderRadius: 8, textAlign: "center",
+                  boxShadow: "2px 2px 0px 0px #1b1b1b", lineHeight: 1.4
+                }}>
+                  💡 <strong>No hostel allotted yet?</strong> Select any option for now, and edit it later from your profile.
+                </p>
+              </>
             )}
 
             {step === 6 && (
