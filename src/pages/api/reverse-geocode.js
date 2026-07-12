@@ -1,5 +1,22 @@
 import { INDIA_STATES_CITIES } from "../../lib/indiaStatesCities";
 
+const CITY_SYNONYMS = {
+  "noida": "Gautam Buddha Nagar",
+  "greater noida": "Gautam Buddha Nagar",
+  "gurgaon": "Gurugram",
+  "bombay": "Mumbai",
+  "madras": "Chennai",
+  "calcutta": "Kolkata",
+  "banaras": "Varanasi",
+  "varanasi cantonment": "Varanasi",
+  "pondicherry": "Puducherry",
+  "trivandrum": "Thiruvananthapuram",
+  "vizag": "Visakhapatnam",
+  "gauhati": "Guwahati",
+  "baroda": "Vadodara",
+  "cochin": "Ernakulam"
+};
+
 function findMatchingStateAndCity(resolvedState, resolvedCity) {
   if (!resolvedState) return { state: "", city: "" };
 
@@ -14,6 +31,17 @@ function findMatchingStateAndCity(resolvedState, resolvedCity) {
 
   if (!matchedState) {
     return { state: "", city: "" };
+  }
+
+  // Translate Synonyms
+  if (resolvedCity) {
+    const cleanCityWithSpaces = resolvedCity.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+    for (const [syn, official] of Object.entries(CITY_SYNONYMS)) {
+      if (cleanCityWithSpaces === syn || cleanCityWithSpaces.includes(syn)) {
+        resolvedCity = official;
+        break;
+      }
+    }
   }
 
   // 2. Match City
