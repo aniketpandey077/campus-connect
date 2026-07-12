@@ -9,7 +9,7 @@ import { useState, useEffect, useRef, useMemo, createRef } from "react";
 import { useRouter } from "next/router";
 import {
   collection, query, where, getDocs,
-  addDoc, getDoc, doc, serverTimestamp,
+  addDoc, getDoc, doc, serverTimestamp, updateDoc,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import NavBar from "../components/NavBar";
@@ -477,6 +477,87 @@ export default function Swipe() {
   const myPhoneRef = useRef(null);
   const myProfileRef = useRef(null);
 
+  // Location prompt modal for legacy users (Compulsory)
+  const [showLocModal, setShowLocModal] = useState(false);
+  const [modalState, setModalState] = useState("");
+  const [modalCity, setModalCity] = useState("");
+  const [modalLat, setModalLat] = useState(null);
+  const [modalLon, setModalLon] = useState(null);
+  const [modalLocLoading, setModalLocLoading] = useState(false);
+  const [modalError, setModalError] = useState("");
+
+  const detectModalLocation = () => {
+    if (!navigator.geolocation) {
+      setModalError("Geolocation is not supported by your browser");
+      return;
+    }
+    setModalLocLoading(true);
+    setModalError("");
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        setModalLat(lat);
+        setModalLon(lon);
+
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`);
+          if (!res.ok) throw new Error("Location service error");
+          const data = await res.json();
+          if (data && data.address) {
+            const resolvedState = data.address.state || "";
+            const resolvedCity = data.address.city || data.address.town || data.address.village || data.address.county || data.address.suburb || "";
+            setModalState(resolvedState);
+            setModalCity(resolvedCity);
+          } else {
+            setModalError("Could not resolve city/state from GPS.");
+          }
+        } catch (err) {
+          console.error("Reverse geocoding failed:", err);
+          setModalError("Location lookup failed. Please type manually.");
+        } finally {
+          setModalLocLoading(false);
+        }
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
+        setModalError("GPS access denied or unavailable.");
+        setModalLocLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
+  const saveModalLocation = async () => {
+    if (!modalState.trim() || !modalCity.trim()) {
+      setModalError("Please select or enter both state and city.");
+      return;
+    }
+    setModalLocLoading(true);
+    try {
+      const phone = myPhoneRef.current;
+      await updateDoc(doc(db, "profiles", phone), {
+        state: modalState.trim(),
+        city: modalCity.trim(),
+        latitude: modalLat || null,
+        longitude: modalLon || null,
+      });
+      if (myProfileRef.current) {
+        myProfileRef.current.state = modalState.trim();
+        myProfileRef.current.city = modalCity.trim();
+        myProfileRef.current.latitude = modalLat || null;
+        myProfileRef.current.longitude = modalLon || null;
+      }
+      setShowLocModal(false);
+      loadData(phone);
+    } catch (err) {
+      console.error("Failed to save location from modal:", err);
+      setModalError("Failed to save. Please try again.");
+    } finally {
+      setModalLocLoading(false);
+    }
+  };
+
   const [TinderCard, setTinderCard] = useState(null);
 
   // profiles sorted ascending by score: profiles[last] = best match = visually on top
@@ -533,6 +614,10 @@ export default function Swipe() {
       const me = { id: phone, ...mySnap.data() };
       myProfileRef.current = me;
       setMyVerificationStatus(me.verificationStatus || "pending");
+
+      if (!me.city || !me.state) {
+        setShowLocModal(true);
+      }
 
       // 2. All completed profiles except self (sanitized to remove photoUrl from memory)
       const allSnap = await getDocs(collection(db, "profiles"));
@@ -965,6 +1050,137 @@ export default function Swipe() {
             >💚</button>
           </div>
         )}
+
+        {/* Location Update Modal for Existing Users (Compulsory) */}
+        {showLocModal && (
+          <div style={{
+            position: "fixed", inset: 0, zIndex: 300,
+            background: "rgba(27,27,27,0.85)",
+            backdropFilter: "blur(5px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontFamily: "'Montserrat', sans-serif",
+            padding: "20px"
+          }}>
+            <div style={{
+              background: "#fff",
+              border: "4px solid #1b1b1b",
+              borderRadius: "20px",
+              padding: "24px",
+              maxWidth: "400px",
+              width: "100%",
+              boxShadow: "8px 8px 0px 0px #1b1b1b",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "28px" }}>📍</span>
+                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 950, textTransform: "uppercase", color: "#1b1b1b" }}>
+                  Set Your Location
+                </h3>
+              </div>
+
+              <p style={{ margin: 0, fontSize: "12px", color: "#555", fontWeight: 800, lineHeight: "1.4", textTransform: "uppercase" }}>
+                We've added location-based matching! Set your city and state to see nearby students first.
+              </p>
+
+              {modalError && (
+                <div style={{
+                  fontSize: "11px", fontWeight: 800, color: "#b90e4f",
+                  background: "#ffd9de", border: "2px solid #1b1b1b",
+                  padding: "8px 12px", borderRadius: "6px"
+                }}>
+                  ⚠️ {modalError}
+                </div>
+              )}
+
+              {/* GPS Button */}
+              <button
+                type="button"
+                onClick={detectModalLocation}
+                disabled={modalLocLoading}
+                style={{
+                  width: "100%", padding: "12px", border: "2px solid #1b1b1b",
+                  background: "#ecdcff", color: "#1b1b1b", fontWeight: 950,
+                  fontSize: "12px", cursor: "pointer", fontFamily: "inherit",
+                  boxShadow: "2.5px 2.5px 0px 0px #1b1b1b", textTransform: "uppercase",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "6px"
+                }}
+              >
+                {modalLocLoading ? "Detecting location..." : "📍 Use Current Location"}
+              </button>
+
+              {/* Map Preview */}
+              {modalLat && modalLon && (
+                <div style={{ border: "2px solid #1b1b1b", borderRadius: "8px", overflow: "hidden", boxShadow: "2px 2px 0px 0px #1b1b1b", height: "130px", width: "100%" }}>
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${modalLon - 0.02}%2C${modalLat - 0.02}%2C${modalLon + 0.02}%2C${modalLat + 0.02}&layer=mapnik&marker=${modalLat}%2C${modalLon}`}
+                  />
+                </div>
+              )}
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <label style={{ fontSize: "10px", fontWeight: 950, textTransform: "uppercase", color: "#1b1b1b" }}>State</label>
+                <input
+                  type="text"
+                  list="modal-states"
+                  value={modalState}
+                  onChange={(e) => setModalState(e.target.value)}
+                  placeholder="Select or enter state..."
+                  style={{
+                    padding: "10px 12px", border: "2px solid #1b1b1b",
+                    borderRadius: "6px", fontSize: "13px", fontWeight: 800,
+                    outline: "none", fontFamily: "inherit", background: "#fff"
+                  }}
+                />
+                <datalist id="modal-states">
+                  {["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Jammu and Kashmir", "Ladakh", "Puducherry"].map(st => (
+                    <option key={st} value={st} />
+                  ))}
+                </datalist>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <label style={{ fontSize: "10px", fontWeight: 950, textTransform: "uppercase", color: "#1b1b1b" }}>City</label>
+                <input
+                  type="text"
+                  list="modal-cities"
+                  value={modalCity}
+                  onChange={(e) => setModalCity(e.target.value)}
+                  placeholder="Select or enter city..."
+                  style={{
+                    padding: "10px 12px", border: "2px solid #1b1b1b",
+                    borderRadius: "6px", fontSize: "13px", fontWeight: 800,
+                    outline: "none", fontFamily: "inherit", background: "#fff"
+                  }}
+                />
+                <datalist id="modal-cities">
+                  {["Jalandhar", "Phagwara", "Ludhiana", "Amritsar", "Patiala", "Bathinda", "Chandigarh", "Mohali", "Panchkula", "Delhi", "Mumbai", "Pune", "Nagpur", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Ahmedabad", "Surat", "Jaipur", "Jodhpur", "Udaipur", "Kota", "Lucknow", "Kanpur", "Varanasi", "Noida", "Ghaziabad", "Gurugram", "Faridabad", "Patna", "Ranchi", "Bhopal", "Indore", "Raipur", "Dehradun", "Shimla", "Guwahati", "Bhubaneswar"].map(ct => (
+                    <option key={ct} value={ct} />
+                  ))}
+                </datalist>
+              </div>
+
+              <button
+                onClick={saveModalLocation}
+                disabled={modalLocLoading}
+                style={{
+                  width: "100%", padding: "12px", border: "2px solid #1b1b1b",
+                  background: "#bdff00", color: "#1b1b1b", fontWeight: 950,
+                  fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
+                  boxShadow: "3px 3px 0px 0px #1b1b1b", textTransform: "uppercase",
+                  marginTop: "8px"
+                }}
+              >
+                Save Location
+              </button>
+            </div>
+          </div>
+        )}
+
         <NavBar active="/swipe" />
       </div>
     </>
