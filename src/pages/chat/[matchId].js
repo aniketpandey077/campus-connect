@@ -1151,24 +1151,30 @@ export default function Chat() {
       const unreadField = isUser1 ? "user2Unread" : "user1Unread";
       
       let url;
-      try {
-        const uploadPromise = (async () => {
-          const fileName = `${Date.now()}_${file.name}`;
-          const storageRef = ref(storage, `chats/${matchId}/photos/${fileName}`);
-          await uploadBytes(storageRef, file);
-          return await getDownloadURL(storageRef);
-        })();
-
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Storage upload timeout")), 3000)
-        );
-
-        url = await Promise.race([uploadPromise, timeoutPromise]);
-      } catch (storageError) {
-        console.warn("Storage upload failed or timed out, falling back to base64 inline compression:", storageError);
-        // Fallback to local base64 compression via imageUtils
+      if (!storage) {
+        console.warn("Storage instance is null, directly falling back to base64 inline compression.");
         const { fileToFirestorePhoto } = await import("../../lib/imageUtils");
         url = await fileToFirestorePhoto(file);
+      } else {
+        try {
+          const uploadPromise = (async () => {
+            const fileName = `${Date.now()}_${file.name}`;
+            const storageRef = ref(storage, `chats/${matchId}/photos/${fileName}`);
+            await uploadBytes(storageRef, file);
+            return await getDownloadURL(storageRef);
+          })();
+
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Storage upload timeout")), 1000)
+          );
+
+          url = await Promise.race([uploadPromise, timeoutPromise]);
+        } catch (storageError) {
+          console.warn("Storage upload failed or timed out, falling back to base64 inline compression:", storageError);
+          // Fallback to local base64 compression via imageUtils
+          const { fileToFirestorePhoto } = await import("../../lib/imageUtils");
+          url = await fileToFirestorePhoto(file);
+        }
       }
 
       const msgData = {
@@ -1252,26 +1258,35 @@ export default function Chat() {
           const unreadField = isUser1 ? "user2Unread" : "user1Unread";
           
           let url;
-          try {
-            const uploadPromise = (async () => {
-              const fileName = `${Date.now()}_voice.webm`;
-              const storageRef = ref(storage, `chats/${matchId}/audio/${fileName}`);
-              await uploadBytes(storageRef, blob);
-              return await getDownloadURL(storageRef);
-            })();
-
-            const timeoutPromise = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error("Storage upload timeout")), 3000)
-            );
-
-            url = await Promise.race([uploadPromise, timeoutPromise]);
-          } catch (storageError) {
-            console.warn("Storage audio upload failed or timed out, falling back to base64 inline:", storageError);
+          if (!storage) {
+            console.warn("Storage instance is null, directly falling back to base64 audio.");
             url = await new Promise((res) => {
               const reader = new FileReader();
               reader.onloadend = () => res(reader.result);
               reader.readAsDataURL(blob);
             });
+          } else {
+            try {
+              const uploadPromise = (async () => {
+                const fileName = `${Date.now()}_voice.webm`;
+                const storageRef = ref(storage, `chats/${matchId}/audio/${fileName}`);
+                await uploadBytes(storageRef, blob);
+                return await getDownloadURL(storageRef);
+              })();
+
+              const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Storage upload timeout")), 1000)
+              );
+
+              url = await Promise.race([uploadPromise, timeoutPromise]);
+            } catch (storageError) {
+              console.warn("Storage audio upload failed or timed out, falling back to base64 inline:", storageError);
+              url = await new Promise((res) => {
+                const reader = new FileReader();
+                reader.onloadend = () => res(reader.result);
+                reader.readAsDataURL(blob);
+              });
+            }
           }
 
           const msgData = {
