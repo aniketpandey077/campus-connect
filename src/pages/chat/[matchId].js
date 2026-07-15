@@ -668,7 +668,24 @@ function ProfileModal({ profile, revealed, onClose }) {
 }
 
 // ─── Call Overlay ──────────────────────────────────────────────────────────────
-function CallOverlay({ callState, otherProfile, revealed, localVideoRef, remoteVideoRef, onEnd, onAccept, onDecline, callTimer }) {
+function CallOverlay({
+  callState,
+  otherProfile,
+  revealed,
+  localVideoRef,
+  remoteVideoRef,
+  remoteAudioRef,
+  onEnd,
+  onAccept,
+  onDecline,
+  callTimer,
+  micMuted,
+  speakerMuted,
+  videoOff,
+  onToggleMic,
+  onToggleSpeaker,
+  onToggleVideo
+}) {
   if (!callState) return null;
 
   const isVideo = callState.type === "video";
@@ -695,25 +712,44 @@ function CallOverlay({ callState, otherProfile, revealed, localVideoRef, remoteV
         @keyframes callRing { 0%{transform:rotate(0)} 10%{transform:rotate(15deg)} 20%{transform:rotate(-15deg)} 30%{transform:rotate(10deg)} 40%{transform:rotate(-10deg)} 50%{transform:rotate(0)} 100%{transform:rotate(0)} }
       `}</style>
 
+      {/* Audio element to play audio for voice calls */}
+      {!isVideo && (
+        <audio ref={remoteAudioRef} autoPlay playsInline muted={speakerMuted} />
+      )}
+
       {/* Video Streams */}
-      {isVideo && isConnected && (
+      {isVideo && (
         <>
-          <video ref={remoteVideoRef} autoPlay playsInline style={{
-            position: "absolute", inset: 0, width: "100%", height: "100%",
-            objectFit: "cover",
-          }} />
-          <video ref={localVideoRef} autoPlay playsInline muted style={{
-            position: "absolute", top: 20, right: 20,
-            width: 120, height: 160, objectFit: "cover",
-            borderRadius: 12, border: "3px solid #fff",
-            boxShadow: "4px 4px 0px 0px rgba(0,0,0,0.5)",
-            zIndex: 2,
-          }} />
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            muted={speakerMuted}
+            style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              objectFit: "cover",
+              display: isConnected ? "block" : "none",
+            }}
+          />
+          <video
+            ref={localVideoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{
+              position: "absolute", top: 20, right: 20,
+              width: 120, height: 160, objectFit: "cover",
+              borderRadius: 12, border: "3px solid #fff",
+              boxShadow: "4px 4px 0px 0px rgba(0,0,0,0.5)",
+              zIndex: 2,
+              display: isConnected && !videoOff ? "block" : "none",
+            }}
+          />
         </>
       )}
 
-      {/* Non-connected or audio state */}
-      {(!isConnected || !isVideo) && (
+      {/* Non-connected, audio, or video off avatar UI */}
+      {(!isConnected || !isVideo || (isVideo && videoOff)) && (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, zIndex: 2 }}>
           <div style={{ animation: isRinging ? "callPulse 2s infinite" : "none" }}>
             <Avatar profile={otherProfile} size={100} revealed={revealed} />
@@ -736,41 +772,83 @@ function CallOverlay({ callState, otherProfile, revealed, localVideoRef, remoteV
         </div>
       )}
 
-      {/* Controls */}
+      {/* Controls Container */}
       <div style={{
         position: "absolute", bottom: 60,
-        display: "flex", gap: 20, zIndex: 3,
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 20, zIndex: 3,
       }}>
-        {/* Incoming ringing: Accept + Decline */}
-        {isRinging && !isOutgoing && (
-          <>
-            <button onClick={onDecline} style={{
+        {/* Toggle buttons for active call */}
+        {isConnected && (
+          <div style={{ display: "flex", gap: 16, marginBottom: 10 }}>
+            {/* Microphone Toggle */}
+            <button onClick={onToggleMic} style={{
+              width: 48, height: 48, borderRadius: "50%",
+              border: "2px solid #fff", background: micMuted ? "#DC2626" : "rgba(255,255,255,0.2)",
+              color: "#fff", fontSize: 20, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "2px 2px 0px 0px rgba(0,0,0,0.3)",
+            }} title={micMuted ? "Unmute Mic" : "Mute Mic"}>
+              {micMuted ? "🔇" : "🎙️"}
+            </button>
+
+            {/* Speaker Toggle */}
+            <button onClick={onToggleSpeaker} style={{
+              width: 48, height: 48, borderRadius: "50%",
+              border: "2px solid #fff", background: speakerMuted ? "#DC2626" : "rgba(255,255,255,0.2)",
+              color: "#fff", fontSize: 20, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "2px 2px 0px 0px rgba(0,0,0,0.3)",
+            }} title={speakerMuted ? "Unmute Speaker" : "Mute Speaker"}>
+              {speakerMuted ? "🔇" : "🔊"}
+            </button>
+
+            {/* Camera Toggle (Video calls only) */}
+            {isVideo && (
+              <button onClick={onToggleVideo} style={{
+                width: 48, height: 48, borderRadius: "50%",
+                border: "2px solid #fff", background: videoOff ? "#DC2626" : "rgba(255,255,255,0.2)",
+                color: "#fff", fontSize: 20, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "2px 2px 0px 0px rgba(0,0,0,0.3)",
+              }} title={videoOff ? "Turn Camera On" : "Turn Camera Off"}>
+                {videoOff ? "📷🚫" : "📹"}
+              </button>
+            )}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 20 }}>
+          {/* Incoming ringing: Accept + Decline */}
+          {isRinging && !isOutgoing && (
+            <>
+              <button onClick={onDecline} style={{
+                width: 60, height: 60, borderRadius: "50%",
+                border: "3px solid #fff", background: "#DC2626",
+                fontSize: 24, cursor: "pointer", display: "flex",
+                alignItems: "center", justifyContent: "center",
+                boxShadow: "3px 3px 0px 0px rgba(255,255,255,0.3)",
+              }}>✕</button>
+              <button onClick={onAccept} style={{
+                width: 60, height: 60, borderRadius: "50%",
+                border: "3px solid #fff", background: "#10B981",
+                fontSize: 24, cursor: "pointer", display: "flex",
+                alignItems: "center", justifyContent: "center",
+                boxShadow: "3px 3px 0px 0px rgba(255,255,255,0.3)",
+              }}>{isVideo ? "📹" : "📞"}</button>
+            </>
+          )}
+
+          {/* Outgoing ringing / connected / connecting: End */}
+          {(isOutgoing || isConnected || callState.status === "connecting") && (
+            <button onClick={onEnd} style={{
               width: 60, height: 60, borderRadius: "50%",
               border: "3px solid #fff", background: "#DC2626",
               fontSize: 24, cursor: "pointer", display: "flex",
               alignItems: "center", justifyContent: "center",
               boxShadow: "3px 3px 0px 0px rgba(255,255,255,0.3)",
-            }}>✕</button>
-            <button onClick={onAccept} style={{
-              width: 60, height: 60, borderRadius: "50%",
-              border: "3px solid #fff", background: "#10B981",
-              fontSize: 24, cursor: "pointer", display: "flex",
-              alignItems: "center", justifyContent: "center",
-              boxShadow: "3px 3px 0px 0px rgba(255,255,255,0.3)",
-            }}>{isVideo ? "📹" : "📞"}</button>
-          </>
-        )}
-
-        {/* Outgoing ringing / connected: End */}
-        {(isOutgoing || isConnected || callState.status === "connecting") && (
-          <button onClick={onEnd} style={{
-            width: 60, height: 60, borderRadius: "50%",
-            border: "3px solid #fff", background: "#DC2626",
-            fontSize: 24, cursor: "pointer", display: "flex",
-            alignItems: "center", justifyContent: "center",
-            boxShadow: "3px 3px 0px 0px rgba(255,255,255,0.3)",
-          }}>📵</button>
-        )}
+            }}>📵</button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -831,6 +909,11 @@ export default function Chat() {
   // ── Call state ──
   const [callState, setCallState] = useState(null); // { type, status, direction }
   const [callTimer, setCallTimer] = useState(0);
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
+  const [micMuted, setMicMuted] = useState(false);
+  const [speakerMuted, setSpeakerMuted] = useState(false);
+  const [videoOff, setVideoOff] = useState(false);
 
   const bottomRef  = useRef(null);
   const inputRef   = useRef(null);
@@ -845,8 +928,28 @@ export default function Chat() {
   const remoteStreamRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const remoteAudioRef = useRef(null);
   const callTimerRef = useRef(null);
   const callDocUnsubRef = useRef(null);
+
+  // Stream effect triggers to attach streams without DOM races
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream, localVideoRef.current, videoOff]);
+
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream, remoteVideoRef.current]);
+
+  useEffect(() => {
+    if (remoteAudioRef.current && remoteStream) {
+      remoteAudioRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream, remoteAudioRef.current]);
 
   // ── Auth ──
   useEffect(() => {
@@ -1046,10 +1149,19 @@ export default function Chat() {
       const phone = myPhoneRef.current;
       const isUser1 = matchData.user1Id === phone;
       const unreadField = isUser1 ? "user2Unread" : "user1Unread";
-      const fileName = `${Date.now()}_${file.name}`;
-      const storageRef = ref(storage, `chats/${matchId}/photos/${fileName}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
+      
+      let url;
+      try {
+        const fileName = `${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, `chats/${matchId}/photos/${fileName}`);
+        await uploadBytes(storageRef, file);
+        url = await getDownloadURL(storageRef);
+      } catch (storageError) {
+        console.warn("Storage upload failed, falling back to base64 inline compression:", storageError);
+        // Fallback to local base64 compression via imageUtils
+        const { fileToFirestorePhoto } = await import("../../lib/imageUtils");
+        url = await fileToFirestorePhoto(file);
+      }
 
       const msgData = {
         senderId: phone, content: "📷 Photo", timestamp: serverTimestamp(),
@@ -1075,7 +1187,7 @@ export default function Chat() {
       setReplyingTo(null);
     } catch (e) {
       console.error("photo upload:", e);
-      alert("Failed to send photo.");
+      alert("Failed to send photo: " + e.message);
     } finally {
       setUploadingMedia(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -1130,10 +1242,21 @@ export default function Chat() {
           const phone = myPhoneRef.current;
           const isUser1 = matchData.user1Id === phone;
           const unreadField = isUser1 ? "user2Unread" : "user1Unread";
-          const fileName = `${Date.now()}_voice.webm`;
-          const storageRef = ref(storage, `chats/${matchId}/audio/${fileName}`);
-          await uploadBytes(storageRef, blob);
-          const url = await getDownloadURL(storageRef);
+          
+          let url;
+          try {
+            const fileName = `${Date.now()}_voice.webm`;
+            const storageRef = ref(storage, `chats/${matchId}/audio/${fileName}`);
+            await uploadBytes(storageRef, blob);
+            url = await getDownloadURL(storageRef);
+          } catch (storageError) {
+            console.warn("Storage audio upload failed, falling back to base64 inline:", storageError);
+            url = await new Promise((res) => {
+              const reader = new FileReader();
+              reader.onloadend = () => res(reader.result);
+              reader.readAsDataURL(blob);
+            });
+          }
 
           const msgData = {
             senderId: phone, content: "🎙️ Voice note", timestamp: serverTimestamp(),
@@ -1159,7 +1282,7 @@ export default function Chat() {
           setReplyingTo(null);
         } catch (e) {
           console.error("voice upload:", e);
-          alert("Failed to send voice note.");
+          alert("Failed to send voice note: " + e.message);
         } finally {
           setUploadingMedia(false);
         }
@@ -1264,58 +1387,53 @@ export default function Chat() {
       const constraints = type === "video" ? { audio: true, video: true } : { audio: true };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       localStreamRef.current = stream;
+      setLocalStream(stream);
 
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcRef.current = pc;
-      remoteStreamRef.current = new MediaStream();
+      const rStream = new MediaStream();
+      remoteStreamRef.current = rStream;
+      setRemoteStream(rStream);
 
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
       pc.ontrack = (e) => {
-        e.streams[0].getTracks().forEach(track => remoteStreamRef.current.addTrack(track));
-        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStreamRef.current;
+        e.streams[0].getTracks().forEach(track => {
+          rStream.addTrack(track);
+        });
       };
-
-      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
       const callDocRef = doc(db, "matches", matchId, "calls", "active_call");
 
-      // Collect ICE candidates
-      const callerCandidates = [];
+      // Set up real-time candidate adding
       pc.onicecandidate = (e) => {
-        if (e.candidate) callerCandidates.push(e.candidate.toJSON());
+        if (e.candidate) {
+          const candRef = collection(db, "matches", matchId, "calls", "active_call", "callerCandidates");
+          addDoc(candRef, e.candidate.toJSON()).catch(() => {});
+        }
       };
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      // Wait briefly for ICE gathering
-      await new Promise(r => setTimeout(r, 1000));
-
-      await updateDoc(doc(db, "matches", matchId, "calls", "active_call"), {
+      const { setDoc } = await import("firebase/firestore");
+      await setDoc(callDocRef, {
         callerId: phone, receiverId: otherId,
         type, status: "ringing",
         offer: { type: offer.type, sdp: offer.sdp },
-        callerCandidates,
-        answer: null, receiverCandidates: null,
+        answer: null,
         createdAt: serverTimestamp(),
-      }).catch(async () => {
-        // Doc might not exist yet, use set-like approach via addDoc workaround
-        // Since we're using a fixed doc id, let's try to create it
-        const { setDoc } = await import("firebase/firestore");
-        await setDoc(callDocRef, {
-          callerId: phone, receiverId: otherId,
-          type, status: "ringing",
-          offer: { type: offer.type, sdp: offer.sdp },
-          callerCandidates,
-          answer: null, receiverCandidates: null,
-          createdAt: serverTimestamp(),
-        });
       });
 
       setCallState({ type, status: "ringing", direction: "outgoing" });
 
-      // Listen for answer
+      // Reset mute controls
+      setMicMuted(false);
+      setSpeakerMuted(false);
+      setVideoOff(false);
+
+      // Listen for answer + remote candidates
+      let unsubReceiverCand = null;
       callDocUnsubRef.current = onSnapshot(callDocRef, async (snap) => {
         if (!snap.exists()) { endCall(); return; }
         const data = snap.data();
@@ -1325,17 +1443,28 @@ export default function Chat() {
         }
         if (data.status === "accepted" && data.answer && pc.signalingState !== "stable") {
           await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-          if (data.receiverCandidates) {
-            for (const c of data.receiverCandidates) {
-              await pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
-            }
-          }
+          
+          const receiverCandRef = collection(db, "matches", matchId, "calls", "active_call", "receiverCandidates");
+          unsubReceiverCand = onSnapshot(receiverCandRef, (cSnap) => {
+            cSnap.docChanges().forEach(async (change) => {
+              if (change.type === "added") {
+                const cData = change.doc.data();
+                await pc.addIceCandidate(new RTCIceCandidate(cData)).catch(() => {});
+              }
+            });
+          });
+
           setCallState(prev => ({ ...prev, status: "connected" }));
-          // Start timer
           setCallTimer(0);
           callTimerRef.current = setInterval(() => setCallTimer(t => t + 1), 1000);
         }
       });
+
+      const prevUnsub = callDocUnsubRef.current;
+      callDocUnsubRef.current = () => {
+        prevUnsub?.();
+        unsubReceiverCand?.();
+      };
 
     } catch (e) {
       console.error("startCall:", e);
@@ -1369,54 +1498,70 @@ export default function Chat() {
       const constraints = callData.type === "video" ? { audio: true, video: true } : { audio: true };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       localStreamRef.current = stream;
+      setLocalStream(stream);
 
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcRef.current = pc;
-      remoteStreamRef.current = new MediaStream();
+      const rStream = new MediaStream();
+      remoteStreamRef.current = rStream;
+      setRemoteStream(rStream);
 
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
       pc.ontrack = (e) => {
-        e.streams[0].getTracks().forEach(track => remoteStreamRef.current.addTrack(track));
-        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStreamRef.current;
+        e.streams[0].getTracks().forEach(track => {
+          rStream.addTrack(track);
+        });
       };
-
-      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
       await pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
 
-      if (callData.callerCandidates) {
-        for (const c of callData.callerCandidates) {
-          await pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
-        }
-      }
+      // Listen for caller candidates
+      const callerCandRef = collection(db, "matches", matchId, "calls", "active_call", "callerCandidates");
+      const unsubCallerCand = onSnapshot(callerCandRef, (cSnap) => {
+        cSnap.docChanges().forEach(async (change) => {
+          if (change.type === "added") {
+            const cData = change.doc.data();
+            await pc.addIceCandidate(new RTCIceCandidate(cData)).catch(() => {});
+          }
+        });
+      });
 
-      const receiverCandidates = [];
       pc.onicecandidate = (e) => {
-        if (e.candidate) receiverCandidates.push(e.candidate.toJSON());
+        if (e.candidate) {
+          const candRef = collection(db, "matches", matchId, "calls", "active_call", "receiverCandidates");
+          addDoc(candRef, e.candidate.toJSON()).catch(() => {});
+        }
       };
 
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
-      await new Promise(r => setTimeout(r, 1000));
-
       await updateDoc(callDocRef, {
         status: "accepted",
         answer: { type: answer.type, sdp: answer.sdp },
-        receiverCandidates,
       });
 
       setCallState(prev => ({ ...prev, status: "connected" }));
       setCallTimer(0);
       callTimerRef.current = setInterval(() => setCallTimer(t => t + 1), 1000);
 
+      // Reset mute controls
+      setMicMuted(false);
+      setSpeakerMuted(false);
+      setVideoOff(false);
+
       // Listen for end
-      callDocUnsubRef.current = onSnapshot(callDocRef, (snap) => {
+      const unsubCallDoc = onSnapshot(callDocRef, (snap) => {
         if (!snap.exists()) { endCall(); return; }
         const data = snap.data();
         if (data.status === "ended") endCall();
       });
+
+      callDocUnsubRef.current = () => {
+        unsubCallDoc();
+        unsubCallerCand();
+      };
 
     } catch (e) {
       console.error("acceptCall:", e);
@@ -1434,26 +1579,55 @@ export default function Chat() {
   };
 
   const endCall = useCallback(() => {
-    // Stop media
     localStreamRef.current?.getTracks().forEach(t => t.stop());
     remoteStreamRef.current?.getTracks().forEach(t => t.stop());
     pcRef.current?.close();
     localStreamRef.current = null;
     remoteStreamRef.current = null;
     pcRef.current = null;
+    setLocalStream(null);
+    setRemoteStream(null);
+    setMicMuted(false);
+    setSpeakerMuted(false);
+    setVideoOff(false);
+
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+
     clearInterval(callTimerRef.current);
     callDocUnsubRef.current?.();
     callDocUnsubRef.current = null;
 
-    // Update Firestore
     if (matchId) {
       deleteDoc(doc(db, "matches", matchId, "calls", "active_call")).catch(() => {});
     }
     setCallState(null);
     setCallTimer(0);
   }, [matchId]);
+
+  // Mic, Video, Speaker controllers
+  const toggleMic = () => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getAudioTracks().forEach(t => {
+        t.enabled = micMuted;
+      });
+      setMicMuted(!micMuted);
+    }
+  };
+
+  const toggleVideo = () => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getVideoTracks().forEach(t => {
+        t.enabled = videoOff;
+      });
+      setVideoOff(!videoOff);
+    }
+  };
+
+  const toggleSpeaker = () => {
+    setSpeakerMuted(!speakerMuted);
+  };
 
   // Cleanup call on unmount
   useEffect(() => {
@@ -1549,10 +1723,17 @@ export default function Chat() {
         revealed={isFullyRevealed}
         localVideoRef={localVideoRef}
         remoteVideoRef={remoteVideoRef}
+        remoteAudioRef={remoteAudioRef}
         onEnd={endCall}
         onAccept={acceptCall}
         onDecline={declineCall}
         callTimer={callTimer}
+        micMuted={micMuted}
+        speakerMuted={speakerMuted}
+        videoOff={videoOff}
+        onToggleMic={toggleMic}
+        onToggleSpeaker={toggleSpeaker}
+        onToggleVideo={toggleVideo}
       />
 
       {showReport && <ReportModal onSubmit={submitReport} onClose={() => setShowReport(false)} />}
