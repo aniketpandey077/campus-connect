@@ -1152,12 +1152,20 @@ export default function Chat() {
       
       let url;
       try {
-        const fileName = `${Date.now()}_${file.name}`;
-        const storageRef = ref(storage, `chats/${matchId}/photos/${fileName}`);
-        await uploadBytes(storageRef, file);
-        url = await getDownloadURL(storageRef);
+        const uploadPromise = (async () => {
+          const fileName = `${Date.now()}_${file.name}`;
+          const storageRef = ref(storage, `chats/${matchId}/photos/${fileName}`);
+          await uploadBytes(storageRef, file);
+          return await getDownloadURL(storageRef);
+        })();
+
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Storage upload timeout")), 3000)
+        );
+
+        url = await Promise.race([uploadPromise, timeoutPromise]);
       } catch (storageError) {
-        console.warn("Storage upload failed, falling back to base64 inline compression:", storageError);
+        console.warn("Storage upload failed or timed out, falling back to base64 inline compression:", storageError);
         // Fallback to local base64 compression via imageUtils
         const { fileToFirestorePhoto } = await import("../../lib/imageUtils");
         url = await fileToFirestorePhoto(file);
@@ -1245,12 +1253,20 @@ export default function Chat() {
           
           let url;
           try {
-            const fileName = `${Date.now()}_voice.webm`;
-            const storageRef = ref(storage, `chats/${matchId}/audio/${fileName}`);
-            await uploadBytes(storageRef, blob);
-            url = await getDownloadURL(storageRef);
+            const uploadPromise = (async () => {
+              const fileName = `${Date.now()}_voice.webm`;
+              const storageRef = ref(storage, `chats/${matchId}/audio/${fileName}`);
+              await uploadBytes(storageRef, blob);
+              return await getDownloadURL(storageRef);
+            })();
+
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("Storage upload timeout")), 3000)
+            );
+
+            url = await Promise.race([uploadPromise, timeoutPromise]);
           } catch (storageError) {
-            console.warn("Storage audio upload failed, falling back to base64 inline:", storageError);
+            console.warn("Storage audio upload failed or timed out, falling back to base64 inline:", storageError);
             url = await new Promise((res) => {
               const reader = new FileReader();
               reader.onloadend = () => res(reader.result);
@@ -1857,20 +1873,6 @@ export default function Chat() {
               boxShadow: "2px 2px 0px 0px #1b1b1b", fontWeight: 900
             }}
           >📞</button>
-
-          {/* 📹 Video Call */}
-          <button
-            onClick={() => startCall("video")}
-            title="Video Call"
-            className="neo-btn"
-            style={{
-              width: 32, height: 32, borderRadius: 6, border: "2px solid #1b1b1b",
-              background: "#EEF2FF", color: "#1b1b1b", fontSize: 14,
-              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-              fontFamily: "inherit", flexShrink: 0,
-              boxShadow: "2px 2px 0px 0px #1b1b1b", fontWeight: 900
-            }}
-          >📹</button>
 
           {/* 👁️ Reveal toggle button */}
           <button
