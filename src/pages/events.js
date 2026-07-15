@@ -17,14 +17,14 @@ import { useRequireAuth } from "../lib/useAuth";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const CATEGORIES = {
-  All:    { icon: "✨", bg: "#F5F4F0",  color: "#555"    },
+  All:    { icon: "✨", bg: "#F5F4F0",  color: "#1b1b1b"    },
   Study:  { icon: "📚", bg: "#EEF2FF",  color: "#4338CA" },
   Chill:  { icon: "😎", bg: "#FEF3C7",  color: "#92400E" },
   Food:   { icon: "🍕", bg: "#FFF7ED",  color: "#C2410C" },
   Sports: { icon: "⚽", bg: "#DCFCE7",  color: "#15803D" },
   Gaming: { icon: "🎮", bg: "#F3E8FF",  color: "#7E22CE" },
   Music:  { icon: "🎵", bg: "#FDF2F8",  color: "#BE185D" },
-  Other:  { icon: "🌀", bg: "#F5F4F0",  color: "#555"    },
+  Other:  { icon: "🌀", bg: "#F5F4F0",  color: "#1b1b1b"    },
 };
 
 const LOCATIONS = [
@@ -131,7 +131,7 @@ function EventCard({ event, myPhone, onJoin, onLeave, creatorProfile }) {
         {/* Description */}
         {event.description && (
           <p style={{
-            margin: "0 0 12px", fontSize: 13, color: "#555",
+            margin: "0 0 12px", fontSize: 13, color: "#1b1b1b",
             lineHeight: 1.5, fontWeight: 700,
           }}>{event.description}</p>
         )}
@@ -164,7 +164,7 @@ function EventCard({ event, myPhone, onJoin, onLeave, creatorProfile }) {
             <p style={{ margin: 0, fontSize: 11, fontWeight: 900, color: "#1b1b1b" }}>
               {isMine ? "YOU" : (creatorProfile?.name || "Someone").toUpperCase()} IS GOING
             </p>
-            <p style={{ margin: 0, fontSize: 10, color: "#555", fontWeight: 800 }}>
+            <p style={{ margin: 0, fontSize: 10, color: "#1b1b1b", fontWeight: 800 }}>
               {filled}/{event.maxPeople} SPOTS • {timeAgo(event.createdAt).toUpperCase()}
             </p>
           </div>
@@ -562,7 +562,7 @@ export default function Events() {
                 <h1 style={{ margin: 0, fontSize: 20, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>
                   Campus Events 🗓️
                 </h1>
-                <p style={{ margin: "2px 0 0", fontSize: 11, color: "#555", fontWeight: 800 }}>
+                <p style={{ margin: "2px 0 0", fontSize: 11, color: "#1b1b1b", fontWeight: 800 }}>
                   OPEN TO ALL · JOIN ANY EVENT, NO MATCH NEEDED
                 </p>
               </div>
@@ -624,7 +624,7 @@ export default function Events() {
               <h2 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>
                 {filter === "All" ? "No events yet" : `No ${filter} events yet`}
               </h2>
-              <p style={{ margin: "0 0 24px", fontSize: 13, color: "#555", fontWeight: 700, lineHeight: 1.6 }}>
+              <p style={{ margin: "0 0 24px", fontSize: 13, color: "#1b1b1b", fontWeight: 700, lineHeight: 1.6 }}>
                 Be the first to create one — your campus crew is waiting!
               </p>
               <button onClick={() => setShowCreate(true)} className="neo-btn" style={{
@@ -658,3 +658,4 @@ export default function Events() {
     </>
   );
 }
+

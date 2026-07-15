@@ -98,7 +98,7 @@ export default function SearchPage() {
               <h1 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>
                 🔍 Find Anyone
               </h1>
-              <p style={{ margin: "1px 0 0", fontSize: 10, color: "#555", fontWeight: 800 }}>
+              <p style={{ margin: "1px 0 0", fontSize: 10, color: "#1b1b1b", fontWeight: 800 }}>
                 SEARCH BY @USERNAME · NO MATCH NEEDED
               </p>
             </div>
@@ -156,10 +156,10 @@ export default function SearchPage() {
           {results === null && !searching && (
             <div style={{ marginTop: 48, textAlign: "center" }}>
               <div style={{ fontSize: 64, marginBottom: 12 }}>🔎</div>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: "#888", textTransform: "uppercase" }}>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: "#1b1b1b", textTransform: "uppercase" }}>
                 Search any Unihood student
               </p>
-              <p style={{ margin: "6px 0 0", fontSize: 11, color: "#bbb", fontWeight: 700 }}>
+              <p style={{ margin: "6px 0 0", fontSize: 11, color: "#1b1b1b", fontWeight: 700 }}>
                 Try @username or name, no @ needed too
               </p>
               <div style={{ marginTop: 24, display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
@@ -205,7 +205,7 @@ export default function SearchPage() {
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>
                   No users found
                 </p>
-                <p style={{ margin: "4px 0 0", fontSize: 11, color: "#555", fontWeight: 700 }}>
+                <p style={{ margin: "4px 0 0", fontSize: 11, color: "#1b1b1b", fontWeight: 700 }}>
                   No match found for &quot;{searchQuery}&quot;
                 </p>
               </div>
@@ -325,7 +325,7 @@ export default function SearchPage() {
                     {/* Interests */}
                     {(res.interests || []).length > 0 && (
                       <div style={{ marginBottom: 12 }}>
-                        <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Into</p>
+                        <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#1b1b1b", textTransform: "uppercase", letterSpacing: "0.1em" }}>Into</p>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                           {(res.interests || []).slice(0, 6).map(i => (
                             <span key={i} style={{
@@ -335,7 +335,7 @@ export default function SearchPage() {
                             }}>{i}</span>
                           ))}
                           {(res.interests || []).length > 6 && (
-                            <span style={{ padding: "4px 9px", fontSize: 11, fontWeight: 700, color: "#aaa" }}>
+                            <span style={{ padding: "4px 9px", fontSize: 11, fontWeight: 700, color: "#1b1b1b" }}>
                               +{res.interests.length - 6}
                             </span>
                           )}
@@ -346,7 +346,7 @@ export default function SearchPage() {
                     {/* Campus vibe */}
                     {(res.campusVibe || []).length > 0 && (
                       <div style={{ marginBottom: 12 }}>
-                        <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Campus Vibe</p>
+                        <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#1b1b1b", textTransform: "uppercase", letterSpacing: "0.1em" }}>Campus Vibe</p>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                           {(res.campusVibe || []).slice(0, 3).map(v => (
                             <span key={v} style={{
@@ -362,7 +362,7 @@ export default function SearchPage() {
                     {/* Squad / looking for */}
                     {(res.squad || []).length > 0 && (
                       <div style={{ marginBottom: 12 }}>
-                        <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Looking for</p>
+                        <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#1b1b1b", textTransform: "uppercase", letterSpacing: "0.1em" }}>Looking for</p>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                           {(res.squad || []).slice(0, 4).map(s => (
                             <span key={s} style={{
@@ -377,7 +377,7 @@ export default function SearchPage() {
 
                     {/* Privacy notice */}
                     <p style={{
-                      margin: "10px 0 0", fontSize: 10, color: "#bbb",
+                      margin: "10px 0 0", fontSize: 10, color: "#1b1b1b",
                       fontWeight: 700, textAlign: "center",
                       paddingTop: 10, borderTop: "1.5px solid #eee",
                     }}>
@@ -395,3 +395,4 @@ export default function SearchPage() {
     </>
   );
 }
+

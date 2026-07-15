@@ -251,7 +251,7 @@ function ProfileCard({ profile, swipeHint }) {
           {/* Interests */}
           {(profile.interests || []).length > 0 && (
             <div>
-              <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Into</p>
+              <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#1b1b1b", textTransform: "uppercase", letterSpacing: "0.1em" }}>Into</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {(profile.interests || []).slice(0, 7).map(i => <Tag key={i}>{i}</Tag>)}
                 {(profile.interests || []).length > 7 && <Tag color="transparent" text="#AAA">+{profile.interests.length - 7}</Tag>}
@@ -262,7 +262,7 @@ function ProfileCard({ profile, swipeHint }) {
           {/* Squad */}
           {(profile.squad || []).length > 0 && (
             <div>
-              <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Looking for</p>
+              <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 900, color: "#1b1b1b", textTransform: "uppercase", letterSpacing: "0.1em" }}>Looking for</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {(profile.squad || []).slice(0, 4).map(s => <Tag key={s} color="#EEF2FF" text="#4338CA">{s}</Tag>)}
               </div>
@@ -272,21 +272,21 @@ function ProfileCard({ profile, swipeHint }) {
           {/* Weekend vibe */}
           {(profile.weekendVibe || []).length > 0 && (
             <div style={{ background: "#F5F4F0", borderRadius: 10, padding: "8px 12px" }}>
-              <p style={{ margin: "0 0 2px", fontSize: 9, fontWeight: 900, color: "#AAA", textTransform: "uppercase", letterSpacing: "0.1em" }}>Ideal Saturday</p>
+              <p style={{ margin: "0 0 2px", fontSize: 9, fontWeight: 900, color: "#1b1b1b", textTransform: "uppercase", letterSpacing: "0.1em" }}>Ideal Saturday</p>
               <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#222" }}>{(profile.weekendVibe || []).join("  ·  ")}</p>
             </div>
           )}
 
           {/* Location */}
           {profile.city && (
-            <p style={{ margin: 0, fontSize: 11, color: "#555", fontWeight: 750, textTransform: "uppercase" }}>
+            <p style={{ margin: 0, fontSize: 11, color: "#1b1b1b", fontWeight: 750, textTransform: "uppercase" }}>
               🏠 From: {profile.city}{profile.state ? `, ${profile.state}` : ""}
             </p>
           )}
 
           {/* Spot */}
           {(profile.defaultSpot || []).length > 0 && (
-            <p style={{ margin: 0, fontSize: 11, color: "#888", fontWeight: 600 }}>
+            <p style={{ margin: 0, fontSize: 11, color: "#1b1b1b", fontWeight: 600 }}>
               📍 Usually at: {(profile.defaultSpot || []).slice(0, 2).join(", ")}
             </p>
           )}
@@ -434,7 +434,7 @@ function MatchModal({ matched, onContinue }) {
           margin: "0 0 12px", fontSize: 28, fontWeight: 950,
           color: "#1b1b1b", letterSpacing: -1, textTransform: "uppercase"
         }}>IT'S A MATCH! 🎉</h1>
-        <p style={{ margin: "0 0 16px", fontSize: 14, color: "#555", fontWeight: 700 }}>
+        <p style={{ margin: "0 0 16px", fontSize: 14, color: "#1b1b1b", fontWeight: 700 }}>
           You and <strong>{matched.name.toUpperCase()}</strong> liked each other!
         </p>
         <p style={{
@@ -954,7 +954,7 @@ export default function Swipe() {
               <p style={{ margin: 0, fontSize: 11, fontWeight: 900, color: "#1b1b1b", textTransform: "uppercase" }}>
                 Profile Pending Verification
               </p>
-              <p style={{ margin: "2px 0 0", fontSize: 10, color: "#555", fontWeight: 700, lineHeight: 1.4 }}>
+              <p style={{ margin: "2px 0 0", fontSize: 10, color: "#1b1b1b", fontWeight: 700, lineHeight: 1.4 }}>
                 You'll appear to others once verified.
               </p>
             </div>
@@ -985,7 +985,7 @@ export default function Swipe() {
               <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: "#0D0D0D" }}>
                 UMS Savior, you're caught up!
               </h2>
-              <p style={{ margin: 0, fontSize: 14, color: "#888", maxWidth: 260, lineHeight: 1.6 }}>
+              <p style={{ margin: 0, fontSize: 14, color: "#1b1b1b", maxWidth: 260, lineHeight: 1.6 }}>
                 No new profiles right now. Go maintain your attendance above 75% on UMS or head to Uni Mall for a quick snack!
               </p>
               <button
@@ -1050,7 +1050,7 @@ export default function Swipe() {
               <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: "#1b1b1b", textTransform: "uppercase" }}>
                 {profiles[currentIndex]?.name}
               </p>
-              <p style={{ margin: "2px 0 0", fontSize: 10, color: "#555", fontWeight: 800, textTransform: "uppercase" }}>
+              <p style={{ margin: "2px 0 0", fontSize: 10, color: "#1b1b1b", fontWeight: 800, textTransform: "uppercase" }}>
                 {(profiles[currentIndex]?.branch || []).slice(0, 1).join("")}
               </p>
             </div>
@@ -1097,7 +1097,7 @@ export default function Swipe() {
                 </h3>
               </div>
 
-              <p style={{ margin: 0, fontSize: "12px", color: "#555", fontWeight: 800, lineHeight: "1.4", textTransform: "uppercase" }}>
+              <p style={{ margin: 0, fontSize: "12px", color: "#1b1b1b", fontWeight: 800, lineHeight: "1.4", textTransform: "uppercase" }}>
                 We've added location-based matching! Set your city and state to see nearby students first.
               </p>
 
@@ -1410,3 +1410,4 @@ function solidBtn(bg, color = "#1b1b1b") {
     boxShadow: "4px 4px 0px 0px #1b1b1b",
   };
 }
+

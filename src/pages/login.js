@@ -679,7 +679,7 @@ export default function Login() {
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "13px", fontWeight: 900 }}>ANANYA · CSE</h3>
-                  <p style={{ margin: "2px 0 0", fontSize: "10px", fontWeight: 700, color: "#555" }}>
+                  <p style={{ margin: "2px 0 0", fontSize: "10px", fontWeight: 700, color: "#1b1b1b" }}>
                     3RD YEAR · HOSTEL
                   </p>
                 </div>
@@ -774,3 +774,4 @@ export default function Login() {
     </>
   );
 }
+

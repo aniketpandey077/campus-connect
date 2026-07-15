@@ -340,7 +340,7 @@ export default function Admin() {
         }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🛡️</div>
           <h2 style={{ margin: "0 0 6px", fontSize: 20, fontWeight: 900, color: "#111" }}>Admin Portal</h2>
-          <p style={{ margin: "0 0 20px", fontSize: 13, color: "#888" }}>
+          <p style={{ margin: "0 0 20px", fontSize: 13, color: "#1b1b1b" }}>
             Enter passkey to review college student ID verifications (Real LPU IDs only, no fake UMS screenshots!).
           </p>
           <input
@@ -404,7 +404,7 @@ export default function Admin() {
               <span style={{ fontSize: 24 }}>🛡️</span>
               <div>
                 <h1 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: "#111" }}>Campus Admin</h1>
-                <p style={{ margin: 0, fontSize: 11, color: "#888", fontWeight: 600 }}>Unihood Moderation</p>
+                <p style={{ margin: 0, fontSize: 11, color: "#1b1b1b", fontWeight: 600 }}>Unihood Moderation</p>
               </div>
             </div>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
@@ -486,7 +486,7 @@ export default function Admin() {
                 }}>
                   <div style={{ fontSize: 48, marginBottom: 10 }}>🎉</div>
                   <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 900, color: "#222" }}>Queue is empty</h3>
-                  <p style={{ margin: 0, fontSize: 13, color: "#888" }}>All submitted ID cards have been reviewed.</p>
+                  <p style={{ margin: 0, fontSize: 13, color: "#1b1b1b" }}>All submitted ID cards have been reviewed.</p>
                 </div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
@@ -517,7 +517,7 @@ export default function Admin() {
                             <p style={{ margin: 0, fontWeight: 800, fontSize: 14, color: "#111" }}>
                               {user.name || "Loading name..."}
                             </p>
-                            <p style={{ margin: "2px 0 0", fontSize: 11, color: "#888", fontWeight: 600 }}>
+                            <p style={{ margin: "2px 0 0", fontSize: 11, color: "#1b1b1b", fontWeight: 600 }}>
                               {user.phone} • {user.branch?.slice(0, 1).join("")}
                             </p>
                           </div>
@@ -556,7 +556,7 @@ export default function Admin() {
                               }}
                             />
                           ) : (
-                            <span style={{ fontSize: 12, color: "#AAA" }}>No ID uploaded / No Details</span>
+                            <span style={{ fontSize: 12, color: "#1b1b1b" }}>No ID uploaded / No Details</span>
                           )}
                         </div>
 
@@ -808,7 +808,7 @@ export default function Admin() {
                 }}>
                   <div style={{ fontSize: 48, marginBottom: 10 }}>🎉</div>
                   <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 900, color: "#222" }}>All profiles are in sync!</h3>
-                  <p style={{ margin: 0, fontSize: 13, color: "#888" }}>No student profiles are out of sync.</p>
+                  <p style={{ margin: 0, fontSize: 13, color: "#1b1b1b" }}>No student profiles are out of sync.</p>
                 </div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
@@ -838,7 +838,7 @@ export default function Admin() {
                             <p style={{ margin: 0, fontWeight: 800, fontSize: 14, color: "#111" }}>
                               {u.profile.name || "Loading name..."}
                             </p>
-                            <p style={{ margin: "2px 0 0", fontSize: 11, color: "#888", fontWeight: 600 }}>
+                            <p style={{ margin: "2px 0 0", fontSize: 11, color: "#1b1b1b", fontWeight: 600 }}>
                               {u.profile.phone || "No phone"}
                             </p>
                           </div>
@@ -923,7 +923,7 @@ export default function Admin() {
             {/* Message List */}
             <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 12, background: "#F9F9FB" }}>
               {inspectingMessages.length === 0 ? (
-                <div style={{ textAlign: "center", color: "#888", marginTop: 40, fontSize: 13 }}>
+                <div style={{ textAlign: "center", color: "#1b1b1b", marginTop: 40, fontSize: 13 }}>
                   No messages sent yet in this conversation.
                 </div>
               ) : (
@@ -944,7 +944,7 @@ export default function Admin() {
                         alignItems: isUser1 ? "flex-start" : "flex-end"
                       }}
                     >
-                      <span style={{ fontSize: 10, fontWeight: 700, color: "#888", marginBottom: 3 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: "#1b1b1b", marginBottom: 3 }}>
                         {senderName}
                       </span>
                       <div style={{
@@ -959,7 +959,7 @@ export default function Admin() {
                         {msg.content}
                       </div>
                       {msg.timestamp && (
-                        <span style={{ fontSize: 9, color: "#AAA", marginTop: 2 }}>
+                        <span style={{ fontSize: 9, color: "#1b1b1b", marginTop: 2 }}>
                           {new Date(msg.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       )}
@@ -988,3 +988,4 @@ export default function Admin() {
     </>
   );
 }
+

@@ -640,7 +640,7 @@ export default function Onboarding() {
                       boxShadow: username.length >= 3 ? "3px 3px 0px 0px #1b1b1b" : "none"
                     }}
                   />
-                  <span style={{ fontSize: "10px", fontWeight: 800, color: "#888" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 800, color: "#1b1b1b" }}>
                     Handles will be shown as @{username || "your_handle"} (letters, numbers, underscores only)
                   </span>
                 </div>
@@ -678,7 +678,7 @@ export default function Onboarding() {
                 <h2 style={{ fontSize: "20px", fontWeight: 950, textTransform: "uppercase", color: "#1b1b1b", margin: 0 }}>
                   📍 Where are you from?
                 </h2>
-                <p style={{ fontSize: "11px", fontWeight: 800, color: "#555", margin: 0, textTransform: "uppercase" }}>
+                <p style={{ fontSize: "11px", fontWeight: 800, color: "#1b1b1b", margin: 0, textTransform: "uppercase" }}>
                   Used to connect you with other students from your hometown or nearby cities!
                 </p>
 
@@ -891,7 +891,7 @@ export default function Onboarding() {
                     <p style={{ fontSize: "11px", fontWeight: 950, marginTop: "12px", textTransform: "uppercase", color: "#1b1b1b" }}>
                       ⚠️ UPLOAD PROFILE PHOTO REQUIRED
                     </p>
-                    <p style={{ fontSize: "9px", color: "#555", marginTop: "4px", fontWeight: 800, textTransform: "uppercase" }}>
+                    <p style={{ fontSize: "9px", color: "#1b1b1b", marginTop: "4px", fontWeight: 800, textTransform: "uppercase" }}>
                       Tap to select your profile photo
                     </p>
                   </div>
@@ -920,7 +920,7 @@ export default function Onboarding() {
 
                 {/* Option Selector: Choose verification method */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#555", textTransform: "uppercase" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#1b1b1b", textTransform: "uppercase" }}>
                     Choose Verification Method:
                   </span>
                   <div style={{ display: "flex", gap: "12px" }}>
@@ -1310,7 +1310,7 @@ function SelectionStep({ label, options, value, onChange, single = false, placeh
       {/* Custom item input */}
       {placeholder && (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "12px" }}>
-          <span style={{ fontSize: "11px", fontWeight: 800, color: "#555" }}>
+          <span style={{ fontSize: "11px", fontWeight: 800, color: "#1b1b1b" }}>
             ✍️ Don't see yours? Write your own custom option below:
           </span>
           <div style={{ display: "flex", gap: "8px" }}>
@@ -1344,3 +1344,4 @@ function SelectionStep({ label, options, value, onChange, single = false, placeh
     </div>
   );
 }
+

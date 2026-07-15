@@ -217,7 +217,7 @@ export default function CoursesPage() {
               </button>
               <div>
                 <h1 style={{ margin: 0, fontSize: 16, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>Courses Directory</h1>
-                <p style={{ margin: 0, fontSize: 10, color: "#555", fontWeight: 800 }}>{totalCourses} PROGRAMMES • {COURSE_STREAMS.length} STREAMS</p>
+                <p style={{ margin: 0, fontSize: 10, color: "#1b1b1b", fontWeight: 800 }}>{totalCourses} PROGRAMMES • {COURSE_STREAMS.length} STREAMS</p>
               </div>
             </div>
             <button
@@ -279,7 +279,7 @@ export default function CoursesPage() {
                 </div>
                 <div>
                   <p style={{ margin: 0, fontWeight: 950, fontSize: 14, color: "#1b1b1b", textTransform: "uppercase" }}>{stream.stream}</p>
-                  <p style={{ margin: 0, fontSize: 10, color: "#555", fontWeight: 800 }}>{stream.courses.length} PROGRAMMES</p>
+                  <p style={{ margin: 0, fontSize: 10, color: "#1b1b1b", fontWeight: 800 }}>{stream.courses.length} PROGRAMMES</p>
                 </div>
               </div>
 
@@ -307,7 +307,7 @@ export default function CoursesPage() {
                     </div>
                     <div style={{ minWidth: 0, paddingLeft: 4 }}>
                       <p style={{ margin: 0, fontWeight: 900, fontSize: 13, color: "#1b1b1b" }}>{course.l}</p>
-                      <p style={{ margin: "2px 0 0", fontSize: 11, color: "#555", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <p style={{ margin: "2px 0 0", fontSize: 11, color: "#1b1b1b", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {course.full}
                       </p>
                     </div>
@@ -323,3 +323,4 @@ export default function CoursesPage() {
     </>
   );
 }
+

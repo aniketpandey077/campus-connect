@@ -173,7 +173,7 @@ function AudioBubblePlayer({ url, isMe }) {
             background: isMe ? "#7531d3" : "#bdff00", transition: "width 0.2s",
           }} />
         </div>
-        <span style={{ fontSize: 9, fontWeight: 800, color: "#555" }}>
+        <span style={{ fontSize: 9, fontWeight: 800, color: "#1b1b1b" }}>
           {fmt(playing ? progress : duration)} 🎙️
         </span>
       </div>
@@ -203,7 +203,7 @@ function Bubble({ msg, isMe, otherProfile, myProfile, showAvatar, revealed, onRe
         borderLeft: `3px solid ${isMe ? "#7531d3" : "#bdff00"}`,
         padding: "5px 8px", borderRadius: "4px",
         marginBottom: 6, cursor: "pointer",
-        fontSize: 10, fontWeight: 800, color: "#555",
+        fontSize: 10, fontWeight: 800, color: "#1b1b1b",
       }}
     >
       <span style={{ color: isMe ? "#7531d3" : "#1b1b1b", fontWeight: 950, textTransform: "uppercase" }}>
@@ -340,7 +340,7 @@ function TypingIndicator({ name }) {
           }} />
         ))}
       </div>
-      <span style={{ fontSize: 10, fontWeight: 800, color: "#555", textTransform: "uppercase" }}>
+      <span style={{ fontSize: 10, fontWeight: 800, color: "#1b1b1b", textTransform: "uppercase" }}>
         {name} is typing…
       </span>
     </div>
@@ -462,7 +462,7 @@ function ReportModal({ onSubmit, onClose }) {
         <style>{`@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}`}</style>
         <div style={{ width: 44, height: 6, borderRadius: 3, background: "#1b1b1b", margin: "0 auto 18px" }} />
         <h3 style={{ margin: "0 0 4px", fontSize: 20, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>Report</h3>
-        <p style={{ margin: "0 0 16px", fontSize: 13, color: "#555", fontWeight: 700 }}>
+        <p style={{ margin: "0 0 16px", fontSize: 13, color: "#1b1b1b", fontWeight: 700 }}>
           We'll review this within 24 hours.
         </p>
         <select
@@ -604,7 +604,7 @@ function ProfileModal({ profile, revealed, onClose }) {
             }}>{profile.avatar || "😊"}</div>
             <div>
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>{profile.name}</h3>
-              <p style={{ margin: 0, fontSize: 11, color: "#555", fontWeight: 800, textTransform: "uppercase" }}>
+              <p style={{ margin: 0, fontSize: 11, color: "#1b1b1b", fontWeight: 800, textTransform: "uppercase" }}>
                 {(profile.branch || []).join(" + ")} · {profile.year?.[0]}
               </p>
               {profile.username && (
@@ -1876,7 +1876,7 @@ export default function Chat() {
                   textTransform: "uppercase"
                 }}>{revealStatusText}</p>
               ) : (
-                <p style={{ margin: "2px 0 0", fontSize: 9, color: "#555", fontWeight: 900, textTransform: "uppercase" }}>
+                <p style={{ margin: "2px 0 0", fontSize: 9, color: "#1b1b1b", fontWeight: 900, textTransform: "uppercase" }}>
                   {(otherProfile?.branch || []).slice(0, 1).join("")}
                   {otherProfile?.year?.[0] ? ` · ${otherProfile.year[0]}` : ""}
                 </p>
@@ -1948,7 +1948,7 @@ export default function Chat() {
               <Avatar profile={otherProfile} size={56} revealed={isFullyRevealed} />
               <p style={{ margin: 0, fontSize: 14, color: "#1b1b1b", fontWeight: 900, textAlign: "center", textTransform: "uppercase" }}>
                 You matched with {otherProfile?.name}!<br />
-                <span style={{ fontWeight: 700, fontSize: 12, color: "#555" }}>Break the ice 👋</span>
+                <span style={{ fontWeight: 700, fontSize: 12, color: "#1b1b1b" }}>Break the ice 👋</span>
               </p>
             </div>
           )}
@@ -2001,7 +2001,7 @@ export default function Chat() {
           }}>
             <div style={{
               flex: 1, borderLeft: "3px solid #7531d3",
-              padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "#555",
+              padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "#1b1b1b",
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
               <span style={{ color: "#7531d3", fontWeight: 950, textTransform: "uppercase" }}>

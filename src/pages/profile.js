@@ -348,7 +348,7 @@ export default function Profile() {
               </p>
               <p style={{
                 margin: "6px 0 0", fontFamily: "Montserrat", fontSize: "13px", fontWeight: 800,
-                color: "#555"
+                color: "#1b1b1b"
               }}>
                 💻 {(profile.branch || []).join(" + ").toUpperCase()}
                 {(profile.year || []).length ? ` · ${profile.year[0].toUpperCase()}` : ""}
@@ -521,7 +521,7 @@ export default function Profile() {
                     fontFamily: "Montserrat", textTransform: "uppercase" }}>
                     Admin Panel
                   </p>
-                  <p style={{ margin: "3px 0 0", fontSize: 11, fontWeight: 700, color: "#555" }}>
+                  <p style={{ margin: "3px 0 0", fontSize: 11, fontWeight: 700, color: "#1b1b1b" }}>
                     {pendingCount > 0
                       ? `${pendingCount} verification${pendingCount > 1 ? "s" : ""} waiting for review`
                       : "No pending verifications — all clear ✅"}
@@ -617,3 +617,4 @@ function solidBtn(bg, color = "#fff") {
     textTransform: "uppercase",
   };
 }
+

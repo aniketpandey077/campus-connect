@@ -300,7 +300,7 @@ export default function EditProfile() {
   const renderCustomInput = (key, setList, list, color = "#FF4757") => {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%", marginTop: 12 }}>
-        <span style={{ fontSize: "11px", fontWeight: 800, color: "#555" }}>
+        <span style={{ fontSize: "11px", fontWeight: 800, color: "#1b1b1b" }}>
           ✍️ Don't see yours? Write your own custom option:
         </span>
         <div style={{ display: "flex", gap: 10, width: "100%" }}>
@@ -543,7 +543,7 @@ export default function EditProfile() {
                 fontWeight: 700
               }}
             />
-            <span style={{ fontSize: 10, fontWeight: 800, color: "#888", display: "block", marginTop: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: "#1b1b1b", display: "block", marginTop: 6 }}>
               Handles are shown as @{username || "your_handle"} (small letters, numbers, underscores only)
             </span>
           </div>
@@ -686,7 +686,7 @@ export default function EditProfile() {
                 <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#1b1b1b" }}>
                   ALWAYS KEEP PROFILE OPEN
                 </p>
-                <p style={{ margin: "4px 0 0", fontSize: 10, color: "#555", fontWeight: 700, lineHeight: 1.4 }}>
+                <p style={{ margin: "4px 0 0", fontSize: 10, color: "#1b1b1b", fontWeight: 700, lineHeight: 1.4 }}>
                   Turn this on to skip anonymous matching and always reveal your name and avatar by default.
                 </p>
               </div>
@@ -904,3 +904,4 @@ export default function EditProfile() {
     </>
   );
 }
+

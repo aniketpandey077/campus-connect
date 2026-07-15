@@ -183,7 +183,7 @@ function LikerCard({ profile, onLike, onPass }) {
           textTransform: "uppercase"
         }}>{profile?.name || "…"}</p>
         <p style={{
-          margin: "1px 0 0", fontSize: 9, color: "#555", fontWeight: 800,
+          margin: "1px 0 0", fontSize: 9, color: "#1b1b1b", fontWeight: 800,
           textTransform: "uppercase"
         }}>{(profile?.branch || []).slice(0, 1).join("")}</p>
       </div>
@@ -550,7 +550,7 @@ export default function Matches() {
                 padding: "10px 16px", background: "#1b1b1b", color: "#bdff00",
                 border: "2.5px solid #1b1b1b", borderRadius: 8, cursor: "pointer",
                 fontSize: 13, fontWeight: 900, fontFamily: "inherit",
-                boxShadow: "2px 2px 0px 0px #555",
+                boxShadow: "2px 2px 0px 0px #1b1b1b",
                 textTransform: "uppercase",
               }}
             >
@@ -653,7 +653,7 @@ export default function Matches() {
                 }}>
                   <div style={{ fontSize: 56, marginBottom: 14 }}>💬</div>
                   <h2 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 950, color: "#1b1b1b", textTransform: "uppercase" }}>No matches yet</h2>
-                  <p style={{ margin: "0 0 24px", fontSize: 13, color: "#555", fontWeight: 700, lineHeight: 1.6 }}>
+                  <p style={{ margin: "0 0 24px", fontSize: 13, color: "#1b1b1b", fontWeight: 700, lineHeight: 1.6 }}>
                     Swipe right on people you like — when they like you back, they'll appear here.
                   </p>
                   <button onClick={() => router.push("/swipe")} className="neo-btn" style={{
@@ -689,3 +689,4 @@ export default function Matches() {
     </>
   );
 }
+
