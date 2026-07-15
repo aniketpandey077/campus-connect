@@ -291,8 +291,8 @@ function Bubble({ msg, isMe, otherProfile, myProfile, showAvatar, revealed, onRe
             alt="Photo"
             onClick={() => onImageClick(msg.fileUrl)}
             style={{
-              width: "100%", maxWidth: 260, borderRadius: 8,
-              cursor: "zoom-in", display: "block",
+              width: 200, height: 200, borderRadius: 8,
+              objectFit: "cover", cursor: "zoom-in", display: "block",
             }}
           />
         ) : msg.type === "audio" ? (
