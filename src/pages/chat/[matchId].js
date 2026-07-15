@@ -1,20 +1,18 @@
 // src/pages/chat/[matchId].js
 // Real-time chat between two matched users.
-// Reveal: toggle-based button in header (no message threshold).
-// Report + Block in ⋮ menu.
-// TODO: replace localStorage "cc_phone" with auth.currentUser.uid once Firebase Auth is live.
+// Features: Reply, Emoji, Photo, Voice Note, Typing/Seen/Presence, Delete, Voice/Video Call.
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import {
   collection, query, orderBy, onSnapshot,
-  doc, getDoc, addDoc, updateDoc,
+  doc, getDoc, addDoc, updateDoc, deleteDoc,
   increment, arrayUnion, serverTimestamp,
 } from "firebase/firestore";
-import { db } from "../../lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "../../lib/firebase";
 import { useRequireAuth } from "../../lib/useAuth";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const BRANCH_BGS = {
   CSE: "#ffd9de", IT: "#ecdcff", ECE: "#d6baff", Mechanical: "#eeeeee",
@@ -32,6 +30,16 @@ function msgTime(ts) {
 }
 
 const REPORT_REASONS = ["Harassment", "Fake profile", "Inappropriate content", "Spam", "Other"];
+
+// ─── Emoji Data ───────────────────────────────────────────────────────────────
+const EMOJI_CATEGORIES = {
+  "Smileys": ["😀","😂","🤣","😊","😍","🥰","😘","😜","🤪","😎","🥳","🤩","😇","🙃","😋","🤗","🤔","🫡","😏","😌","🥹","😭","😤","🔥","💀","👻","🤡"],
+  "Gestures": ["👋","🙌","👏","🤝","👍","👎","✌️","🤞","🫶","💪","🫰","👊","🤙","✋","🤚","👆","👇","👈","👉","🖐️"],
+  "Hearts": ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💕","💗","💝","💘","💖","💓","💔","❤️‍🔥","❣️"],
+  "Campus": ["📚","🎓","🏫","📝","✏️","🎒","💻","📖","🧪","🔬","📐","🗓️","🍕","🍔","☕","🧃","🎵","🎮","⚽","🏀","🏋️","🚴"],
+  "Fun": ["🎉","🎊","🪩","🌟","⭐","✨","💫","🌈","🦋","🌸","🌻","🍀","🎶","🎧","📸","💡","🚀","👑","💎","🏆","🎯","💯"],
+  "Reactions": ["👀","🫣","🤫","🤭","😱","😳","🙄","😑","🫠","😵‍💫","🥱","😴","🤮","🤢","💩","🤯","😈","👹"],
+};
 
 // ─── Avatar circle ────────────────────────────────────────────────────────────
 function Avatar({ profile, size = 38, revealed = false }) {
@@ -84,16 +92,145 @@ function Avatar({ profile, size = 38, revealed = false }) {
   );
 }
 
-// ─── Chat bubble ──────────────────────────────────────────────────────────────
-function Bubble({ msg, isMe, otherProfile, showAvatar, revealed }) {
+// ─── Image Lightbox ───────────────────────────────────────────────────────────
+function ImageLightbox({ src, onClose }) {
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: isMe ? "row-reverse" : "row",
-      alignItems: "flex-end",
-      gap: 8, marginBottom: 8,
-      fontFamily: "'Montserrat', sans-serif",
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 3000,
+      background: "rgba(0,0,0,0.9)", display: "flex",
+      alignItems: "center", justifyContent: "center",
+      cursor: "zoom-out",
     }}>
+      <img src={src} alt="" style={{
+        maxWidth: "92vw", maxHeight: "88vh", objectFit: "contain",
+        borderRadius: 8, border: "3px solid #fff",
+      }} />
+      <button onClick={onClose} style={{
+        position: "absolute", top: 20, right: 20,
+        background: "#fff", border: "2px solid #1b1b1b",
+        borderRadius: "50%", width: 36, height: 36,
+        fontWeight: 900, fontSize: 16, cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: "2px 2px 0px 0px #1b1b1b",
+      }}>✕</button>
+    </div>
+  );
+}
+
+// ─── Audio Player ─────────────────────────────────────────────────────────────
+function AudioBubblePlayer({ url, isMe }) {
+  const audioRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const onTime = () => setProgress(a.currentTime);
+    const onLoad = () => setDuration(a.duration || 0);
+    const onEnd = () => { setPlaying(false); setProgress(0); };
+    a.addEventListener("timeupdate", onTime);
+    a.addEventListener("loadedmetadata", onLoad);
+    a.addEventListener("ended", onEnd);
+    return () => {
+      a.removeEventListener("timeupdate", onTime);
+      a.removeEventListener("loadedmetadata", onLoad);
+      a.removeEventListener("ended", onEnd);
+    };
+  }, []);
+
+  const toggle = () => {
+    if (!audioRef.current) return;
+    if (playing) { audioRef.current.pause(); }
+    else { audioRef.current.play(); }
+    setPlaying(!playing);
+  };
+
+  const fmt = (s) => {
+    if (!s || !isFinite(s)) return "0:00";
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec < 10 ? "0" : ""}${sec}`;
+  };
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 180 }}>
+      <audio ref={audioRef} src={url} preload="metadata" />
+      <button onClick={toggle} style={{
+        width: 32, height: 32, borderRadius: "50%",
+        border: "2px solid #1b1b1b", background: isMe ? "#bdff00" : "#ecdcff",
+        fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: "1.5px 1.5px 0px 0px #1b1b1b", flexShrink: 0,
+      }}>{playing ? "⏸" : "▶"}</button>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
+        <div style={{
+          height: 5, background: "#ddd", borderRadius: 3, overflow: "hidden",
+          border: "1px solid #1b1b1b",
+        }}>
+          <div style={{
+            height: "100%", width: `${duration ? (progress / duration) * 100 : 0}%`,
+            background: isMe ? "#7531d3" : "#bdff00", transition: "width 0.2s",
+          }} />
+        </div>
+        <span style={{ fontSize: 9, fontWeight: 800, color: "#555" }}>
+          {fmt(playing ? progress : duration)} 🎙️
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Chat bubble ──────────────────────────────────────────────────────────────
+function Bubble({ msg, isMe, otherProfile, myProfile, showAvatar, revealed, onReply, onDelete, onImageClick, otherLastReadAt }) {
+  const [showActions, setShowActions] = useState(false);
+  const isDeleted = msg.deleted === true;
+
+  // Determine seen status for my messages
+  const isSeen = isMe && otherLastReadAt && msg.timestamp &&
+    msg.timestamp.toDate && otherLastReadAt.toDate &&
+    msg.timestamp.toDate() <= otherLastReadAt.toDate();
+
+  // Reply preview
+  const replyBox = msg.replyTo ? (
+    <div
+      onClick={() => {
+        const el = document.getElementById(`msg-${msg.replyTo.id}`);
+        if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.style.background = "#fef3c7"; setTimeout(() => el.style.background = "", 1200); }
+      }}
+      style={{
+        background: isMe ? "rgba(117,49,211,0.1)" : "rgba(189,255,0,0.15)",
+        borderLeft: `3px solid ${isMe ? "#7531d3" : "#bdff00"}`,
+        padding: "5px 8px", borderRadius: "4px",
+        marginBottom: 6, cursor: "pointer",
+        fontSize: 10, fontWeight: 800, color: "#555",
+      }}
+    >
+      <span style={{ color: isMe ? "#7531d3" : "#1b1b1b", fontWeight: 950, textTransform: "uppercase" }}>
+        {msg.replyTo.senderName}
+      </span>
+      <div style={{ marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>
+        {msg.replyTo.type === "image" ? "📷 Photo" : msg.replyTo.type === "audio" ? "🎙️ Voice note" : msg.replyTo.content}
+      </div>
+    </div>
+  ) : null;
+
+  return (
+    <div
+      id={`msg-${msg.id}`}
+      onMouseEnter={() => !isDeleted && setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
+      onTouchStart={() => !isDeleted && setShowActions(true)}
+      style={{
+        display: "flex",
+        flexDirection: isMe ? "row-reverse" : "row",
+        alignItems: "flex-end",
+        gap: 8, marginBottom: 8,
+        fontFamily: "'Montserrat', sans-serif",
+        position: "relative",
+        transition: "background 0.3s",
+      }}
+    >
       {!isMe && (
         <div style={{ width: 28, height: 28, flexShrink: 0 }}>
           {showAvatar
@@ -102,25 +239,200 @@ function Bubble({ msg, isMe, otherProfile, showAvatar, revealed }) {
           }
         </div>
       )}
+
+      {/* Action buttons (reply + delete) */}
+      {showActions && (
+        <div style={{
+          display: "flex", gap: 4, alignItems: "center",
+          position: "absolute", [isMe ? "left" : "right"]: isMe ? "auto" : "auto",
+          top: "50%", transform: "translateY(-50%)",
+          ...(isMe ? { left: 0 } : { right: 0 }),
+          zIndex: 5,
+        }}>
+          <button onClick={() => onReply(msg)} title="Reply" style={{
+            width: 26, height: 26, borderRadius: 6,
+            border: "1.5px solid #1b1b1b", background: "#fff",
+            fontSize: 12, cursor: "pointer", display: "flex",
+            alignItems: "center", justifyContent: "center",
+            boxShadow: "1px 1px 0px 0px #1b1b1b",
+          }}>↩️</button>
+          {isMe && (
+            <button onClick={() => onDelete(msg)} title="Delete for Everyone" style={{
+              width: 26, height: 26, borderRadius: 6,
+              border: "1.5px solid #1b1b1b", background: "#ffb2bf",
+              fontSize: 12, cursor: "pointer", display: "flex",
+              alignItems: "center", justifyContent: "center",
+              boxShadow: "1px 1px 0px 0px #1b1b1b",
+            }}>🗑️</button>
+          )}
+        </div>
+      )}
+
       <div style={{
         maxWidth: "72%",
-        padding: "10px 14px",
+        padding: isDeleted ? "10px 14px" : (msg.type === "image" ? "4px" : "10px 14px"),
         borderRadius: isMe ? "12px 2px 12px 12px" : "2px 12px 12px 12px",
-        background: isMe ? "#ecdcff" : "#fff",
-        color: "#1b1b1b",
-        border: "2.5px solid #1b1b1b",
+        background: isDeleted ? "#f0f0f0" : (isMe ? "#ecdcff" : "#fff"),
+        color: isDeleted ? "#999" : "#1b1b1b",
+        border: `2.5px solid ${isDeleted ? "#ccc" : "#1b1b1b"}`,
         fontSize: 13, lineHeight: 1.5,
         fontWeight: 700,
-        boxShadow: "3px 3px 0px 0px #1b1b1b",
+        boxShadow: isDeleted ? "none" : "3px 3px 0px 0px #1b1b1b",
         wordBreak: "break-word",
         overflowWrap: "break-word",
       }}>
-        <div>{msg.content}</div>
+        {replyBox}
+
+        {isDeleted ? (
+          <div style={{ fontStyle: "italic", fontSize: 12, fontWeight: 600 }}>🚫 This message was deleted</div>
+        ) : msg.type === "image" ? (
+          <img
+            src={msg.fileUrl}
+            alt="Photo"
+            onClick={() => onImageClick(msg.fileUrl)}
+            style={{
+              width: "100%", maxWidth: 260, borderRadius: 8,
+              cursor: "zoom-in", display: "block",
+            }}
+          />
+        ) : msg.type === "audio" ? (
+          <AudioBubblePlayer url={msg.fileUrl} isMe={isMe} />
+        ) : (
+          <div>{msg.content}</div>
+        )}
+
         <div style={{
           fontSize: 9, marginTop: 4, textAlign: "right",
-          color: "#555", fontWeight: 800,
-        }}>{msgTime(msg.timestamp)}</div>
+          color: isDeleted ? "#bbb" : "#555", fontWeight: 800,
+          display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4,
+        }}>
+          <span>{msgTime(msg.timestamp)}</span>
+          {isSeen && <span style={{ color: "#7531d3", fontWeight: 950 }}>✓✓</span>}
+        </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Typing Indicator ─────────────────────────────────────────────────────────
+function TypingIndicator({ name }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 8,
+      padding: "6px 14px", fontFamily: "'Montserrat', sans-serif",
+    }}>
+      <div style={{
+        display: "flex", gap: 4, padding: "8px 14px",
+        borderRadius: "2px 12px 12px 12px",
+        background: "#fff", border: "2px solid #1b1b1b",
+        boxShadow: "2px 2px 0px 0px #1b1b1b",
+      }}>
+        <style>{`
+          @keyframes typingBounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-6px); }
+          }
+        `}</style>
+        {[0, 1, 2].map(i => (
+          <div key={i} style={{
+            width: 7, height: 7, borderRadius: "50%",
+            background: "#7531d3", animation: `typingBounce 1.4s ${i * 0.16}s infinite ease-in-out`,
+          }} />
+        ))}
+      </div>
+      <span style={{ fontSize: 10, fontWeight: 800, color: "#555", textTransform: "uppercase" }}>
+        {name} is typing…
+      </span>
+    </div>
+  );
+}
+
+// ─── Emoji Picker ─────────────────────────────────────────────────────────────
+function EmojiPicker({ onSelect, onClose }) {
+  const [activeTab, setActiveTab] = useState(Object.keys(EMOJI_CATEGORIES)[0]);
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 90 }} />
+      <div style={{
+        position: "absolute", bottom: 70, left: 14, right: 14, zIndex: 100,
+        background: "#fff", border: "3px solid #1b1b1b", borderRadius: 14,
+        boxShadow: "6px 6px 0px 0px #1b1b1b", overflow: "hidden",
+        maxHeight: 320, display: "flex", flexDirection: "column",
+        fontFamily: "'Montserrat', sans-serif",
+        animation: "slideUp 0.25s cubic-bezier(.22,1,.36,1)",
+      }}>
+        {/* Category Tabs */}
+        <div style={{
+          display: "flex", overflowX: "auto", borderBottom: "2.5px solid #1b1b1b",
+          background: "#f5f4f0", padding: "6px 6px 0",
+          gap: 2, flexShrink: 0,
+        }}>
+          {Object.keys(EMOJI_CATEGORIES).map(cat => (
+            <button key={cat} onClick={() => setActiveTab(cat)} style={{
+              padding: "6px 10px", borderRadius: "6px 6px 0 0",
+              border: activeTab === cat ? "2px solid #1b1b1b" : "2px solid transparent",
+              borderBottom: activeTab === cat ? "2px solid #fff" : "2px solid transparent",
+              background: activeTab === cat ? "#fff" : "transparent",
+              fontSize: 9, fontWeight: 950, cursor: "pointer",
+              color: "#1b1b1b", fontFamily: "inherit",
+              textTransform: "uppercase", whiteSpace: "nowrap",
+              marginBottom: -2.5,
+            }}>{cat}</button>
+          ))}
+        </div>
+        {/* Emoji Grid */}
+        <div style={{
+          padding: 10, display: "flex", flexWrap: "wrap", gap: 4,
+          overflowY: "auto", flex: 1,
+        }}>
+          {EMOJI_CATEGORIES[activeTab].map(e => (
+            <button key={e} onClick={() => onSelect(e)} style={{
+              width: 36, height: 36, fontSize: 20,
+              background: "none", border: "none", cursor: "pointer",
+              borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "background 0.1s",
+            }}
+            onMouseEnter={ev => ev.currentTarget.style.background = "#f0edec"}
+            onMouseLeave={ev => ev.currentTarget.style.background = "none"}
+            >{e}</button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── Recording UI ─────────────────────────────────────────────────────────────
+function RecordingBar({ duration, onCancel, onSend }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10, flex: 1,
+      background: "#FFF0F1", border: "2px solid #1b1b1b", borderRadius: 8,
+      padding: "8px 14px", boxShadow: "2px 2px 0px 0px #1b1b1b",
+    }}>
+      <style>{`@keyframes recPulse { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
+      <div style={{
+        width: 12, height: 12, borderRadius: "50%", background: "#DC2626",
+        animation: "recPulse 1s infinite",
+      }} />
+      <span style={{ fontSize: 14, fontWeight: 900, color: "#DC2626", fontFamily: "'Montserrat', sans-serif" }}>
+        {Math.floor(duration / 60)}:{(duration % 60).toString().padStart(2, "0")}
+      </span>
+      <div style={{ flex: 1 }} />
+      <button onClick={onCancel} className="neo-btn" style={{
+        width: 32, height: 32, borderRadius: 6,
+        border: "2px solid #1b1b1b", background: "#fff",
+        fontSize: 14, cursor: "pointer", display: "flex",
+        alignItems: "center", justifyContent: "center",
+        boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+      }}>✕</button>
+      <button onClick={onSend} className="neo-btn" style={{
+        width: 32, height: 32, borderRadius: 6,
+        border: "2px solid #1b1b1b", background: "#bdff00",
+        fontSize: 14, cursor: "pointer", display: "flex",
+        alignItems: "center", justifyContent: "center",
+        boxShadow: "1.5px 1.5px 0px 0px #1b1b1b",
+      }}>↑</button>
     </div>
   );
 }
@@ -355,6 +667,140 @@ function ProfileModal({ profile, revealed, onClose }) {
   );
 }
 
+// ─── Call Overlay ──────────────────────────────────────────────────────────────
+function CallOverlay({ callState, otherProfile, revealed, localVideoRef, remoteVideoRef, onEnd, onAccept, onDecline, callTimer }) {
+  if (!callState) return null;
+
+  const isVideo = callState.type === "video";
+  const isRinging = callState.status === "ringing";
+  const isOutgoing = callState.direction === "outgoing";
+  const isConnected = callState.status === "connected";
+
+  const fmtTimer = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec < 10 ? "0" : ""}${sec}`;
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 5000,
+      background: isVideo && isConnected ? "#000" : "linear-gradient(135deg, #1b1b1b 0%, #333 100%)",
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      fontFamily: "'Montserrat', sans-serif", color: "#fff",
+    }}>
+      <style>{`
+        @keyframes callPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.15);opacity:0.6} }
+        @keyframes callRing { 0%{transform:rotate(0)} 10%{transform:rotate(15deg)} 20%{transform:rotate(-15deg)} 30%{transform:rotate(10deg)} 40%{transform:rotate(-10deg)} 50%{transform:rotate(0)} 100%{transform:rotate(0)} }
+      `}</style>
+
+      {/* Video Streams */}
+      {isVideo && isConnected && (
+        <>
+          <video ref={remoteVideoRef} autoPlay playsInline style={{
+            position: "absolute", inset: 0, width: "100%", height: "100%",
+            objectFit: "cover",
+          }} />
+          <video ref={localVideoRef} autoPlay playsInline muted style={{
+            position: "absolute", top: 20, right: 20,
+            width: 120, height: 160, objectFit: "cover",
+            borderRadius: 12, border: "3px solid #fff",
+            boxShadow: "4px 4px 0px 0px rgba(0,0,0,0.5)",
+            zIndex: 2,
+          }} />
+        </>
+      )}
+
+      {/* Non-connected or audio state */}
+      {(!isConnected || !isVideo) && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, zIndex: 2 }}>
+          <div style={{ animation: isRinging ? "callPulse 2s infinite" : "none" }}>
+            <Avatar profile={otherProfile} size={100} revealed={revealed} />
+          </div>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 950, textTransform: "uppercase" }}>
+            {otherProfile?.name || "…"}
+          </h2>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "#ccc", textTransform: "uppercase" }}>
+            {isRinging && isOutgoing && "Calling…"}
+            {isRinging && !isOutgoing && `Incoming ${isVideo ? "Video" : "Voice"} Call`}
+            {callState.status === "connecting" && "Connecting…"}
+            {isConnected && fmtTimer(callTimer)}
+            {callState.status === "ended" && "Call Ended"}
+          </p>
+          {isRinging && isOutgoing && (
+            <div style={{ fontSize: 28, animation: "callRing 1.5s infinite" }}>
+              {isVideo ? "📹" : "📞"}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Controls */}
+      <div style={{
+        position: "absolute", bottom: 60,
+        display: "flex", gap: 20, zIndex: 3,
+      }}>
+        {/* Incoming ringing: Accept + Decline */}
+        {isRinging && !isOutgoing && (
+          <>
+            <button onClick={onDecline} style={{
+              width: 60, height: 60, borderRadius: "50%",
+              border: "3px solid #fff", background: "#DC2626",
+              fontSize: 24, cursor: "pointer", display: "flex",
+              alignItems: "center", justifyContent: "center",
+              boxShadow: "3px 3px 0px 0px rgba(255,255,255,0.3)",
+            }}>✕</button>
+            <button onClick={onAccept} style={{
+              width: 60, height: 60, borderRadius: "50%",
+              border: "3px solid #fff", background: "#10B981",
+              fontSize: 24, cursor: "pointer", display: "flex",
+              alignItems: "center", justifyContent: "center",
+              boxShadow: "3px 3px 0px 0px rgba(255,255,255,0.3)",
+            }}>{isVideo ? "📹" : "📞"}</button>
+          </>
+        )}
+
+        {/* Outgoing ringing / connected: End */}
+        {(isOutgoing || isConnected || callState.status === "connecting") && (
+          <button onClick={onEnd} style={{
+            width: 60, height: 60, borderRadius: "50%",
+            border: "3px solid #fff", background: "#DC2626",
+            fontSize: 24, cursor: "pointer", display: "flex",
+            alignItems: "center", justifyContent: "center",
+            boxShadow: "3px 3px 0px 0px rgba(255,255,255,0.3)",
+          }}>📵</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Presence Floating Avatar ─────────────────────────────────────────────────
+function PresenceAvatar({ profile, revealed }) {
+  return (
+    <div style={{
+      position: "fixed", bottom: 90, right: 16, zIndex: 50,
+      animation: "presencePop 0.4s cubic-bezier(.22,1,.36,1)",
+    }}>
+      <style>{`@keyframes presencePop { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }`}</style>
+      <div style={{ position: "relative" }}>
+        <Avatar profile={profile} size={36} revealed={revealed} />
+        <div style={{
+          position: "absolute", bottom: -1, right: -1,
+          width: 12, height: 12, borderRadius: "50%",
+          background: "#10B981", border: "2px solid #fff",
+        }} />
+      </div>
+      <p style={{
+        margin: "3px 0 0", fontSize: 8, fontWeight: 950,
+        color: "#10B981", textAlign: "center",
+        textTransform: "uppercase", fontFamily: "'Montserrat', sans-serif",
+      }}>HERE</p>
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Chat() {
   const router = useRouter();
@@ -374,9 +820,33 @@ export default function Chat() {
   const [accessDenied, setAccessDenied] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
+  // ── New feature state ──
+  const [replyingTo,    setReplyingTo]    = useState(null); // { id, senderName, content, type }
+  const [showEmoji,     setShowEmoji]     = useState(false);
+  const [lightboxSrc,   setLightboxSrc]   = useState(null);
+  const [isRecording,   setIsRecording]   = useState(false);
+  const [recDuration,   setRecDuration]   = useState(0);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+
+  // ── Call state ──
+  const [callState, setCallState] = useState(null); // { type, status, direction }
+  const [callTimer, setCallTimer] = useState(0);
+
   const bottomRef  = useRef(null);
   const inputRef   = useRef(null);
   const myPhoneRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recIntervalRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const pcRef = useRef(null); // RTCPeerConnection
+  const localStreamRef = useRef(null);
+  const remoteStreamRef = useRef(null);
+  const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+  const callTimerRef = useRef(null);
+  const callDocUnsubRef = useRef(null);
 
   // ── Auth ──
   useEffect(() => {
@@ -438,7 +908,7 @@ export default function Chat() {
     }
   }, [matchData?.revealStatus, myPhone, otherProfile?.photoUrl, myProfile?.photoUrl]);
 
-  // ── Real-time match doc (reveal state, etc.) ──
+  // ── Real-time match doc (reveal state, typing, presence, etc.) ──
   useEffect(() => {
     if (!matchId) return;
     return onSnapshot(doc(db, "matches", matchId), snap => {
@@ -472,20 +942,83 @@ export default function Chat() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
+  // ── Presence: set online on mount, offline on unmount ──
+  useEffect(() => {
+    if (!matchId || !myPhone || !matchData) return;
+    const isUser1 = matchData.user1Id === myPhone;
+    const onlineField = isUser1 ? "user1Online" : "user2Online";
+
+    updateDoc(doc(db, "matches", matchId), { [onlineField]: true }).catch(() => {});
+
+    const handleBeforeUnload = () => {
+      // Best-effort on unload
+      try {
+        const payload = JSON.stringify({ [onlineField]: false });
+        navigator.sendBeacon?.(`/__presence_offline`, payload); // won't work, just fallback
+      } catch {}
+      updateDoc(doc(db, "matches", matchId), { [onlineField]: false }).catch(() => {});
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      updateDoc(doc(db, "matches", matchId), { [onlineField]: false }).catch(() => {});
+    };
+  }, [matchId, myPhone, matchData?.user1Id]);
+
+  // ── Update lastReadAt continuously when chat is open ──
+  useEffect(() => {
+    if (!matchId || !myPhone || !matchData || !messages.length) return;
+    const isUser1 = matchData.user1Id === myPhone;
+    const readField = isUser1 ? "user1LastReadAt" : "user2LastReadAt";
+    updateDoc(doc(db, "matches", matchId), { [readField]: serverTimestamp() }).catch(() => {});
+  }, [matchId, myPhone, matchData?.user1Id, messages.length]);
+
+  // ── Typing: debounced ──
+  const setTyping = useCallback((val) => {
+    if (!matchId || !myPhone || !matchData) return;
+    const isUser1 = matchData.user1Id === myPhone;
+    const typingField = isUser1 ? "user1Typing" : "user2Typing";
+    updateDoc(doc(db, "matches", matchId), { [typingField]: val }).catch(() => {});
+  }, [matchId, myPhone, matchData?.user1Id]);
+
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+    e.target.style.height = "auto";
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+
+    // Typing indicator
+    setTyping(true);
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => setTyping(false), 3000);
+  };
+
   // ── Send message ──
   const sendMessage = async () => {
     const content = input.trim();
     if (!content || sending || !matchId || !myPhoneRef.current || !matchData) return;
     setSending(true);
     setInput("");
+    setShowEmoji(false);
     try {
       const phone = myPhoneRef.current;
       const isUser1 = matchData.user1Id === phone;
       const unreadField = isUser1 ? "user2Unread" : "user1Unread";
 
-      await addDoc(collection(db, "chats", matchId, "messages"), {
+      const msgData = {
         senderId: phone, content, timestamp: serverTimestamp(),
-      });
+        type: "text",
+      };
+      if (replyingTo) {
+        msgData.replyTo = {
+          id: replyingTo.id,
+          senderName: replyingTo.senderName,
+          content: replyingTo.content,
+          type: replyingTo.type || "text",
+        };
+      }
+
+      await addDoc(collection(db, "chats", matchId, "messages"), msgData);
       await updateDoc(doc(db, "matches", matchId), {
         messageCount: increment(1),
         lastMessage: content,
@@ -493,6 +1026,8 @@ export default function Chat() {
         lastSenderId: phone,
         [unreadField]: increment(1),
       });
+      setReplyingTo(null);
+      setTyping(false);
     } catch (e) {
       console.error("send:", e);
       setInput(content);
@@ -500,6 +1035,172 @@ export default function Chat() {
       setSending(false);
       inputRef.current?.focus();
     }
+  };
+
+  // ── Send Photo ──
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !matchId || !myPhoneRef.current || !matchData) return;
+    setUploadingMedia(true);
+    try {
+      const phone = myPhoneRef.current;
+      const isUser1 = matchData.user1Id === phone;
+      const unreadField = isUser1 ? "user2Unread" : "user1Unread";
+      const fileName = `${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, `chats/${matchId}/photos/${fileName}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+
+      const msgData = {
+        senderId: phone, content: "📷 Photo", timestamp: serverTimestamp(),
+        type: "image", fileUrl: url,
+      };
+      if (replyingTo) {
+        msgData.replyTo = {
+          id: replyingTo.id,
+          senderName: replyingTo.senderName,
+          content: replyingTo.content,
+          type: replyingTo.type || "text",
+        };
+      }
+
+      await addDoc(collection(db, "chats", matchId, "messages"), msgData);
+      await updateDoc(doc(db, "matches", matchId), {
+        messageCount: increment(1),
+        lastMessage: "📷 Photo",
+        lastMessageAt: serverTimestamp(),
+        lastSenderId: phone,
+        [unreadField]: increment(1),
+      });
+      setReplyingTo(null);
+    } catch (e) {
+      console.error("photo upload:", e);
+      alert("Failed to send photo.");
+    } finally {
+      setUploadingMedia(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  // ── Voice Recording ──
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+      setRecDuration(0);
+      recIntervalRef.current = setInterval(() => setRecDuration(d => d + 1), 1000);
+    } catch (e) {
+      console.error("mic access:", e);
+      alert("Microphone access denied.");
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
+    }
+    clearInterval(recIntervalRef.current);
+    setIsRecording(false);
+    setRecDuration(0);
+    audioChunksRef.current = [];
+  };
+
+  const sendRecording = async () => {
+    if (!mediaRecorderRef.current || !matchId || !myPhoneRef.current || !matchData) return;
+    const recorder = mediaRecorderRef.current;
+    const dur = recDuration;
+    clearInterval(recIntervalRef.current);
+    setIsRecording(false);
+    setRecDuration(0);
+
+    return new Promise((resolve) => {
+      recorder.onstop = async () => {
+        recorder.stream?.getTracks().forEach(t => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        audioChunksRef.current = [];
+        if (blob.size === 0) { resolve(); return; }
+        setUploadingMedia(true);
+        try {
+          const phone = myPhoneRef.current;
+          const isUser1 = matchData.user1Id === phone;
+          const unreadField = isUser1 ? "user2Unread" : "user1Unread";
+          const fileName = `${Date.now()}_voice.webm`;
+          const storageRef = ref(storage, `chats/${matchId}/audio/${fileName}`);
+          await uploadBytes(storageRef, blob);
+          const url = await getDownloadURL(storageRef);
+
+          const msgData = {
+            senderId: phone, content: "🎙️ Voice note", timestamp: serverTimestamp(),
+            type: "audio", fileUrl: url, duration: dur,
+          };
+          if (replyingTo) {
+            msgData.replyTo = {
+              id: replyingTo.id,
+              senderName: replyingTo.senderName,
+              content: replyingTo.content,
+              type: replyingTo.type || "text",
+            };
+          }
+
+          await addDoc(collection(db, "chats", matchId, "messages"), msgData);
+          await updateDoc(doc(db, "matches", matchId), {
+            messageCount: increment(1),
+            lastMessage: "🎙️ Voice note",
+            lastMessageAt: serverTimestamp(),
+            lastSenderId: phone,
+            [unreadField]: increment(1),
+          });
+          setReplyingTo(null);
+        } catch (e) {
+          console.error("voice upload:", e);
+          alert("Failed to send voice note.");
+        } finally {
+          setUploadingMedia(false);
+        }
+        resolve();
+      };
+      if (recorder.state !== "inactive") recorder.stop();
+      else resolve();
+    });
+  };
+
+  // ── Delete for Everyone ──
+  const deleteForEveryone = async (msg) => {
+    if (!msg || msg.senderId !== myPhoneRef.current) return;
+    try {
+      await updateDoc(doc(db, "chats", matchId, "messages", msg.id), {
+        deleted: true,
+        content: "This message was deleted.",
+        fileUrl: null,
+      });
+    } catch (e) {
+      console.error("delete:", e);
+      alert("Failed to delete message.");
+    }
+  };
+
+  // ── Reply handler ──
+  const handleReply = (msg) => {
+    const senderName = msg.senderId === myPhoneRef.current ? (myProfile?.name || "You") : (otherProfile?.name || "Them");
+    setReplyingTo({
+      id: msg.id,
+      senderName,
+      content: msg.content,
+      type: msg.type || "text",
+    });
+    inputRef.current?.focus();
+  };
+
+  // ── Emoji select ──
+  const handleEmojiSelect = (emoji) => {
+    setInput(prev => prev + emoji);
+    inputRef.current?.focus();
   };
 
   // ── Toggle reveal ──
@@ -552,11 +1253,228 @@ export default function Chat() {
     } catch (e) { console.error("block:", e); }
   };
 
+  // ── WebRTC Voice/Video Call ──
+  const ICE_SERVERS = { iceServers: [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }] };
+
+  const startCall = async (type) => {
+    if (!matchId || !myPhoneRef.current || !matchData || callState) return;
+    try {
+      const phone = myPhoneRef.current;
+      const otherId = matchData.user1Id === phone ? matchData.user2Id : matchData.user1Id;
+      const constraints = type === "video" ? { audio: true, video: true } : { audio: true };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      localStreamRef.current = stream;
+
+      const pc = new RTCPeerConnection(ICE_SERVERS);
+      pcRef.current = pc;
+      remoteStreamRef.current = new MediaStream();
+
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+      pc.ontrack = (e) => {
+        e.streams[0].getTracks().forEach(track => remoteStreamRef.current.addTrack(track));
+        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStreamRef.current;
+      };
+
+      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+
+      const callDocRef = doc(db, "matches", matchId, "calls", "active_call");
+
+      // Collect ICE candidates
+      const callerCandidates = [];
+      pc.onicecandidate = (e) => {
+        if (e.candidate) callerCandidates.push(e.candidate.toJSON());
+      };
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      // Wait briefly for ICE gathering
+      await new Promise(r => setTimeout(r, 1000));
+
+      await updateDoc(doc(db, "matches", matchId, "calls", "active_call"), {
+        callerId: phone, receiverId: otherId,
+        type, status: "ringing",
+        offer: { type: offer.type, sdp: offer.sdp },
+        callerCandidates,
+        answer: null, receiverCandidates: null,
+        createdAt: serverTimestamp(),
+      }).catch(async () => {
+        // Doc might not exist yet, use set-like approach via addDoc workaround
+        // Since we're using a fixed doc id, let's try to create it
+        const { setDoc } = await import("firebase/firestore");
+        await setDoc(callDocRef, {
+          callerId: phone, receiverId: otherId,
+          type, status: "ringing",
+          offer: { type: offer.type, sdp: offer.sdp },
+          callerCandidates,
+          answer: null, receiverCandidates: null,
+          createdAt: serverTimestamp(),
+        });
+      });
+
+      setCallState({ type, status: "ringing", direction: "outgoing" });
+
+      // Listen for answer
+      callDocUnsubRef.current = onSnapshot(callDocRef, async (snap) => {
+        if (!snap.exists()) { endCall(); return; }
+        const data = snap.data();
+        if (data.status === "rejected" || data.status === "ended") {
+          endCall();
+          return;
+        }
+        if (data.status === "accepted" && data.answer && pc.signalingState !== "stable") {
+          await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+          if (data.receiverCandidates) {
+            for (const c of data.receiverCandidates) {
+              await pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
+            }
+          }
+          setCallState(prev => ({ ...prev, status: "connected" }));
+          // Start timer
+          setCallTimer(0);
+          callTimerRef.current = setInterval(() => setCallTimer(t => t + 1), 1000);
+        }
+      });
+
+    } catch (e) {
+      console.error("startCall:", e);
+      alert("Could not start call. Check camera/mic permissions.");
+      endCall();
+    }
+  };
+
+  // Listen for incoming calls
+  useEffect(() => {
+    if (!matchId || !myPhone || callState) return;
+    const callDocRef = doc(db, "matches", matchId, "calls", "active_call");
+    const unsub = onSnapshot(callDocRef, (snap) => {
+      if (!snap.exists()) return;
+      const data = snap.data();
+      if (data.status === "ringing" && data.receiverId === myPhone && !callState) {
+        setCallState({ type: data.type, status: "ringing", direction: "incoming" });
+      }
+    });
+    return () => unsub();
+  }, [matchId, myPhone, callState]);
+
+  const acceptCall = async () => {
+    if (!matchId || !myPhoneRef.current || !matchData) return;
+    try {
+      const callDocRef = doc(db, "matches", matchId, "calls", "active_call");
+      const callSnap = await getDoc(callDocRef);
+      if (!callSnap.exists()) return;
+      const callData = callSnap.data();
+
+      const constraints = callData.type === "video" ? { audio: true, video: true } : { audio: true };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      localStreamRef.current = stream;
+
+      const pc = new RTCPeerConnection(ICE_SERVERS);
+      pcRef.current = pc;
+      remoteStreamRef.current = new MediaStream();
+
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+      pc.ontrack = (e) => {
+        e.streams[0].getTracks().forEach(track => remoteStreamRef.current.addTrack(track));
+        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStreamRef.current;
+      };
+
+      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+
+      await pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
+
+      if (callData.callerCandidates) {
+        for (const c of callData.callerCandidates) {
+          await pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
+        }
+      }
+
+      const receiverCandidates = [];
+      pc.onicecandidate = (e) => {
+        if (e.candidate) receiverCandidates.push(e.candidate.toJSON());
+      };
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      await new Promise(r => setTimeout(r, 1000));
+
+      await updateDoc(callDocRef, {
+        status: "accepted",
+        answer: { type: answer.type, sdp: answer.sdp },
+        receiverCandidates,
+      });
+
+      setCallState(prev => ({ ...prev, status: "connected" }));
+      setCallTimer(0);
+      callTimerRef.current = setInterval(() => setCallTimer(t => t + 1), 1000);
+
+      // Listen for end
+      callDocUnsubRef.current = onSnapshot(callDocRef, (snap) => {
+        if (!snap.exists()) { endCall(); return; }
+        const data = snap.data();
+        if (data.status === "ended") endCall();
+      });
+
+    } catch (e) {
+      console.error("acceptCall:", e);
+      alert("Failed to accept call. Check permissions.");
+      endCall();
+    }
+  };
+
+  const declineCall = async () => {
+    if (!matchId) return;
+    try {
+      await updateDoc(doc(db, "matches", matchId, "calls", "active_call"), { status: "rejected" });
+    } catch {}
+    setCallState(null);
+  };
+
+  const endCall = useCallback(() => {
+    // Stop media
+    localStreamRef.current?.getTracks().forEach(t => t.stop());
+    remoteStreamRef.current?.getTracks().forEach(t => t.stop());
+    pcRef.current?.close();
+    localStreamRef.current = null;
+    remoteStreamRef.current = null;
+    pcRef.current = null;
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    clearInterval(callTimerRef.current);
+    callDocUnsubRef.current?.();
+    callDocUnsubRef.current = null;
+
+    // Update Firestore
+    if (matchId) {
+      deleteDoc(doc(db, "matches", matchId, "calls", "active_call")).catch(() => {});
+    }
+    setCallState(null);
+    setCallTimer(0);
+  }, [matchId]);
+
+  // Cleanup call on unmount
+  useEffect(() => {
+    return () => {
+      localStreamRef.current?.getTracks().forEach(t => t.stop());
+      pcRef.current?.close();
+      clearInterval(callTimerRef.current);
+      callDocUnsubRef.current?.();
+    };
+  }, []);
+
   // ── Computed reveal values ──
   const isUser1        = matchData?.user1Id === myPhone;
   const isFullyRevealed = matchData?.revealStatus === "revealed";
   const myWantsReveal   = isUser1 ? (matchData?.user1WantsReveal || false) : (matchData?.user2WantsReveal || false);
   const theyWantReveal  = isUser1 ? (matchData?.user2WantsReveal || false) : (matchData?.user1WantsReveal || false);
+
+  // Typing & presence computed
+  const theyAreTyping = isUser1 ? matchData?.user2Typing : matchData?.user1Typing;
+  const theyAreOnline = isUser1 ? matchData?.user2Online : matchData?.user1Online;
+  const otherLastReadAt = isUser1 ? matchData?.user2LastReadAt : matchData?.user1LastReadAt;
 
   // Status text shown under name in header
   let revealStatusText = "";
@@ -621,6 +1539,22 @@ export default function Chat() {
         }
       `}</style>
 
+      {/* Lightbox */}
+      {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
+
+      {/* Call Overlay */}
+      <CallOverlay
+        callState={callState}
+        otherProfile={otherProfile}
+        revealed={isFullyRevealed}
+        localVideoRef={localVideoRef}
+        remoteVideoRef={remoteVideoRef}
+        onEnd={endCall}
+        onAccept={acceptCall}
+        onDecline={declineCall}
+        callTimer={callTimer}
+      />
+
       {showReport && <ReportModal onSubmit={submitReport} onClose={() => setShowReport(false)} />}
       {showProfileModal && (
         <ProfileModal
@@ -642,7 +1576,7 @@ export default function Chat() {
           background: "#ffffff",
           borderBottom: "3px solid #1b1b1b",
           padding: "12px 16px",
-          display: "flex", alignItems: "center", gap: 10,
+          display: "flex", alignItems: "center", gap: 8,
           flexShrink: 0, position: "relative",
           boxShadow: "0px 4px 0px 0px rgba(0,0,0,1)",
           zIndex: 10
@@ -689,7 +1623,16 @@ export default function Chat() {
                 </div>
               </div>
             ) : (
-              <Avatar profile={otherProfile} size={36} revealed={false} />
+              <div style={{ position: "relative" }}>
+                <Avatar profile={otherProfile} size={36} revealed={false} />
+                {theyAreOnline && (
+                  <div style={{
+                    position: "absolute", bottom: -1, right: -1,
+                    width: 10, height: 10, borderRadius: "50%",
+                    background: "#10B981", border: "2px solid #fff",
+                  }} />
+                )}
+              </div>
             )}
 
             {/* Name + status */}
@@ -700,7 +1643,11 @@ export default function Chat() {
                 textTransform: "uppercase"
               }}>{otherProfile?.name || "…"}</p>
 
-              {revealStatusText ? (
+              {theyAreOnline ? (
+                <p style={{ margin: "2px 0 0", fontSize: 9, fontWeight: 900, color: "#10B981", textTransform: "uppercase" }}>
+                  Online now
+                </p>
+              ) : revealStatusText ? (
                 <p style={{
                   margin: "2px 0 0", fontSize: 9, fontWeight: 900,
                   color: isFullyRevealed ? "#10B981" : theyWantReveal ? "#FF4757" : "#555",
@@ -715,6 +1662,34 @@ export default function Chat() {
               )}
             </div>
           </div>
+
+          {/* 📞 Voice Call */}
+          <button
+            onClick={() => startCall("voice")}
+            title="Voice Call"
+            className="neo-btn"
+            style={{
+              width: 32, height: 32, borderRadius: 6, border: "2px solid #1b1b1b",
+              background: "#DCFCE7", color: "#1b1b1b", fontSize: 14,
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              fontFamily: "inherit", flexShrink: 0,
+              boxShadow: "2px 2px 0px 0px #1b1b1b", fontWeight: 900
+            }}
+          >📞</button>
+
+          {/* 📹 Video Call */}
+          <button
+            onClick={() => startCall("video")}
+            title="Video Call"
+            className="neo-btn"
+            style={{
+              width: 32, height: 32, borderRadius: 6, border: "2px solid #1b1b1b",
+              background: "#EEF2FF", color: "#1b1b1b", fontSize: 14,
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              fontFamily: "inherit", flexShrink: 0,
+              boxShadow: "2px 2px 0px 0px #1b1b1b", fontWeight: 900
+            }}
+          >📹</button>
 
           {/* 👁️ Reveal toggle button */}
           <button
@@ -781,13 +1756,80 @@ export default function Chat() {
                 msg={msg}
                 isMe={isMe}
                 otherProfile={otherProfile}
+                myProfile={myProfile}
                 showAvatar={showAvatar}
                 revealed={isFullyRevealed}
+                onReply={handleReply}
+                onDelete={deleteForEveryone}
+                onImageClick={(src) => setLightboxSrc(src)}
+                otherLastReadAt={otherLastReadAt}
               />
             );
           })}
+
+          {/* Typing indicator */}
+          {theyAreTyping && <TypingIndicator name={otherProfile?.name || "…"} />}
+
           <div ref={bottomRef} style={{ height: 1 }} />
         </div>
+
+        {/* Presence floating avatar */}
+        {theyAreOnline && <PresenceAvatar profile={otherProfile} revealed={isFullyRevealed} />}
+
+        {/* Emoji Picker */}
+        {showEmoji && (
+          <EmojiPicker
+            onSelect={handleEmojiSelect}
+            onClose={() => setShowEmoji(false)}
+          />
+        )}
+
+        {/* ── Reply Preview ── */}
+        {replyingTo && (
+          <div style={{
+            flexShrink: 0, background: "#f5f4f0",
+            borderTop: "2.5px solid #1b1b1b",
+            padding: "8px 14px",
+            display: "flex", alignItems: "center", gap: 10,
+          }}>
+            <div style={{
+              flex: 1, borderLeft: "3px solid #7531d3",
+              padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "#555",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>
+              <span style={{ color: "#7531d3", fontWeight: 950, textTransform: "uppercase" }}>
+                {replyingTo.senderName}
+              </span>
+              <div style={{ marginTop: 1 }}>
+                {replyingTo.type === "image" ? "📷 Photo" : replyingTo.type === "audio" ? "🎙️ Voice note" : replyingTo.content}
+              </div>
+            </div>
+            <button onClick={() => setReplyingTo(null)} style={{
+              width: 26, height: 26, borderRadius: "50%",
+              border: "2px solid #1b1b1b", background: "#fff",
+              fontSize: 12, cursor: "pointer", display: "flex",
+              alignItems: "center", justifyContent: "center",
+              boxShadow: "1px 1px 0px 0px #1b1b1b",
+            }}>✕</button>
+          </div>
+        )}
+
+        {/* ── Upload progress ── */}
+        {uploadingMedia && (
+          <div style={{
+            flexShrink: 0, background: "#ecdcff",
+            borderTop: "2px solid #1b1b1b",
+            padding: "8px 14px", display: "flex", alignItems: "center", gap: 8,
+            fontSize: 11, fontWeight: 900, color: "#1b1b1b", textTransform: "uppercase",
+          }}>
+            <div style={{
+              width: 16, height: 16, border: "3px solid #7531d3",
+              borderTopColor: "transparent", borderRadius: "50%",
+              animation: "spin 0.8s linear infinite",
+            }} />
+            Uploading…
+          </div>
+        )}
 
         {/* ── Input bar ── */}
         <div style={{
@@ -795,46 +1837,108 @@ export default function Chat() {
           background: "#ffffff",
           borderTop: "3px solid #1b1b1b",
           padding: "12px 14px 18px",
-          display: "flex", gap: 10, alignItems: "flex-end",
+          display: "flex", gap: 8, alignItems: "flex-end",
+          position: "relative",
         }}>
-          <textarea
-            ref={inputRef}
-            rows={1}
-            value={input}
-            onChange={e => {
-              setInput(e.target.value);
-              e.target.style.height = "auto";
-              e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
-            }}
-            onKeyDown={e => {
-              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-            }}
-            placeholder="Message…"
-            style={{
-              flex: 1, padding: "10px 14px", borderRadius: 8,
-              border: "2px solid #1b1b1b", fontSize: 13,
-              fontFamily: "inherit", resize: "none",
-              lineHeight: 1.5, background: "#ffffff",
-              color: "#1b1b1b", maxHeight: 120, overflow: "hidden",
-              boxShadow: "2px 2px 0px 0px #1b1b1b",
-              fontWeight: 700
-            }}
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={handlePhotoSelect}
           />
+
+          {/* Attach Photo */}
           <button
-            onClick={sendMessage}
-            disabled={!input.trim() || sending}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingMedia}
             className="neo-btn"
+            title="Send Photo"
             style={{
-              width: 44, height: 44, borderRadius: 8, border: "2px solid #1b1b1b",
-              background: input.trim() && !sending ? "#bdff00" : "#eeeeee",
-              color: "#1b1b1b",
-              fontSize: 18, cursor: input.trim() ? "pointer" : "not-allowed",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: input.trim() ? "2.5px 2.5px 0px 0px #1b1b1b" : "none",
-              transition: "all 0.1s", fontFamily: "inherit", flexShrink: 0,
-              fontWeight: 950
+              width: 38, height: 38, borderRadius: 8, border: "2px solid #1b1b1b",
+              background: "#fff", color: "#1b1b1b", fontSize: 16,
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "2px 2px 0px 0px #1b1b1b", flexShrink: 0,
+              fontFamily: "inherit", fontWeight: 900,
             }}
-          >{sending ? "…" : "↑"}</button>
+          >📎</button>
+
+          {/* Emoji */}
+          <button
+            onClick={() => setShowEmoji(v => !v)}
+            className="neo-btn"
+            title="Emoji"
+            style={{
+              width: 38, height: 38, borderRadius: 8, border: "2px solid #1b1b1b",
+              background: showEmoji ? "#fef3c7" : "#fff", color: "#1b1b1b", fontSize: 16,
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "2px 2px 0px 0px #1b1b1b", flexShrink: 0,
+              fontFamily: "inherit", fontWeight: 900,
+            }}
+          >😃</button>
+
+          {isRecording ? (
+            <RecordingBar
+              duration={recDuration}
+              onCancel={cancelRecording}
+              onSend={sendRecording}
+            />
+          ) : (
+            <textarea
+              ref={inputRef}
+              rows={1}
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={e => {
+                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+              }}
+              placeholder="Message…"
+              style={{
+                flex: 1, padding: "10px 14px", borderRadius: 8,
+                border: "2px solid #1b1b1b", fontSize: 13,
+                fontFamily: "inherit", resize: "none",
+                lineHeight: 1.5, background: "#ffffff",
+                color: "#1b1b1b", maxHeight: 120, overflow: "hidden",
+                boxShadow: "2px 2px 0px 0px #1b1b1b",
+                fontWeight: 700
+              }}
+            />
+          )}
+
+          {/* Mic / Send toggle */}
+          {input.trim() ? (
+            <button
+              onClick={sendMessage}
+              disabled={sending}
+              className="neo-btn"
+              style={{
+                width: 44, height: 44, borderRadius: 8, border: "2px solid #1b1b1b",
+                background: "#bdff00", color: "#1b1b1b",
+                fontSize: 18, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "2.5px 2.5px 0px 0px #1b1b1b",
+                transition: "all 0.1s", fontFamily: "inherit", flexShrink: 0,
+                fontWeight: 950
+              }}
+            >{sending ? "…" : "↑"}</button>
+          ) : !isRecording ? (
+            <button
+              onClick={startRecording}
+              disabled={uploadingMedia}
+              className="neo-btn"
+              title="Record Voice Note"
+              style={{
+                width: 44, height: 44, borderRadius: 8, border: "2px solid #1b1b1b",
+                background: "#FFF0F1", color: "#1b1b1b",
+                fontSize: 18, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "2.5px 2.5px 0px 0px #1b1b1b",
+                transition: "all 0.1s", fontFamily: "inherit", flexShrink: 0,
+                fontWeight: 950,
+              }}
+            >🎙️</button>
+          ) : null}
         </div>
       </div>
     </>
@@ -870,4 +1974,3 @@ function fillBtn(bg) {
     textTransform: "uppercase"
   };
 }
-

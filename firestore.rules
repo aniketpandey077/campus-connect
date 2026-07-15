@@ -53,6 +53,15 @@ service cloud.firestore {
         get(/databases/$(database)/documents/matches/$(matchId)).data.user1Id == request.auth.uid || 
         get(/databases/$(database)/documents/matches/$(matchId)).data.user2Id == request.auth.uid
       );
+      allow update, delete: if isAuthed() && resource.data.senderId == request.auth.uid;
+    }
+
+    // WebRTC Calling signaling subcollection
+    match /matches/{matchId}/calls/{callId} {
+      allow read, write: if isAuthed() && (
+        get(/databases/$(database)/documents/matches/$(matchId)).data.user1Id == request.auth.uid || 
+        get(/databases/$(database)/documents/matches/$(matchId)).data.user2Id == request.auth.uid
+      );
     }
 
     // Events Collection
