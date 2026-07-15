@@ -931,6 +931,7 @@ export default function Chat() {
   const remoteAudioRef = useRef(null);
   const callTimerRef = useRef(null);
   const callDocUnsubRef = useRef(null);
+  const isTypingRef = useRef(false);
 
   // Stream effect triggers to attach streams without DOM races
   useEffect(() => {
@@ -1090,10 +1091,17 @@ export default function Chat() {
     e.target.style.height = "auto";
     e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
 
-    // Typing indicator
-    setTyping(true);
+    // Typing indicator: only write to db if status transitions from false to true
+    if (!isTypingRef.current) {
+      isTypingRef.current = true;
+      setTyping(true);
+    }
+
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => setTyping(false), 3000);
+    typingTimeoutRef.current = setTimeout(() => {
+      isTypingRef.current = false;
+      setTyping(false);
+    }, 3000);
   };
 
   // ── Send message ──
@@ -1130,6 +1138,7 @@ export default function Chat() {
         [unreadField]: increment(1),
       });
       setReplyingTo(null);
+      isTypingRef.current = false;
       setTyping(false);
     } catch (e) {
       console.error("send:", e);
