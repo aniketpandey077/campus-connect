@@ -582,15 +582,21 @@ export default function Matches() {
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ margin: 0, fontWeight: 950, fontSize: 14, textTransform: "uppercase", color: "#1b1b1b" }}>{res.name}</p>
-                    <p style={{ margin: "2px 0 0", fontWeight: 800, fontSize: 11, color: "#7531d3" }}>@{res.username}</p>
-                    <p style={{ margin: "2px 0 0", fontWeight: 700, fontSize: 10, color: "#555", textTransform: "uppercase" }}>
+                    {res.username && (
+                      <p style={{ margin: "2px 0 0", fontWeight: 800, fontSize: 11, color: "#7531d3" }}>@{res.username}</p>
+                    )}
+                    <p style={{ margin: "2px 0 0", fontWeight: 800, fontSize: 11, color: "#1b1b1b", textTransform: "uppercase" }}>
                       {(res.branch || []).join(" + ")} · {res.year?.[0]}
                     </p>
                   </div>
                   <button
                     onClick={() => setSearchResults(null)}
-                    style={{ background: "#f3f3f3", border: "2px solid #1b1b1b", borderRadius: 6, padding: "4px 8px", cursor: "pointer", fontWeight: 900, fontSize: 11 }}
-                  >✕</button>
+                    style={{
+                      background: "#f3f3f3", border: "2px solid #1b1b1b", borderRadius: 6,
+                      padding: "6px 10px", cursor: "pointer", fontWeight: 950, fontSize: 12,
+                      color: "#1b1b1b", display: "flex", alignItems: "center", justifyContent: "center"
+                    }}
+                  >X</button>
                 </div>
               ))}
             </div>
